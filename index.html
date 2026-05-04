@@ -671,12 +671,30 @@
 
     <!-- 3D Azalea flower model (loaded from GLB) -->
     <a-gltf-model
+      id="azalea-flower"
       src="#azaleaModel"
-      position="0 0 0.1"
+      position="0 0.3 0"
       rotation="0 0 0"
-      scale="0 0 0"
-      animation__scale="property: scale; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound"
+      scale="0.3 0.3 0.3"
+      visible="true"
+      animation__scale="property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound"
       animation__rotate="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound"></a-gltf-model>
+
+    <!-- FALLBACK: procedural flower (shown if GLB fails to load) -->
+    <a-entity id="fallback-flower" position="0 0.3 0" scale="0.3 0.3 0.3" visible="false">
+      <!-- 5 petals arranged in flower shape -->
+      <a-sphere color="#e8a5c0" radius="0.15" position="0 0 0" scale="1 0.4 1"></a-sphere>
+      <a-sphere color="#f5d3de" radius="0.13" position="0.2 0 0" scale="1.3 0.4 0.9"></a-sphere>
+      <a-sphere color="#f5d3de" radius="0.13" position="-0.2 0 0" scale="1.3 0.4 0.9"></a-sphere>
+      <a-sphere color="#e8a5c0" radius="0.13" position="0 0 0.2" scale="0.9 0.4 1.3"></a-sphere>
+      <a-sphere color="#e8a5c0" radius="0.13" position="0 0 -0.2" scale="0.9 0.4 1.3"></a-sphere>
+      <!-- Yellow center -->
+      <a-sphere color="#c9a961" radius="0.06" position="0 0.04 0"></a-sphere>
+      <!-- Stamens -->
+      <a-cylinder color="#6d1b3e" radius="0.008" height="0.12" position="0.03 0.08 0" rotation="-15 0 0"></a-cylinder>
+      <a-cylinder color="#6d1b3e" radius="0.008" height="0.12" position="-0.03 0.08 0.03" rotation="15 0 0"></a-cylinder>
+      <a-cylinder color="#6d1b3e" radius="0.008" height="0.12" position="0 0.08 -0.03" rotation="0 0 15"></a-cylinder>
+    </a-entity>
 
     <!-- Floating particles around flower -->
     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 12000; easing: linear">
@@ -895,7 +913,78 @@
   // Wait for scene to be ready
   document.querySelector('a-scene').addEventListener('loaded', () => {
     setupTargetListeners();
+    setupModelFallback();
   });
+
+  // =========================
+  // GLB MODEL LOAD DETECTION
+  // =========================
+  function setupModelFallback() {
+    const glbModel = document.getElementById('azalea-flower');
+    const fallback = document.getElementById('fallback-flower');
+
+    if (!glbModel || !fallback) return;
+
+    let modelLoaded = false;
+
+    // Listen for successful GLB load
+    glbModel.addEventListener('model-loaded', (e) => {
+      modelLoaded = true;
+      console.log('✓ GLB model loaded successfully');
+
+      // Check if model has visible mesh
+      const obj = e.detail.model;
+      let meshCount = 0;
+      let hasVisibleMaterial = false;
+      obj.traverse((node) => {
+        if (node.isMesh) {
+          meshCount++;
+          if (node.material) {
+            // Force material to be visible if it has issues
+            node.material.transparent = false;
+            node.material.opacity = 1;
+            node.material.needsUpdate = true;
+            if (node.material.color || node.material.map) {
+              hasVisibleMaterial = true;
+            }
+          }
+        }
+      });
+      console.log(`Model meshes: ${meshCount}, visible materials: ${hasVisibleMaterial}`);
+
+      // If no visible materials, show fallback alongside
+      if (meshCount === 0 || !hasVisibleMaterial) {
+        console.warn('Model has no visible content — showing fallback');
+        fallback.setAttribute('visible', 'true');
+      }
+    });
+
+    // Listen for GLB load errors
+    glbModel.addEventListener('model-error', (e) => {
+      console.error('✗ GLB model failed to load:', e.detail);
+      glbModel.setAttribute('visible', 'false');
+      fallback.setAttribute('visible', 'true');
+
+      // Apply same animations to fallback
+      fallback.setAttribute('animation__scale',
+        'property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound');
+      fallback.setAttribute('animation__rotate',
+        'property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound');
+    });
+
+    // Timeout fallback: if model doesn't load in 5 seconds, show backup
+    setTimeout(() => {
+      if (!modelLoaded) {
+        console.warn('GLB load timeout — showing fallback flower');
+        glbModel.setAttribute('visible', 'false');
+        fallback.setAttribute('visible', 'true');
+        fallback.setAttribute('animation__scale',
+          'property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound');
+        fallback.setAttribute('animation__rotate',
+          'property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound');
+      }
+    }, 5000);
+  }
 
   // =========================
   // INFO PANEL

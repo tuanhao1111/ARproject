@@ -251,6 +251,27 @@
     }
 
     /* ============ AR SCENE UI OVERLAY ============ */
+    /* Force a-scene to fullscreen — critical for MindAR camera */
+    #ar-scene {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 1 !important;
+    }
+    #ar-scene.hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #ar-scene canvas,
+    #ar-scene video,
+    .a-canvas {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
     #ar-ui {
       position: fixed; inset: 0;
       pointer-events: none;
@@ -599,13 +620,13 @@
 
 <a-scene
   id="ar-scene"
+  class="hidden"
   mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
   color-space="sRGB"
   renderer="colorManagement: true, physicallyCorrectLights: true"
   vr-mode-ui="enabled: false"
   device-orientation-permission-ui="enabled: false"
-  embedded
-  style="display:none;">
+  embedded>
 
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
@@ -739,29 +760,39 @@
   startBtn.addEventListener('click', async () => {
     intro.classList.add('hidden');
     setTimeout(async () => {
-      arScene.style.display = 'block';
+      // Show AR scene FIRST (visibility), then start MindAR
+      arScene.classList.remove('hidden');
       arUI.classList.add('active');
 
-      // Show loading toast
       showToast(state.lang === 'zh' ? '正在啟動相機...' : 'Starting camera...');
 
       const sceneEl = document.querySelector('a-scene');
 
-      // Wait for scene to be loaded
+      // Wait for A-Frame scene to fully load
       if (!sceneEl.hasLoaded) {
         await new Promise(resolve => sceneEl.addEventListener('loaded', resolve, { once: true }));
       }
+
+      // Wait one extra frame for canvas to size properly
+      await new Promise(resolve => requestAnimationFrame(resolve));
 
       const arSystem = sceneEl.systems['mindar-image-system'];
 
       if (!arSystem) {
         showToast(state.lang === 'zh' ? 'AR 系統載入失敗' : 'AR system failed to load');
+        console.error('mindar-image-system not found');
         return;
       }
 
       try {
         await arSystem.start();
         state.arActive = true;
+
+        // Force resize after camera starts
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 500);
+
         showToast(state.lang === 'zh' ? '✓ 請對準標記' : '✓ Point at marker');
       } catch (err) {
         showToast(state.lang === 'zh' ? '相機啟動失敗，請允許存取' : 'Camera failed — please grant access');
@@ -779,7 +810,7 @@
     if (state.arActive) arSystem.stop();
     state.arActive = false;
 
-    arScene.style.display = 'none';
+    arScene.classList.add('hidden');
     arUI.classList.remove('active');
     intro.classList.remove('hidden');
     document.getElementById('infoPanel').classList.remove('visible');

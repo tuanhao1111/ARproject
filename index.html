@@ -264,12 +264,25 @@
       visibility: hidden;
       pointer-events: none;
     }
-    #ar-scene canvas,
-    #ar-scene video,
-    .a-canvas {
-      width: 100% !important;
-      height: 100% !important;
+
+    /* MindAR injects video directly into body, not into a-scene — target it globally */
+    video {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
       object-fit: cover !important;
+      z-index: 0 !important;
+    }
+    .a-canvas,
+    canvas.a-canvas {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 2 !important;
     }
 
     #ar-ui {
@@ -759,8 +772,34 @@
 
   startBtn.addEventListener('click', async () => {
     intro.classList.add('hidden');
+
+    // STEP 1: Request camera permission proactively BEFORE MindAR starts
+    // This way we get a clear error if denied, instead of MindAR silently failing
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      // Stop our test stream — MindAR will request its own
+      stream.getTracks().forEach(track => track.stop());
+      console.log('✓ Camera permission granted');
+    } catch (permErr) {
+      console.error('Camera permission error:', permErr);
+      let msg;
+      if (permErr.name === 'NotAllowedError') {
+        msg = state.lang === 'zh'
+          ? '相機權限被拒絕。請點擊網址列旁的鎖頭圖示 → 允許相機'
+          : 'Camera blocked. Click 🔒 icon → Allow camera';
+      } else if (permErr.name === 'NotFoundError') {
+        msg = state.lang === 'zh' ? '找不到相機裝置' : 'No camera device found';
+      } else {
+        msg = state.lang === 'zh' ? '相機錯誤：' + permErr.message : 'Camera error: ' + permErr.message;
+      }
+      showToast(msg);
+      intro.classList.remove('hidden');
+      return;
+    }
+
     setTimeout(async () => {
-      // Show AR scene FIRST (visibility), then start MindAR
       arScene.classList.remove('hidden');
       arUI.classList.add('active');
 
@@ -768,12 +807,10 @@
 
       const sceneEl = document.querySelector('a-scene');
 
-      // Wait for A-Frame scene to fully load
       if (!sceneEl.hasLoaded) {
         await new Promise(resolve => sceneEl.addEventListener('loaded', resolve, { once: true }));
       }
 
-      // Wait one extra frame for canvas to size properly
       await new Promise(resolve => requestAnimationFrame(resolve));
 
       const arSystem = sceneEl.systems['mindar-image-system'];
@@ -788,14 +825,32 @@
         await arSystem.start();
         state.arActive = true;
 
-        // Force resize after camera starts
+        // Debug: check if video element was created
         setTimeout(() => {
+          const videos = document.querySelectorAll('video');
+          console.log('Videos found in DOM:', videos.length);
+          videos.forEach((v, i) => {
+            console.log(`Video ${i}:`, {
+              srcObject: !!v.srcObject,
+              width: v.videoWidth,
+              height: v.videoHeight,
+              paused: v.paused,
+              display: getComputedStyle(v).display,
+              visibility: getComputedStyle(v).visibility,
+              zIndex: getComputedStyle(v).zIndex,
+              position: getComputedStyle(v).position
+            });
+            // Force play if paused
+            if (v.paused && v.srcObject) {
+              v.play().catch(e => console.warn('Video play failed:', e));
+            }
+          });
           window.dispatchEvent(new Event('resize'));
-        }, 500);
+        }, 1000);
 
         showToast(state.lang === 'zh' ? '✓ 請對準標記' : '✓ Point at marker');
       } catch (err) {
-        showToast(state.lang === 'zh' ? '相機啟動失敗，請允許存取' : 'Camera failed — please grant access');
+        showToast(state.lang === 'zh' ? '相機啟動失敗：' + err.message : 'Camera failed: ' + err.message);
         console.error('AR start error:', err);
       }
     }, 800);

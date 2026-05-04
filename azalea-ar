@@ -1,0 +1,11 @@
+# 1. Tạo repo mới trên GitHub (ví dụ: azalea-ar)
+# 2. Trên máy:
+git init
+git add index.html
+git commit -m "Initial AR azalea prototype"
+git branch -M main
+git remote add origin https://github.com/USERNAME/azalea-ar.git
+git push -u origin main
+
+# 3. Trên GitHub: Settings → Pages → Source: main branch → Save
+# 4. Sau ~1 phút, truy cập: https://USERNAME.github.io/azalea-ar/

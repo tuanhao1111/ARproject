@@ -592,11 +592,16 @@
 </div>
 
 <!-- ============ A-FRAME / MINDAR SCENE ============ -->
+<!-- Preload GLB asset -->
+<a-assets timeout="30000">
+  <a-asset-item id="azaleaModel" src="./azalea.glb"></a-asset-item>
+</a-assets>
+
 <a-scene
   id="ar-scene"
-  mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/tuanhao1111/ARproject@add42d60737e8c5b7b26e0c28d5dfb3097bb8e75/targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
+  mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
   color-space="sRGB"
-  renderer="colorManagement: true, physicallyCorrectLights"
+  renderer="colorManagement: true, physicallyCorrectLights: true"
   vr-mode-ui="enabled: false"
   device-orientation-permission-ui="enabled: false"
   embedded
@@ -604,55 +609,57 @@
 
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
+  <!-- Lighting for GLB model -->
+  <a-entity light="type: ambient; color: #ffffff; intensity: 0.8"></a-entity>
+  <a-entity light="type: directional; color: #ffffff; intensity: 0.6" position="1 1 1"></a-entity>
+  <a-entity light="type: directional; color: #ffd9e6; intensity: 0.3" position="-1 0.5 -1"></a-entity>
+
   <!-- Target 0: Hirado Azalea -->
   <a-entity mindar-image-target="targetIndex: 0" id="target-0">
-    <!-- Decorative ring -->
-    <a-ring color="#6d1b3e" radius-inner="0.55" radius-outer="0.58" position="0 0 0" rotation="-90 0 0"
+
+    <!-- Decorative rotating ring -->
+    <a-ring color="#6d1b3e"
+            radius-inner="0.55"
+            radius-outer="0.58"
+            position="0 0 0"
+            rotation="-90 0 0"
+            opacity="0.6"
             animation="property: rotation; to: -90 0 360; loop: true; dur: 20000; easing: linear"></a-ring>
 
-    <!-- Azalea flower (procedural) -->
-    <a-gltf-model src="./azalea.glb"> position="0 0.05 0" scale="0 0 0"
-              animation="property: scale; to: 0.4 0.4 0.4; dur: 1500; easing: easeOutElastic; startEvents: targetFound">
+    <!-- Outer dashed ring -->
+    <a-ring color="#e8a5c0"
+            radius-inner="0.7"
+            radius-outer="0.72"
+            position="0 0 0"
+            rotation="-90 0 0"
+            opacity="0.4"
+            animation="property: rotation; to: -90 0 -360; loop: true; dur: 30000; easing: linear"></a-ring>
 
-      <!-- Stem -->
-      <a-cylinder color="#4a6741" radius="0.015" height="0.4" position="0 -0.2 0"></a-cylinder>
+    <!-- 3D Azalea flower model (loaded from GLB) -->
+    <a-gltf-model
+      src="#azaleaModel"
+      position="0 0 0.1"
+      rotation="0 0 0"
+      scale="0 0 0"
+      animation__scale="property: scale; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound"
+      animation__rotate="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound"></a-gltf-model>
 
-      <!-- Leaves -->
-      <a-entity position="0 -0.1 0">
-        <a-plane color="#2d3d28" width="0.18" height="0.08" rotation="0 30 25" position="0.08 0 0"></a-plane>
-        <a-plane color="#4a6741" width="0.16" height="0.07" rotation="0 -45 -20" position="-0.07 -0.05 0"></a-plane>
-      </a-entity>
-
-      <!-- Petals (5 around center) -->
-      <a-entity rotation="0 0 0">
-        <a-sphere color="#e8a5c0" radius="0.12" position="0 0 0" scale="1 0.3 1"></a-sphere>
-        <a-sphere color="#f5d3de" radius="0.1" position="0.15 0 0" scale="1.2 0.3 0.8"></a-sphere>
-        <a-sphere color="#f5d3de" radius="0.1" position="-0.15 0 0" scale="1.2 0.3 0.8"></a-sphere>
-        <a-sphere color="#e8a5c0" radius="0.1" position="0 0 0.15" scale="0.8 0.3 1.2"></a-sphere>
-        <a-sphere color="#e8a5c0" radius="0.1" position="0 0 -0.15" scale="0.8 0.3 1.2"></a-sphere>
-        <!-- Center -->
-        <a-sphere color="#c9a961" radius="0.04" position="0 0.02 0"></a-sphere>
-        <!-- Stamens -->
-        <a-cylinder color="#6d1b3e" radius="0.005" height="0.08" position="0.02 0.06 0" rotation="-15 0 0"></a-cylinder>
-        <a-cylinder color="#6d1b3e" radius="0.005" height="0.08" position="-0.02 0.06 0.02" rotation="15 0 0"></a-cylinder>
-      </a-entity>
-
-      <!-- Floating particles around flower -->
-      <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 12000; easing: linear">
-        <a-sphere color="#f5d3de" radius="0.012" position="0.3 0.05 0" opacity="0.7"></a-sphere>
-        <a-sphere color="#e8a5c0" radius="0.01" position="-0.25 0.1 0.1" opacity="0.6"></a-sphere>
-        <a-sphere color="#f5d3de" radius="0.008" position="0.1 0.15 -0.25" opacity="0.5"></a-sphere>
-      </a-entity>
+    <!-- Floating particles around flower -->
+    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 12000; easing: linear">
+      <a-sphere color="#f5d3de" radius="0.012" position="0.4 0.1 0" opacity="0.7"></a-sphere>
+      <a-sphere color="#e8a5c0" radius="0.01" position="-0.35 0.2 0.15" opacity="0.6"></a-sphere>
+      <a-sphere color="#f5d3de" radius="0.008" position="0.15 0.3 -0.35" opacity="0.5"></a-sphere>
+      <a-sphere color="#c9a961" radius="0.01" position="-0.2 0.05 -0.3" opacity="0.6"></a-sphere>
     </a-entity>
 
-    <!-- Floating label -->
-    <a-text value="Rhododendron"
+    <!-- Floating label above flower -->
+    <a-text value="Rhododendron x pulchrum"
             color="#6d1b3e"
             align="center"
             width="2"
-            position="0 0.5 0"
+            position="0 0.7 0"
             font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
-            animation="property: position; to: 0 0.55 0; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine"></a-text>
+            animation="property: position; to: 0 0.75 0; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine"></a-text>
   </a-entity>
 
 </a-scene>
@@ -735,15 +742,30 @@
       arScene.style.display = 'block';
       arUI.classList.add('active');
 
+      // Show loading toast
+      showToast(state.lang === 'zh' ? '正在啟動相機...' : 'Starting camera...');
+
       const sceneEl = document.querySelector('a-scene');
+
+      // Wait for scene to be loaded
+      if (!sceneEl.hasLoaded) {
+        await new Promise(resolve => sceneEl.addEventListener('loaded', resolve, { once: true }));
+      }
+
       const arSystem = sceneEl.systems['mindar-image-system'];
+
+      if (!arSystem) {
+        showToast(state.lang === 'zh' ? 'AR 系統載入失敗' : 'AR system failed to load');
+        return;
+      }
 
       try {
         await arSystem.start();
         state.arActive = true;
+        showToast(state.lang === 'zh' ? '✓ 請對準標記' : '✓ Point at marker');
       } catch (err) {
         showToast(state.lang === 'zh' ? '相機啟動失敗，請允許存取' : 'Camera failed — please grant access');
-        console.error(err);
+        console.error('AR start error:', err);
       }
     }, 800);
   });

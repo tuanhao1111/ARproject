@@ -613,27 +613,27 @@
 </div>
 
 <!-- ============ A-FRAME / MINDAR SCENE ============ -->
-<!-- Preload GLB asset -->
-<a-assets timeout="30000">
-  <a-asset-item id="azaleaModel" src="./azalea.glb"></a-asset-item>
-</a-assets>
-
 <a-scene
   id="ar-scene"
   class="hidden"
   mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
   color-space="sRGB"
-  renderer="colorManagement: true, physicallyCorrectLights: true"
+  renderer="colorManagement: true"
   vr-mode-ui="enabled: false"
   device-orientation-permission-ui="enabled: false"
   embedded>
 
+  <!-- Preload GLB asset (must be inside a-scene) -->
+  <a-assets timeout="30000">
+    <a-asset-item id="azaleaModel" src="./azalea.glb"></a-asset-item>
+  </a-assets>
+
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
   <!-- Lighting for GLB model -->
-  <a-entity light="type: ambient; color: #ffffff; intensity: 0.8"></a-entity>
-  <a-entity light="type: directional; color: #ffffff; intensity: 0.6" position="1 1 1"></a-entity>
-  <a-entity light="type: directional; color: #ffd9e6; intensity: 0.3" position="-1 0.5 -1"></a-entity>
+  <a-entity light="type: ambient; color: #ffffff; intensity: 1.2"></a-entity>
+  <a-entity light="type: directional; color: #ffffff; intensity: 0.8" position="1 1 1"></a-entity>
+  <a-entity light="type: directional; color: #ffd9e6; intensity: 0.4" position="-1 0.5 -1"></a-entity>
 
   <!-- Target 0: Hirado Azalea -->
   <a-entity mindar-image-target="targetIndex: 0" id="target-0">

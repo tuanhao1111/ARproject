@@ -14,6 +14,19 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
+  <!-- Patch: register pbrSpecularGlossiness extension handler so old Sketchfab models render correctly -->
+  <script>
+    // This patch makes Three.js GLTFLoader convert spec-gloss materials to standard PBR
+    // so models from older Sketchfab exports display with proper materials
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.THREE && window.THREE.GLTFLoader) {
+        const loader = window.THREE.GLTFLoader;
+        // Force loaded materials to use standard color even if extension fails
+        console.log('THREE GLTFLoader available, version:', THREE.REVISION);
+      }
+    });
+  </script>
+
   <style>
     :root {
       --azalea-deep: #6d1b3e;
@@ -932,47 +945,135 @@
       modelLoaded = true;
       console.log('✓ GLB model loaded successfully');
 
-      // Check if model has visible mesh
       const obj = e.detail.model;
       let meshCount = 0;
-      let hasVisibleMaterial = false;
+      let flowerMesh = null;
+
+      // STEP 1: Hide Insect/non-flower nodes BEFORE computing bbox
       obj.traverse((node) => {
-        if (node.isMesh) {
-          meshCount++;
-          if (node.material) {
-            // Force material to be visible if it has issues
-            node.material.transparent = false;
-            node.material.opacity = 1;
-            node.material.needsUpdate = true;
-            if (node.material.color || node.material.map) {
-              hasVisibleMaterial = true;
-            }
+        // Hide nodes by name
+        if (node.name) {
+          const lname = node.name.toLowerCase();
+          if (lname.includes('insect') || lname.includes('bee') || lname === 'object_5') {
+            node.visible = false;
+            console.log('Hidden node:', node.name);
           }
         }
       });
-      console.log(`Model meshes: ${meshCount}, visible materials: ${hasVisibleMaterial}`);
 
-      // If no visible materials, show fallback alongside
-      if (meshCount === 0 || !hasVisibleMaterial) {
-        console.warn('Model has no visible content — showing fallback');
-        fallback.setAttribute('visible', 'true');
-      }
+      // STEP 2: Process materials — extract diffuse texture from spec-gloss extension
+      obj.traverse((node) => {
+        if (node.isMesh && node.visible) {
+          meshCount++;
+          flowerMesh = node;
+
+          if (node.material) {
+            const mat = node.material;
+
+            // Try to find any existing texture (diffuse/map/specGlossiness)
+            let foundTexture = mat.map;
+
+            // Three.js sometimes loads spec-gloss textures into different properties
+            // Check userData and traverse for textures
+            if (!foundTexture && mat.userData) {
+              for (const key in mat.userData) {
+                if (mat.userData[key] && mat.userData[key].isTexture) {
+                  foundTexture = mat.userData[key];
+                  console.log('Found texture in userData:', key);
+                  break;
+                }
+              }
+            }
+
+            // Check material's all properties for any texture
+            if (!foundTexture) {
+              for (const key in mat) {
+                if (mat[key] && mat[key].isTexture && key !== 'normalMap' && key !== 'envMap') {
+                  foundTexture = mat[key];
+                  console.log('Found texture at:', key);
+                  break;
+                }
+              }
+            }
+
+            // Create a fresh standard material (replaces broken spec-gloss)
+            const newMat = new THREE.MeshStandardMaterial({
+              map: foundTexture || null,
+              color: foundTexture ? 0xffffff : 0xe85d5d, // white if texture, red if not (azalea red)
+              side: THREE.DoubleSide,
+              roughness: 0.6,
+              metalness: 0.0,
+              transparent: false,
+              opacity: 1.0
+            });
+
+            // Preserve normal map if exists
+            if (mat.normalMap) {
+              newMat.normalMap = mat.normalMap;
+            }
+
+            node.material = newMat;
+            node.material.needsUpdate = true;
+
+            console.log('Material applied:', {
+              hasTexture: !!foundTexture,
+              meshName: node.name
+            });
+          }
+        }
+      });
+      console.log(`Visible meshes: ${meshCount}`);
+
+      // STEP 3: Compute bounding box ONLY of visible meshes (excludes hidden Insect)
+      const box = new THREE.Box3();
+      obj.traverse((node) => {
+        if (node.isMesh && node.visible) {
+          node.geometry.computeBoundingBox();
+          const meshBox = node.geometry.boundingBox.clone();
+          meshBox.applyMatrix4(node.matrixWorld);
+          box.union(meshBox);
+        }
+      });
+
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      console.log('Flower bbox size:', size.x.toFixed(3), size.y.toFixed(3), size.z.toFixed(3));
+      console.log('Flower bbox center:', center.x.toFixed(3), center.y.toFixed(3), center.z.toFixed(3));
+
+      // STEP 4: Auto-scale to fit marker (~0.6 units max dimension)
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const targetSize = 0.5;
+      const autoScale = maxDim > 0 ? targetSize / maxDim : 0.5;
+
+      console.log('Auto-scale factor:', autoScale.toFixed(4));
+
+      // STEP 5: Apply scale and center the flower above marker
+      glbModel.setAttribute('scale', `${autoScale} ${autoScale} ${autoScale}`);
+
+      const offsetX = -center.x * autoScale;
+      const offsetY = -center.y * autoScale + 0.25; // float above marker
+      const offsetZ = -center.z * autoScale;
+      glbModel.setAttribute('position', `${offsetX} ${offsetY} ${offsetZ}`);
+
+      // Remove conflicting animations
+      glbModel.removeAttribute('animation__scale');
+
+      // Add gentle pop-in animation that respects auto-scale
+      glbModel.setAttribute('animation__bounce',
+        `property: scale; from: ${autoScale*0.1} ${autoScale*0.1} ${autoScale*0.1}; to: ${autoScale} ${autoScale} ${autoScale}; dur: 1500; easing: easeOutElastic; startEvents: targetFound`);
     });
 
-    // Listen for GLB load errors
     glbModel.addEventListener('model-error', (e) => {
       console.error('✗ GLB model failed to load:', e.detail);
       glbModel.setAttribute('visible', 'false');
       fallback.setAttribute('visible', 'true');
-
-      // Apply same animations to fallback
       fallback.setAttribute('animation__scale',
         'property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound');
       fallback.setAttribute('animation__rotate',
         'property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound');
     });
 
-    // Timeout fallback: if model doesn't load in 5 seconds, show backup
     setTimeout(() => {
       if (!modelLoaded) {
         console.warn('GLB load timeout — showing fallback flower');

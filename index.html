@@ -31,6 +31,40 @@
     a-scene { display: none; }
     a-scene.active { display: block; }
 
+    /* ============ CRITICAL: MindAR camera video display ============ */
+    /* MindAR v1.2.5 inject một <video> element. Tuỳ phiên bản, nó có thể nằm:
+       - Ở body level (body > video)
+       - Trong a-scene
+       - Trong một div wrapper
+       Selector rộng để bắt mọi trường hợp. */
+    video {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      object-fit: cover !important;
+      z-index: 1 !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+    /* Loại trừ video trong modal (YouTube iframe không bị ảnh hưởng vì là iframe) */
+    .modal video, .video-wrap video {
+      position: static !important;
+      width: 100% !important; height: auto !important;
+      z-index: auto !important;
+    }
+    /* Canvas của A-Frame (3D scene) phải nằm TRÊN video, transparent background */
+    a-scene, a-scene .a-canvas, .a-canvas {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      background: transparent !important;
+      z-index: 2 !important;
+    }
+    /* Khi a-scene chưa active, không cho nó che màn hình */
+    a-scene:not(.active) { display: none !important; }
+
     /* ============ INTRO SCREEN ============ */
     #intro {
       position: fixed; inset: 0; z-index: 100;
@@ -640,12 +674,12 @@
     </div>
     <div class="modal-body">
       <div class="video-wrap">
-        <iframe src="https://www.youtube.com/embed/9bcdy9tpfrs?rel=0"
-                title="Azalea bloom time-lapse"
+        <iframe src="https://www.youtube.com/embed/yJrn5iY4uFE?rel=0"
+                title="Azalea bloom time-lapse - Yangmingshan"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen></iframe>
       </div>
-      <p>從花苞至盛開的縮時影像，記錄杜鵑於春日清晨綻放的瞬間。</p>
+      <p>陽明山國家公園杜鵑花盛開縮時影像（4K）。從花苞至盛開的瞬間，記錄春日清晨的綻放過程。</p>
       <p style="font-size:11px;color:var(--azalea-leaf);margin-top:8px;">
         ※ 替換 iframe 中的 YouTube ID 即可換成你的影片。
       </p>
@@ -851,6 +885,57 @@
       await sys.start();
       loading.classList.remove('active');
       arUI.classList.add('active');
+
+      // ============ FORCE-FIX VIDEO ELEMENT ============
+      // Đợi MindAR chèn video element vào DOM, rồi force inline styles
+      setTimeout(() => {
+        const videos = document.querySelectorAll('video');
+        console.log('[Debug] Found', videos.length, 'video element(s)');
+        videos.forEach((v, i) => {
+          console.log(`[Debug] Video ${i}:`, {
+            srcObject: !!v.srcObject,
+            videoWidth: v.videoWidth,
+            videoHeight: v.videoHeight,
+            paused: v.paused,
+            parent: v.parentElement?.tagName + (v.parentElement?.className ? '.' + v.parentElement.className : '')
+          });
+
+          // Skip videos in modals (YouTube iframes are different element)
+          if (v.closest('.modal')) return;
+
+          // Force inline styles (override any framework CSS)
+          Object.assign(v.style, {
+            position: 'fixed',
+            top: '0', left: '0',
+            width: '100vw', height: '100vh',
+            objectFit: 'cover',
+            zIndex: '1',
+            display: 'block',
+            visibility: 'visible',
+            opacity: '1',
+            transform: 'none'
+          });
+
+          // Force play if paused
+          if (v.paused && v.srcObject) {
+            v.play().catch(e => console.warn('Video play failed:', e));
+          }
+        });
+
+        // Also fix canvas to be transparent + z-index above video
+        const canvas = document.querySelector('.a-canvas');
+        if (canvas) {
+          console.log('[Debug] Canvas size:', canvas.width, 'x', canvas.height);
+          Object.assign(canvas.style, {
+            position: 'fixed',
+            top: '0', left: '0',
+            width: '100vw', height: '100vh',
+            background: 'transparent',
+            zIndex: '2'
+          });
+        }
+      }, 500);
+
     } catch (err) {
       console.error('MindAR start error:', err);
       showError('AR Start Failed', 'Could not start MindAR.',

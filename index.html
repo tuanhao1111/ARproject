@@ -503,15 +503,93 @@
             rotation="-90 0 0" opacity="0.4"
             animation="property: rotation; to: -90 0 -360; loop: true; dur: 30000; easing: linear"></a-ring>
 
-    <!-- 3D Azalea flower (GLB model) -->
+    <!-- ============ FLOWER + CINEMATIC BLOOM SEQUENCE ============ -->
+    <!-- Choreography: 
+         Phase 1 (0-800ms):   "Seed" - tiny 0.02 scale, fast spin, low Y
+         Phase 2 (800-1500ms): "Sprout" - grow to 0.25, rise up
+         Phase 3 (1500-2800ms): "Bloom" - elastic burst to 0.6 with bounce
+         Phase 4 (2800ms+):   "Breathing" - subtle scale pulse + slow rotation
+    -->
+
+    <!-- Pulse light that intensifies during bloom -->
+    <a-entity light="type: point; color: #ff6b9d; intensity: 0; distance: 2"
+              position="0 0.3 0.2"
+              animation__pulse="property: light.intensity; from: 0; to: 0.8; dur: 1500; easing: easeOutQuad; startEvents: targetFound; delay: 1500"
+              animation__breathe="property: light.intensity; from: 0.5; to: 0.9; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine; startEvents: bloomComplete"
+              animation__off="property: light.intensity; to: 0; dur: 300; startEvents: targetLost"></a-entity>
+
+    <!-- 3D Azalea flower with multi-phase animation -->
     <a-gltf-model
       id="azalea-flower"
       src="#azaleaModel"
-      position="0 0.3 0"
-      scale="0.05 0.05 0.05"
-      animation__bloom="property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound; delay: 600"
-      animation__shrink="property: scale; to: 0.05 0.05 0.05; dur: 400; startEvents: targetLost"
-      animation__rotate="property: rotation; to: 0 360 0; loop: true; dur: 18000; easing: linear; startEvents: targetFound"></a-gltf-model>
+      position="0 0.05 0"
+      scale="0.02 0.02 0.02"
+      rotation="0 0 0"
+
+      animation__phase1-scale="property: scale; from: 0.02 0.02 0.02; to: 0.25 0.25 0.25; dur: 800; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
+      animation__phase1-pos="property: position; from: 0 0.05 0; to: 0 0.2 0; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
+      animation__phase1-spin="property: rotation; from: 0 0 0; to: 0 720 0; dur: 1000; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
+
+      animation__phase2-scale="property: scale; from: 0.25 0.25 0.25; to: 0.6 0.6 0.6; dur: 1300; easing: easeOutElastic; startEvents: targetFound; delay: 1500"
+      animation__phase2-pos="property: position; from: 0 0.2 0; to: 0 0.3 0; dur: 1300; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
+
+      animation__phase3-rotate="property: rotation; from: 0 720 0; to: 0 1080 0; loop: true; dur: 18000; easing: linear; startEvents: bloomComplete"
+      animation__phase3-breathe="property: scale; from: 0.6 0.6 0.6; to: 0.62 0.62 0.62; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine; startEvents: bloomComplete"
+
+      animation__shrink="property: scale; to: 0.02 0.02 0.02; dur: 400; easing: easeInQuad; startEvents: targetLost"
+      animation__shrink-pos="property: position; to: 0 0.05 0; dur: 400; easing: easeInQuad; startEvents: targetLost"></a-gltf-model>
+
+    <!-- ============ BLOOM PARTICLES (8 small petals burst out at peak) ============ -->
+    <!-- Mỗi particle: scale 0 → bay ra → fade out, lệch pha nhẹ -->
+    <a-entity id="bloom-particles">
+      <a-plane class="bloom-petal" color="#f5d3de" width="0.04" height="0.04"
+        position="0 0.3 0.05" rotation="0 0 45" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: 0.6 0.7 0.1; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete"
+        animation__rotate="property: rotation; from: 0 0 45; to: 0 360 405; dur: 1800; startEvents: bloomComplete"></a-plane>
+
+      <a-plane class="bloom-petal" color="#e8a5c0" width="0.035" height="0.035"
+        position="0 0.3 0.05" rotation="0 0 30" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: -0.7 0.6 0.08; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 100"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 100"
+        animation__rotate="property: rotation; from: 0 0 30; to: 0 -360 390; dur: 1800; startEvents: bloomComplete; delay: 100"></a-plane>
+
+      <a-plane class="bloom-petal" color="#f5d3de" width="0.03" height="0.03"
+        position="0 0.3 0.05" rotation="0 0 60" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: 0.5 -0.5 0.06; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 200"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 200"
+        animation__rotate="property: rotation; from: 0 0 60; to: 0 360 420; dur: 1800; startEvents: bloomComplete; delay: 200"></a-plane>
+
+      <a-plane class="bloom-petal" color="#e8a5c0" width="0.025" height="0.025"
+        position="0 0.3 0.05" rotation="0 0 15" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: -0.6 -0.4 0.04; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 300"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 300"
+        animation__rotate="property: rotation; from: 0 0 15; to: 0 -360 375; dur: 1800; startEvents: bloomComplete; delay: 300"></a-plane>
+
+      <a-plane class="bloom-petal" color="#c9a961" width="0.02" height="0.02"
+        position="0 0.3 0.05" rotation="0 0 0" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: 0.3 0.8 0.07; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 150"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 150"
+        animation__rotate="property: rotation; from: 0 0 0; to: 0 720 360; dur: 1800; startEvents: bloomComplete; delay: 150"></a-plane>
+
+      <a-plane class="bloom-petal" color="#f5d3de" width="0.035" height="0.035"
+        position="0 0.3 0.05" rotation="0 0 75" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: -0.4 0.85 0.09; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 250"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 250"
+        animation__rotate="property: rotation; from: 0 0 75; to: 0 360 435; dur: 1800; startEvents: bloomComplete; delay: 250"></a-plane>
+
+      <a-plane class="bloom-petal" color="#e8a5c0" width="0.03" height="0.03"
+        position="0 0.3 0.05" rotation="0 0 90" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: 0.7 -0.3 0.05; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 350"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 350"
+        animation__rotate="property: rotation; from: 0 0 90; to: 0 -720 450; dur: 1800; startEvents: bloomComplete; delay: 350"></a-plane>
+
+      <a-plane class="bloom-petal" color="#f5d3de" width="0.028" height="0.028"
+        position="0 0.3 0.05" rotation="0 0 45" opacity="0"
+        animation__pos="property: position; from: 0 0.3 0.05; to: -0.5 0.2 0.06; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 400"
+        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 400"
+        animation__rotate="property: rotation; from: 0 0 45; to: 0 360 405; dur: 1800; startEvents: bloomComplete; delay: 400"></a-plane>
+    </a-entity>
 
     <!-- Floating Latin label above flower -->
     <a-text value="Rhododendron x pulchrum"
@@ -519,9 +597,10 @@
             position="0 0.75 0"
             scale="0 0 0"
             font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
-            animation__in="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1400"
+            animation__in="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 2200"
             animation__out="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost"
             animation__hover="property: position; to: 0 0.8 0; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine"></a-text>
+
 
     <!-- ============ 4 PANELS — fly out from flower ============ -->
     <!-- Each panel: scale-in from 0 + fly-out from center using position animation -->
@@ -529,8 +608,8 @@
     <!-- Panel 01: BIO (top-left) -->
     <a-entity id="panel-bio"
       position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: -0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 1500"
+      animation__pos="property: position; from: 0 0 0; to: -0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 2800"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 2800"
       animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
       animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
@@ -543,8 +622,8 @@
     <!-- Panel 02: VIDEO (top-right) -->
     <a-entity id="panel-video"
       position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: 0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 1700"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 1700"
+      animation__pos="property: position; from: 0 0 0; to: 0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3000"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3000"
       animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
       animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
@@ -557,8 +636,8 @@
     <!-- Panel 03: LIFECYCLE (bottom-left) -->
     <a-entity id="panel-life"
       position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: -0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 1900"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 1900"
+      animation__pos="property: position; from: 0 0 0; to: -0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3200"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3200"
       animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
       animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
@@ -571,8 +650,8 @@
     <!-- Panel 04: AUDIO (bottom-right) -->
     <a-entity id="panel-audio"
       position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: 0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 2100"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 2100"
+      animation__pos="property: position; from: 0 0 0; to: 0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3400"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3400"
       animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
       animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
@@ -962,8 +1041,17 @@
       setTimeout(() => revealText.classList.add('show'), 300);
       setTimeout(() => revealText.classList.remove('show'), 2800);
 
-      // 3. FAB buttons hiện sau khi panels đã bay xong (2400ms)
-      setTimeout(() => fabs.classList.add('show'), 2400);
+      // 3. Emit bloomComplete event - trigger Phase 4 (breathing) + particles + light pulse
+      // Match thời điểm hoa nở xong (Phase 2 = delay 1500 + dur 1300 = 2800ms)
+      setTimeout(() => {
+        // Trigger event trên các entity cần listen
+        document.querySelectorAll('#azalea-flower, #bloom-particles .bloom-petal, [light]').forEach(el => {
+          el.emit('bloomComplete');
+        });
+      }, 2800);
+
+      // 4. FAB buttons hiện sau khi panels đã bay xong
+      setTimeout(() => fabs.classList.add('show'), 3800);
     });
 
     target.addEventListener('targetLost', () => {

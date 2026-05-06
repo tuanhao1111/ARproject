@@ -543,6 +543,156 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* ============ REVEAL INTRO (cinematic) ============ */
+    .reveal-intro {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; opacity: 0; z-index: 55;
+      transition: opacity 0.6s ease;
+    }
+    .reveal-intro.show { opacity: 1; }
+    .reveal-intro-content {
+      text-align: center; color: white;
+      mix-blend-mode: difference;
+      transform: translateY(30px);
+      transition: transform 0.8s ease;
+    }
+    .reveal-intro.show .reveal-intro-content { transform: translateY(0); }
+    .reveal-intro-meta { font-size: 10px; letter-spacing: 0.4em; opacity: 0.7; margin-bottom: 12px; }
+    .reveal-intro-zh {
+      font-family: 'Noto Serif TC', serif; font-weight: 700;
+      font-size: 48px; letter-spacing: 0.05em; margin-bottom: 8px;
+    }
+    .reveal-intro-en { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 20px; }
+
+    /* ============ FLOATING ACTION BUTTONS (Visual Feeder style) ============ */
+    .floating-actions {
+      position: absolute;
+      bottom: 32px; left: 0; right: 0;
+      display: flex; justify-content: center;
+      gap: 12px;
+      padding: 0 16px;
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      z-index: 45;
+    }
+    .floating-actions.show { opacity: 1; transform: translateY(0); }
+    .fab {
+      flex: 1; max-width: 90px;
+      background: rgba(250, 246, 241, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(109, 27, 62, 0.2);
+      padding: 12px 8px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 0.2s;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      color: var(--azalea-deep);
+    }
+    .fab:hover, .fab:active {
+      background: var(--azalea-deep); color: white; transform: translateY(-2px);
+    }
+    .fab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .fab .label-zh {
+      font-family: 'Noto Serif TC', serif; font-weight: 700;
+      font-size: 13px; letter-spacing: 0.05em;
+    }
+    .fab .label-en {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 10px; opacity: 0.7;
+    }
+
+    /* ============ MODAL OVERLAY ============ */
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(26, 14, 20, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 24px;
+      pointer-events: auto;
+      z-index: 200;
+    }
+    .modal.show { display: flex; animation: modalFadeIn 0.3s ease; }
+    @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-content {
+      background: var(--paper);
+      max-width: 500px; width: 100%;
+      max-height: 80vh; overflow-y: auto;
+      border-top: 3px solid var(--azalea-deep);
+      animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes modalSlideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(26, 14, 20, 0.1);
+    }
+    .modal-title {
+      font-family: 'Noto Serif TC', serif; font-size: 18px;
+      color: var(--azalea-deep);
+    }
+    .modal-title .latin {
+      display: block;
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 12px; color: var(--azalea-leaf-dark);
+      margin-top: 2px;
+    }
+    .modal-close {
+      background: transparent; border: none;
+      width: 32px; height: 32px; cursor: pointer;
+      font-size: 20px; color: var(--ink);
+    }
+    .modal-body { padding: 24px; }
+    .modal-body h3 {
+      font-family: 'Noto Serif TC', serif; font-size: 16px;
+      margin: 16px 0 8px; color: var(--azalea-deep);
+    }
+    .modal-body h3:first-child { margin-top: 0; }
+    .modal-body p {
+      font-size: 13px; line-height: 1.7; color: #3a2530;
+      margin-bottom: 8px;
+    }
+    .modal-body .video-wrap {
+      position: relative; padding-bottom: 56.25%; height: 0;
+      background: #000; margin-bottom: 16px;
+    }
+    .modal-body .video-wrap iframe {
+      position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+    }
+    .modal-body .map-wrap {
+      background: var(--paper-warm); padding: 16px;
+      border-left: 3px solid var(--azalea-leaf);
+      margin-bottom: 12px;
+    }
+    .modal-body .map-wrap .coord {
+      font-family: monospace; font-size: 12px;
+      color: var(--azalea-leaf-dark);
+    }
+    .modal-body ul { list-style: none; padding: 0; }
+    .modal-body ul li {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(26, 14, 20, 0.08);
+      font-size: 13px;
+    }
+    .modal-body ul li:last-child { border-bottom: none; }
+    .modal-body ul li a {
+      color: var(--azalea-deep); text-decoration: none;
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+    }
+    .modal-body ul li a:hover { text-decoration: underline; }
+    .modal-body ul li .ref-meta {
+      display: block;
+      font-size: 11px; color: var(--azalea-leaf-dark); margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -638,6 +788,151 @@
   <div class="toast" id="toast"></div>
 </div>
 
+<!-- ============ REVEAL INTRO (cinematic) ============ -->
+<div class="reveal-intro" id="reveal-intro">
+  <div class="reveal-intro-content">
+    <div class="reveal-intro-meta" data-zh="標本 · No. 001" data-en="SPECIMEN · No. 001">標本 · No. 001</div>
+    <div class="reveal-intro-zh">杜鵑現身</div>
+    <div class="reveal-intro-en">Azalea unfolds</div>
+  </div>
+</div>
+
+<!-- ============ FLOATING ACTION BUTTONS ============ -->
+<div class="floating-actions" id="floating-actions">
+  <button class="fab" data-action="bio">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z"/>
+      <circle cx="12" cy="14" r="2"/>
+    </svg>
+    <span class="label-zh" data-zh="生態" data-en="Ecology">生態</span>
+    <span class="label-en">Ecology</span>
+  </button>
+
+  <button class="fab" data-action="video">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="6" width="18" height="12" rx="1"/>
+      <path d="M10 10l4 2-4 2v-4z" fill="currentColor" stroke="none"/>
+    </svg>
+    <span class="label-zh" data-zh="影片" data-en="Video">影片</span>
+    <span class="label-en">Video</span>
+  </button>
+
+  <button class="fab" data-action="map">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.5 2 6 4.5 6 8c0 4 6 12 6 12s6-8 6-12c0-3.5-2.5-6-6-6z"/>
+      <circle cx="12" cy="8" r="2"/>
+    </svg>
+    <span class="label-zh" data-zh="地圖" data-en="Map">地圖</span>
+    <span class="label-en">Map</span>
+  </button>
+
+  <button class="fab" data-action="refs">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 3h12a2 2 0 012 2v16l-8-4-8 4V5a2 2 0 012-2z"/>
+      <line x1="9" y1="8" x2="15" y2="8"/>
+      <line x1="9" y1="12" x2="13" y2="12"/>
+    </svg>
+    <span class="label-zh" data-zh="文獻" data-en="Refs">文獻</span>
+    <span class="label-en">Refs</span>
+  </button>
+</div>
+
+<!-- ============ MODALS ============ -->
+
+<!-- Modal: Video -->
+<div class="modal" id="modal-video">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span data-zh="花開時序" data-en="Bloom Timeline">花開時序</span>
+        <span class="latin">Time-lapse footage</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="video-wrap">
+        <iframe src="https://www.youtube.com/embed/9bcdy9tpfrs?rel=0"
+                title="Azalea bloom time-lapse"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <p data-zh="從花苞至盛開的縮時影像，呈現杜鵑於春日早晨的綻放過程。"
+         data-en="Time-lapse footage showing the azalea unfolding from bud to full bloom on a spring morning.">
+      </p>
+      <p style="font-size:11px;color:var(--azalea-leaf-dark);margin-top:12px;"
+         data-zh="※ 替換 iframe 中的 YouTube ID 即可換成你的影片。"
+         data-en="※ Replace the YouTube ID in the iframe to use your own video.">
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Map -->
+<div class="modal" id="modal-map">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span data-zh="校園分布圖" data-en="Campus Distribution">校園分布圖</span>
+        <span class="latin">Survey locations</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="map-wrap">
+        <strong data-zh="調查點 A · 行政大樓前" data-en="Site A · Admin Building">調查點 A · 行政大樓前</strong>
+        <div class="coord">24.1469° N, 120.6839° E</div>
+        <p style="margin-top:8px;font-size:12px;" data-zh="共記錄 12 株成熟個體，土壤 pH 4.8。"
+           data-en="12 mature individuals recorded; soil pH 4.8.">
+        </p>
+      </div>
+      <div class="map-wrap">
+        <strong data-zh="調查點 B · 圖書館後庭" data-en="Site B · Library Garden">調查點 B · 圖書館後庭</strong>
+        <div class="coord">24.1472° N, 120.6845° E</div>
+        <p style="margin-top:8px;font-size:12px;" data-zh="共記錄 8 株，半遮蔭環境。"
+           data-en="8 individuals; semi-shaded environment.">
+        </p>
+      </div>
+      <p style="font-size:11px;margin-top:12px;color:var(--azalea-leaf-dark);"
+         data-zh="※ 修改此區的座標和文字以符合你的調查地點。"
+         data-en="※ Edit the coordinates and text to match your survey sites.">
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: References -->
+<div class="modal" id="modal-refs">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span data-zh="參考文獻" data-en="References">參考文獻</span>
+        <span class="latin">Selected bibliography</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <ul>
+        <li>
+          <a href="https://en.wikipedia.org/wiki/Rhododendron" target="_blank" rel="noopener">Rhododendron — Wikipedia</a>
+          <span class="ref-meta">General taxonomy and species overview.</span>
+        </li>
+        <li>
+          <a href="https://www.gbif.org/species/2882769" target="_blank" rel="noopener">GBIF · Rhododendron simsii</a>
+          <span class="ref-meta">Global biodiversity occurrence data.</span>
+        </li>
+        <li>
+          <a href="https://powo.science.kew.org/results?q=rhododendron" target="_blank" rel="noopener">Plants of the World Online — Kew</a>
+          <span class="ref-meta">Authoritative botanical reference.</span>
+        </li>
+        <li>
+          <a href="#" target="_blank" rel="noopener" data-zh="校園植物調查報告 (PDF)" data-en="Campus Botanical Survey (PDF)">校園植物調查報告 (PDF)</a>
+          <span class="ref-meta" data-zh="替換為你的報告連結。" data-en="Replace with your own document link.">替換為你的報告連結。</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <!-- ============ A-FRAME / MINDAR SCENE ============ -->
 <a-scene
   id="ar-scene"
@@ -725,6 +1020,49 @@
             position="0 0.7 0"
             font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
             animation="property: position; to: 0 0.75 0; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine"></a-text>
+
+    <!-- ============ FLOATING UI PANELS (Visual Feeder style) ============ -->
+    <!-- 4 panels at corners, scale-in with staggered delay after targetFound -->
+
+    <!-- Panel 01: Top-left · Ecology -->
+    <a-entity position="-0.55 0.45 0.05" scale="0 0 0"
+      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 800">
+      <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
+      <a-plane width="0.35" height="0.025" color="#6d1b3e" position="0 0.0775 0.001"></a-plane>
+      <a-text value="01" color="#6d1b3e" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
+      <a-text value="ECOLOGY" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="生態" color="#6d1b3e" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
+    </a-entity>
+
+    <!-- Panel 02: Top-right · Video -->
+    <a-entity position="0.55 0.45 0.05" scale="0 0 0"
+      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1000">
+      <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
+      <a-plane width="0.35" height="0.025" color="#4a6741" position="0 0.0775 0.001"></a-plane>
+      <a-text value="02" color="#4a6741" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
+      <a-text value="VIDEO" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="影片" color="#4a6741" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
+    </a-entity>
+
+    <!-- Panel 03: Bottom-left · Map -->
+    <a-entity position="-0.55 -0.5 0.05" scale="0 0 0"
+      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1200">
+      <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
+      <a-plane width="0.35" height="0.025" color="#c9a961" position="0 0.0775 0.001"></a-plane>
+      <a-text value="03" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
+      <a-text value="MAP" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="地圖" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
+    </a-entity>
+
+    <!-- Panel 04: Bottom-right · References -->
+    <a-entity position="0.55 -0.5 0.05" scale="0 0 0"
+      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1400">
+      <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
+      <a-plane width="0.35" height="0.025" color="#1a0e14" position="0 0.0775 0.001"></a-plane>
+      <a-text value="04" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
+      <a-text value="REFS" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="文獻" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
+    </a-entity>
   </a-entity>
 
 </a-scene>
@@ -915,10 +1253,23 @@
         state.currentTarget = idx;
         document.getElementById('scanHint').classList.add('found');
         showInfoPanel(idx);
+
+        // ============ VISUAL FEEDER REVEAL SEQUENCE ============
+        const revealEl = document.getElementById('reveal-intro');
+        const fabEl = document.getElementById('floating-actions');
+        if (revealEl && fabEl) {
+          setTimeout(() => revealEl.classList.add('show'), 400);
+          setTimeout(() => revealEl.classList.remove('show'), 2900);
+          setTimeout(() => fabEl.classList.add('show'), 1800);
+        }
       });
 
       target.addEventListener('targetLost', () => {
-        // Keep panel visible, user can close manually
+        // Hide reveal & FAB on target lost
+        const revealEl = document.getElementById('reveal-intro');
+        const fabEl = document.getElementById('floating-actions');
+        if (revealEl) revealEl.classList.remove('show');
+        if (fabEl) fabEl.classList.remove('show');
       });
     });
   }
@@ -1167,6 +1518,80 @@
 
   // Initial language application
   applyLang();
+
+  // ============================================================
+  // CAMERA FALLBACK PATCH (cho desktop dùng camera trước)
+  // ============================================================
+  // MindAR mặc định request facingMode: 'environment' (camera sau).
+  // Trên desktop chỉ có camera trước → patch tự fallback về { video: true }.
+  (function patchGetUserMedia() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async function(constraints) {
+      try {
+        return await original(constraints);
+      } catch (err) {
+        if ((err.name === 'OverconstrainedError' || err.name === 'NotFoundError' || err.name === 'NotReadableError')
+            && constraints && constraints.video && typeof constraints.video === 'object') {
+          console.warn('Camera environment not available, falling back to default camera:', err.name);
+          return await original({ ...constraints, video: true });
+        }
+        throw err;
+      }
+    };
+  })();
+
+  // ============================================================
+  // FAB (Floating Action Button) handlers
+  // ============================================================
+  document.querySelectorAll('.fab').forEach(fab => {
+    fab.addEventListener('click', () => {
+      const action = fab.dataset.action;
+      if (action === 'bio') {
+        // Mở info panel cũ (đã có sẵn)
+        document.getElementById('infoPanel').classList.add('visible');
+      } else {
+        // Mở modal mới (video / map / refs)
+        closeAllModals();
+        const modal = document.getElementById('modal-' + action);
+        if (modal) modal.classList.add('show');
+      }
+    });
+  });
+
+  // Close modal handlers
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const modal = btn.closest('.modal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.querySelectorAll('iframe').forEach(iframe => {
+          const src = iframe.src; iframe.src = ''; iframe.src = src;
+        });
+      }
+    });
+  });
+
+  // Click outside modal to close
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('show');
+        modal.querySelectorAll('iframe').forEach(iframe => {
+          const src = iframe.src; iframe.src = ''; iframe.src = src;
+        });
+      }
+    });
+  });
+
+  function closeAllModals() {
+    document.querySelectorAll('.modal').forEach(m => {
+      m.classList.remove('show');
+      m.querySelectorAll('iframe').forEach(iframe => {
+        const src = iframe.src; iframe.src = ''; iframe.src = src;
+      });
+    });
+  }
 </script>
 
 </body>

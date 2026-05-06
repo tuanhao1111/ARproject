@@ -1142,19 +1142,15 @@
   // ============================================================
   // TARGET FOUND / LOST — cinematic reveal sequence
   // ============================================================
-  // STATE: trạng thái hoa
-  //  - 'idle': chưa quét
-  //  - 'tracking': đang track marker (hoa attach vào marker entity)
-  //  - 'detached': đã rời marker (hoa "treo" trong không gian, có thể zoom/drag)
   let flowerState = 'idle';
-  let detachedTransform = null; // lưu transform khi detach
 
   arScene.addEventListener('loaded', () => {
     const target = document.querySelector('[mindar-image-target]');
     if (!target) return;
 
     target.addEventListener('targetFound', () => {
-      // Nếu đang ở detached mode, quay lại tracking
+      console.log('[TRACKING] targetFound fired, current state:', flowerState);
+
       if (flowerState === 'detached') {
         exitDetachedMode();
       }
@@ -1163,26 +1159,21 @@
       scanHint.classList.add('hide');
       document.getElementById('detach-controls').classList.remove('show');
 
-      // 1. Flash trắng (0ms)
       flash.classList.remove('fire');
       void flash.offsetWidth;
       flash.classList.add('fire');
 
-      // 2. Reveal text "杜鵑現身" (300ms - 2800ms)
       setTimeout(() => revealText.classList.add('show'), 300);
       setTimeout(() => revealText.classList.remove('show'), 2800);
 
-      // 3. Emit bloomComplete event (sau khi hoa nở xong)
       setTimeout(() => {
         document.querySelectorAll('#azalea-flower, #bloom-particles .bloom-petal, [light], #ar-video-frame').forEach(el => {
           el.emit('bloomComplete');
         });
       }, 2800);
 
-      // 4. FAB buttons
       setTimeout(() => fabs.classList.add('show'), 3800);
 
-      // 5. Hint UI: hiện hint pinch/drag sau khi mọi thứ xuất hiện
       setTimeout(() => {
         if (flowerState === 'tracking') {
           showToast(currentLang === 'zh' ? '✦ 兩指縮放 · 一指拖曳' : '✦ Pinch to zoom · Drag to move');
@@ -1190,12 +1181,16 @@
       }, 4500);
     });
 
-    target.addEventListener('targetLost', () => {
-      // Thay vì hide ngay, chuyển sang detached mode để hoa vẫn còn
+    // KEY FIX: Listen với CAPTURE phase để chạy TRƯỚC MindAR's internal handler
+    // Capture phase chạy từ document → target, MindAR's handler thường ở bubble phase
+    target.addEventListener('targetLost', (e) => {
+      console.log('[TRACKING] targetLost fired, current state:', flowerState);
+
       if (flowerState === 'tracking') {
+        // Reparent NGAY LẬP TỨC, không đợi
         enterDetachedMode();
       }
-    });
+    }, true); // true = capture phase
   });
 
   // ============================================================
@@ -1210,7 +1205,7 @@
 
   function enterDetachedMode() {
     if (flowerState === 'detached') return;
-    console.log('[FREE MODE] Entering detached mode');
+    console.log('[FREE MODE] Entering detached mode, time:', Date.now());
     flowerState = 'detached';
 
     const target = document.querySelector('[mindar-image-target]');
@@ -1220,47 +1215,51 @@
       return;
     }
 
-    // Các entity cần "tách" ra khỏi target
     const ids = ['azalea-flower', 'ar-video-frame', 'panel-bio', 'panel-video', 'panel-life', 'panel-audio', 'bloom-particles'];
     const entitiesToDetach = ids.map(id => document.getElementById(id)).filter(el => el !== null);
 
-    console.log('[FREE MODE] Detaching', entitiesToDetach.length, 'entities');
+    console.log('[FREE MODE] Will detach', entitiesToDetach.length, 'entities:', entitiesToDetach.map(e => e.id));
 
     detachedEntities = [];
 
     entitiesToDetach.forEach(el => {
       const obj3D = el.object3D;
-      if (!obj3D) return;
+      if (!obj3D) {
+        console.warn('[FREE MODE] no object3D for', el.id);
+        return;
+      }
 
-      // Lưu original parent (THREE.Object3D parent, không phải DOM parent)
       const originalParent = obj3D.parent;
+      console.log('[FREE MODE]', el.id, 'parent:', originalParent ? originalParent.name || originalParent.type : 'none');
 
       try {
-        // attach() reparent + giữ world transform
         sceneEl.object3D.attach(obj3D);
+        console.log('[FREE MODE] reparented', el.id, '→ scene root');
       } catch (err) {
         console.warn('[FREE MODE] attach failed for', el.id, err);
       }
 
-      // Force visible mọi level
-      obj3D.visible = true;
-      obj3D.traverse(child => { child.visible = true; });
+      // DEEP visible: tất cả descendants + materials
+      forceDeepVisible(obj3D);
 
       detachedEntities.push({ el, originalParent });
     });
 
-    // FAILSAFE: force visible mỗi frame (đề phòng MindAR vẫn ẩn cách nào đó)
+    // Force scan-hint hide để không gây nhiễu
+    scanHint.classList.add('hide');
+
+    // FAILSAFE LOOP: chạy mạnh, traverse deep mỗi frame
     if (detachedFrameLoop) cancelAnimationFrame(detachedFrameLoop);
+    let frameCount = 0;
     const failsafeLoop = () => {
       if (flowerState !== 'detached') {
+        console.log('[FREE MODE] failsafe loop stopped after', frameCount, 'frames');
         detachedFrameLoop = null;
         return;
       }
+      frameCount++;
       detachedEntities.forEach(({ el }) => {
-        if (el.object3D) {
-          el.object3D.visible = true;
-          el.object3D.traverse(child => { child.visible = true; });
-        }
+        if (el.object3D) forceDeepVisible(el.object3D);
       });
       detachedFrameLoop = requestAnimationFrame(failsafeLoop);
     };
@@ -1271,7 +1270,24 @@
     showToast(currentLang === 'zh' ? '✦ 樣本已拾取，可自由縮放拖曳' : '✦ Sample picked up · Free zoom & drag');
     revealText.classList.remove('show');
 
-    console.log('[FREE MODE] Activated');
+    console.log('[FREE MODE] Activated successfully');
+  }
+
+  // Helper: Force visible deep — set visible cho mọi node + material trong subtree
+  function forceDeepVisible(obj3D) {
+    if (!obj3D) return;
+    obj3D.visible = true;
+    obj3D.traverse(child => {
+      child.visible = true;
+      // Một số models có material.visible riêng
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => { if (m) m.visible = true; });
+        } else {
+          child.material.visible = true;
+        }
+      }
+    });
   }
 
   function exitDetachedMode() {

@@ -423,8 +423,75 @@
     .audio-info .audio-title {
       font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 14px;
     }
-    .audio-info .audio-sub {
-      font-size: 11px; color: var(--azalea-leaf); margin-top: 2px;
+    /* ============ DETACH MODE CONTROLS ============ */
+    .detach-controls {
+      position: absolute;
+      top: 80px; left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(26,14,20,0.85);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      padding: 10px 16px;
+      border: 1px solid rgba(232,165,192,0.3);
+      pointer-events: auto;
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: 48;
+      max-width: 90vw;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .detach-controls.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .detach-status {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--azalea-blush);
+      font-size: 10px; letter-spacing: 0.2em;
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+    }
+    .detach-dot {
+      width: 6px; height: 6px;
+      background: var(--azalea-blush);
+      border-radius: 50%;
+      animation: pulse 1.2s infinite;
+    }
+    .detach-hint {
+      display: flex; align-items: center; gap: 6px;
+      color: rgba(250,246,241,0.85);
+      font-size: 11px;
+      padding-left: 12px;
+      border-left: 1px solid rgba(232,165,192,0.3);
+    }
+    .btn-reset-flower {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--azalea-deep); color: white; border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 10px; letter-spacing: 0.2em;
+      transition: all 0.2s;
+    }
+    .btn-reset-flower:hover { background: var(--ink); transform: translateY(-1px); }
+
+    /* ============ TOAST ============ */
+    .toast {
+      position: absolute;
+      bottom: 130px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(26,14,20,0.92);
+      color: var(--paper);
+      padding: 12px 20px;
+      font-size: 12px; letter-spacing: 0.1em;
+      border-left: 2px solid var(--azalea-blush);
+      backdrop-filter: blur(12px);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: 60;
+      max-width: 80vw; text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
   </style>
@@ -484,6 +551,10 @@
 
   <a-assets timeout="30000">
     <a-asset-item id="azaleaModel" src="./azalea.glb"></a-asset-item>
+    <!-- Video time-lapse hoa nở. muted+playsinline để autoplay được trên mọi browser -->
+    <video id="bloomVideo" src="./azalea-bloom.mp4"
+           autoplay loop muted playsinline crossorigin="anonymous"
+           preload="auto" webkit-playsinline></video>
   </a-assets>
 
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -661,6 +732,31 @@
       <a-text value="聲音" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
+    <!-- ============ AR VIDEO PLAYER (time-lapse hoa nở thật) ============ -->
+    <!-- Đặt phía sau-trên hoa, hơi nghiêng để cảm giác như "kính chiếu phim" trong không gian.
+         Kích thước 0.7x0.4 (tỷ lệ 16:9 = 1280:720). 
+         Xuất hiện đồng bộ với panels (sau khi hoa nở xong). -->
+    <a-entity id="ar-video-frame"
+      position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: 0 0.95 -0.2; dur: 800; easing: easeOutCubic; startEvents: bloomComplete; delay: 600"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: bloomComplete; delay: 600"
+      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
+      <!-- Khung viền vàng quanh video -->
+      <a-plane width="0.74" height="0.44" color="#1a0e14" position="0 0 -0.001"></a-plane>
+      <a-plane width="0.72" height="0.42" color="#c9a961" position="0 0 -0.0005"></a-plane>
+      <!-- Video chính -->
+      <a-video src="#bloomVideo" width="0.7" height="0.4" position="0 0 0"></a-video>
+      <!-- Label phía trên video -->
+      <a-text value="LIVE TIME-LAPSE" color="#c9a961"
+              font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
+              width="1.2" align="center"
+              position="0 0.25 0" opacity="0.9"></a-text>
+      <!-- Decorative dot pulse -->
+      <a-circle radius="0.012" color="#ff3838" position="-0.32 0.25 0"
+                animation="property: scale; to: 1.4 1.4 1.4; dir: alternate; loop: true; dur: 800; easing: easeInOutSine"></a-circle>
+    </a-entity>
+
   </a-entity>
 </a-scene>
 
@@ -690,6 +786,29 @@
       <div class="reveal-zh">杜鵑現身</div>
       <div class="reveal-en">Azalea unfolds</div>
     </div>
+  </div>
+
+  <!-- ============ DETACH MODE CONTROLS ============ -->
+  <!-- Hiện khi camera rời marker, hoa "treo" trong không gian -->
+  <div class="detach-controls" id="detach-controls">
+    <div class="detach-status">
+      <span class="detach-dot"></span>
+      <span class="detach-label">FREE MODE · 自由模式</span>
+    </div>
+    <div class="detach-hint">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+        <path d="M9 11V6a3 3 0 016 0v5"/>
+        <path d="M5 11h14v8a3 3 0 01-3 3H8a3 3 0 01-3-3v-8z"/>
+      </svg>
+      <span data-zh="兩指縮放 · 一指拖曳" data-en="Pinch zoom · Drag move">兩指縮放 · 一指拖曳</span>
+    </div>
+    <button class="btn-reset-flower" id="btn-reset-flower">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2">
+        <path d="M3 12a9 9 0 1 0 3-6.7"/>
+        <path d="M3 4v5h5"/>
+      </svg>
+      RESET
+    </button>
   </div>
 
   <!-- 4 FAB buttons -->
@@ -1025,42 +1144,226 @@
   // ============================================================
   // TARGET FOUND / LOST — cinematic reveal sequence
   // ============================================================
+  // STATE: trạng thái hoa
+  //  - 'idle': chưa quét
+  //  - 'tracking': đang track marker (hoa attach vào marker entity)
+  //  - 'detached': đã rời marker (hoa "treo" trong không gian, có thể zoom/drag)
+  let flowerState = 'idle';
+  let detachedTransform = null; // lưu transform khi detach
+
   arScene.addEventListener('loaded', () => {
     const target = document.querySelector('[mindar-image-target]');
     if (!target) return;
 
     target.addEventListener('targetFound', () => {
+      // Nếu đang ở detached mode, quay lại tracking
+      if (flowerState === 'detached') {
+        exitDetachedMode();
+      }
+
+      flowerState = 'tracking';
       scanHint.classList.add('hide');
+      document.getElementById('detach-controls').classList.remove('show');
 
       // 1. Flash trắng (0ms)
       flash.classList.remove('fire');
-      void flash.offsetWidth; // force reflow
+      void flash.offsetWidth;
       flash.classList.add('fire');
 
       // 2. Reveal text "杜鵑現身" (300ms - 2800ms)
       setTimeout(() => revealText.classList.add('show'), 300);
       setTimeout(() => revealText.classList.remove('show'), 2800);
 
-      // 3. Emit bloomComplete event - trigger Phase 4 (breathing) + particles + light pulse
-      // Match thời điểm hoa nở xong (Phase 2 = delay 1500 + dur 1300 = 2800ms)
+      // 3. Emit bloomComplete event (sau khi hoa nở xong)
       setTimeout(() => {
-        // Trigger event trên các entity cần listen
-        document.querySelectorAll('#azalea-flower, #bloom-particles .bloom-petal, [light]').forEach(el => {
+        document.querySelectorAll('#azalea-flower, #bloom-particles .bloom-petal, [light], #ar-video-frame').forEach(el => {
           el.emit('bloomComplete');
         });
       }, 2800);
 
-      // 4. FAB buttons hiện sau khi panels đã bay xong
+      // 4. FAB buttons
       setTimeout(() => fabs.classList.add('show'), 3800);
+
+      // 5. Hint UI: hiện hint pinch/drag sau khi mọi thứ xuất hiện
+      setTimeout(() => {
+        if (flowerState === 'tracking') {
+          showToast(currentLang === 'zh' ? '✦ 兩指縮放 · 一指拖曳' : '✦ Pinch to zoom · Drag to move');
+        }
+      }, 4500);
     });
 
     target.addEventListener('targetLost', () => {
-      scanHint.classList.remove('hide');
-      revealText.classList.remove('show');
-      fabs.classList.remove('show');
-      closeAllModals();
+      // Thay vì hide ngay, chuyển sang detached mode để hoa vẫn còn
+      if (flowerState === 'tracking') {
+        enterDetachedMode();
+      }
     });
   });
+
+  // ============================================================
+  // DETACHED MODE: hoa "treo" trong không gian sau khi rời marker
+  // ============================================================
+  // Cơ chế: clone vị trí thế giới của target entity, reparent flower vào camera frame
+  // Cho phép user zoom (pinch 2 ngón) và drag (1 ngón) trên hoa
+  function enterDetachedMode() {
+    flowerState = 'detached';
+    const target = document.querySelector('[mindar-image-target]');
+    const flower = document.getElementById('azalea-flower');
+    const videoFrame = document.getElementById('ar-video-frame');
+
+    if (!target || !flower) return;
+
+    // Lưu transform cuối cùng của target trong world space
+    const targetObj = target.object3D;
+    const flowerObj = flower.object3D;
+
+    // Lấy world position/rotation/scale hiện tại
+    targetObj.updateMatrixWorld(true);
+    const worldPos = new THREE.Vector3();
+    const worldQuat = new THREE.Quaternion();
+    const worldScale = new THREE.Vector3();
+    targetObj.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+
+    // Hiện UI controls cho detached mode
+    document.getElementById('detach-controls').classList.add('show');
+    showToast(currentLang === 'zh' ? '✦ 樣本已拾取，可自由操控' : '✦ Sample picked up · Free to control');
+
+    // Hiện scan hint trở lại để user biết có thể quét lại marker
+    scanHint.classList.remove('hide');
+
+    // Hide reveal/text overlay
+    revealText.classList.remove('show');
+  }
+
+  function exitDetachedMode() {
+    flowerState = 'tracking';
+    document.getElementById('detach-controls').classList.remove('show');
+  }
+
+  // Reset button: quay lại trạng thái idle, ẩn hoa
+  document.getElementById('btn-reset-flower')?.addEventListener('click', () => {
+    flowerState = 'idle';
+    fabs.classList.remove('show');
+    document.getElementById('detach-controls').classList.remove('show');
+    closeAllModals();
+
+    // Trigger targetLost-like cleanup trên các elements
+    document.querySelectorAll('#azalea-flower, #ar-video-frame, [id^="panel-"]').forEach(el => {
+      el.emit('targetLost');
+    });
+
+    showToast(currentLang === 'zh' ? '✦ 已重置 · 重新對準名片' : '✦ Reset · Point at the card again');
+    scanHint.classList.remove('hide');
+  });
+
+  // ============================================================
+  // PINCH ZOOM + DRAG (touch & mouse)
+  // ============================================================
+  // Áp dụng cho hoa (a-gltf-model). Khi ở detached mode hoặc tracking đều cho phép zoom/drag.
+  let scaleStart = 0.6;   // scale hiện tại của hoa (đã match với phase 2 cuối)
+  let scaleMin = 0.15;
+  let scaleMax = 1.5;
+  let posOffset = { x: 0, y: 0 }; // offset khi drag
+  let pinchStartDist = null;
+  let pinchStartScale = null;
+  let dragStartTouch = null;
+  let dragStartOffset = null;
+
+  function getTouchDist(t1, t2) {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function applyTransform() {
+    const flower = document.getElementById('azalea-flower');
+    if (!flower) return;
+    flower.setAttribute('scale', `${scaleStart} ${scaleStart} ${scaleStart}`);
+
+    // Apply position offset on top of base position (0, 0.3, 0)
+    const baseY = 0.3;
+    flower.setAttribute('position', `${posOffset.x} ${baseY + posOffset.y} 0`);
+  }
+
+  // Touch handlers (mobile)
+  document.addEventListener('touchstart', (e) => {
+    if (flowerState === 'idle') return;
+
+    // Bỏ qua nếu touch trên UI (FAB, modal, etc.)
+    const target = e.target;
+    if (target.closest('.fab, .modal, .top-bar, button, .audio-player, .lc-stage')) return;
+
+    if (e.touches.length === 2) {
+      pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
+      pinchStartScale = scaleStart;
+      e.preventDefault();
+    } else if (e.touches.length === 1) {
+      dragStartTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      dragStartOffset = { ...posOffset };
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if (flowerState === 'idle') return;
+    const target = e.target;
+    if (target.closest('.fab, .modal, .top-bar, button, .audio-player, .lc-stage')) return;
+
+    if (e.touches.length === 2 && pinchStartDist !== null) {
+      // Pinch zoom
+      const currentDist = getTouchDist(e.touches[0], e.touches[1]);
+      const ratio = currentDist / pinchStartDist;
+      scaleStart = Math.max(scaleMin, Math.min(scaleMax, pinchStartScale * ratio));
+      applyTransform();
+      e.preventDefault();
+    } else if (e.touches.length === 1 && dragStartTouch !== null) {
+      // Drag
+      const dx = (e.touches[0].clientX - dragStartTouch.x) / window.innerWidth;
+      const dy = (e.touches[0].clientY - dragStartTouch.y) / window.innerHeight;
+      // Map screen delta to AR world delta (factor 1.5 cảm giác tự nhiên)
+      posOffset.x = dragStartOffset.x + dx * 1.5;
+      posOffset.y = dragStartOffset.y - dy * 1.5; // y đảo dấu vì màn hình y ngược
+      applyTransform();
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    pinchStartDist = null;
+    dragStartTouch = null;
+  });
+
+  // Mouse handlers (desktop) — wheel = zoom, drag = move
+  let mouseDragging = false;
+  let mouseDragStart = null;
+  let mouseDragStartOffset = null;
+
+  document.addEventListener('wheel', (e) => {
+    if (flowerState === 'idle') return;
+    if (e.target.closest('.modal, .info-card, .audio-player')) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
+    scaleStart = Math.max(scaleMin, Math.min(scaleMax, scaleStart * delta));
+    applyTransform();
+  }, { passive: false });
+
+  document.addEventListener('mousedown', (e) => {
+    if (flowerState === 'idle') return;
+    if (e.target.closest('.fab, .modal, .top-bar, button')) return;
+    mouseDragging = true;
+    mouseDragStart = { x: e.clientX, y: e.clientY };
+    mouseDragStartOffset = { ...posOffset };
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!mouseDragging) return;
+    const dx = (e.clientX - mouseDragStart.x) / window.innerWidth;
+    const dy = (e.clientY - mouseDragStart.y) / window.innerHeight;
+    posOffset.x = mouseDragStartOffset.x + dx * 1.5;
+    posOffset.y = mouseDragStartOffset.y - dy * 1.5;
+    applyTransform();
+  });
+
+  document.addEventListener('mouseup', () => { mouseDragging = false; });
 
   // ============================================================
   // BACK
@@ -1183,6 +1486,27 @@
       speechSynthesis.speak(utter);
     });
   });
+
+  // ============================================================
+  // STATE: ngôn ngữ hiện tại + toast helper
+  // ============================================================
+  // (Hiện chưa có UI đổi ngôn ngữ — mặc định 'zh'. Sau này có thể thêm toggle.)
+  let currentLang = 'zh';
+
+  let toastTimeout;
+  function showToast(msg) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast';
+      toast.className = 'toast';
+      document.getElementById('ar-ui').appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+  }
 </script>
 
 </body>

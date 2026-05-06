@@ -564,7 +564,15 @@
   <a-entity light="type: directional; color: #ffffff; intensity: 0.8" position="1 1 1"></a-entity>
   <a-entity light="type: directional; color: #ffd9e6; intensity: 0.4" position="-1 0.5 -1"></a-entity>
 
-  <a-entity mindar-image-target="targetIndex: 0">
+  <!-- ============ TRACKING ANCHOR (chỉ chứa box invisible) ============ -->
+  <a-entity mindar-image-target="targetIndex: 0" id="mindar-anchor">
+    <a-box width="1" height="1" depth="0.001" opacity="0" visible="true"></a-box>
+  </a-entity>
+
+  <!-- ============ DISPLAY LAYER (NGOÀI mindar-image-target) ============ -->
+  <!-- KHÔNG bị MindAR ẩn vì không phải con của target.
+       JS sẽ copy world transform từ anchor sang đây mỗi frame khi tracking. -->
+  <a-entity id="display-layer" visible="false">
 
     <!-- Decorative rings -->
     <a-ring color="#6d1b3e" radius-inner="0.55" radius-outer="0.58"
@@ -574,113 +582,68 @@
             rotation="-90 0 0" opacity="0.4"
             animation="property: rotation; to: -90 0 -360; loop: true; dur: 30000; easing: linear"></a-ring>
 
-    <!-- ============ FLOWER + CINEMATIC BLOOM SEQUENCE ============ -->
-    <!-- Choreography: 
-         Phase 1 (0-800ms):   "Seed" - tiny 0.02 scale, fast spin, low Y
-         Phase 2 (800-1500ms): "Sprout" - grow to 0.25, rise up
-         Phase 3 (1500-2800ms): "Bloom" - elastic burst to 0.6 with bounce
-         Phase 4 (2800ms+):   "Breathing" - subtle scale pulse + slow rotation
-    -->
-
-    <!-- Pulse light that intensifies during bloom -->
-    <a-entity light="type: point; color: #ff6b9d; intensity: 0; distance: 2"
-              position="0 0.3 0.2"
+    <!-- Pulse light -->
+    <a-entity light="type: point; color: #ff6b9d; intensity: 0; distance: 4"
+              position="0 1 0.5"
               animation__pulse="property: light.intensity; from: 0; to: 0.8; dur: 1500; easing: easeOutQuad; startEvents: targetFound; delay: 1500"
-              animation__breathe="property: light.intensity; from: 0.5; to: 0.9; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine; startEvents: bloomComplete"
-              animation__off="property: light.intensity; to: 0; dur: 300; startEvents: targetLost"></a-entity>
+              animation__off="property: light.intensity; to: 0; dur: 300; startEvents: panelHide"></a-entity>
 
-    <!-- 3D Azalea flower with multi-phase animation -->
-    <!-- LƯU Ý: Phase 3 breathing animation bị disable mặc định, vì nó đè lên scale do user pinch.
-         Animation này chỉ chạy khi event 'enableBreathing' được emit (sau khi user release pinch). -->
+    <!-- 3D Azalea flower với multi-phase bloom -->
     <a-gltf-model
       id="azalea-flower"
       src="#azaleaModel"
       position="0 0.05 0"
-      scale="0.02 0.02 0.02"
+      scale="0.04 0.04 0.04"
       rotation="0 0 0"
 
-      animation__phase1-scale="property: scale; from: 0.02 0.02 0.02; to: 4 4 4; dur: 800; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
-      animation__phase1-pos="property: position; from: 0 0.05 0; to: 0 0.5 0; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
+      animation__phase1-scale="property: scale; from: 0.04 0.04 0.04; to: 8 8 8; dur: 800; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
+      animation__phase1-pos="property: position; from: 0 0.05 0; to: 0 0.8 0; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
       animation__phase1-spin="property: rotation; from: 0 0 0; to: 0 720 0; dur: 1000; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
 
-      animation__phase2-scale="property: scale; from: 4 4 4; to: 12 12 12; dur: 1300; easing: easeOutElastic; startEvents: targetFound; delay: 1500"
-      animation__phase2-pos="property: position; from: 0 0.5 0; to: 0 1.5 0; dur: 1300; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
+      animation__phase2-scale="property: scale; from: 8 8 8; to: 24 24 24; dur: 1300; easing: easeOutElastic; startEvents: targetFound; delay: 1500"
+      animation__phase2-pos="property: position; from: 0 0.8 0; to: 0 2 0; dur: 1300; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
 
       animation__phase3-rotate="property: rotation; from: 0 720 0; to: 0 1080 0; loop: true; dur: 18000; easing: linear; startEvents: bloomComplete"></a-gltf-model>
 
-    <!-- ============ BLOOM PARTICLES (8 small petals burst out at peak) ============ -->
-    <!-- Mỗi particle: scale 0 → bay ra → fade out, lệch pha nhẹ -->
+    <!-- Particles burst -->
     <a-entity id="bloom-particles">
-      <a-plane class="bloom-petal" color="#f5d3de" width="0.04" height="0.04"
-        position="0 0.3 0.05" rotation="0 0 45" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: 0.6 0.7 0.1; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete"
+      <a-plane class="bloom-petal" color="#f5d3de" width="0.08" height="0.08"
+        position="0 1 0.05" rotation="0 0 45" opacity="0"
+        animation__pos="property: position; from: 0 1 0.05; to: 1.2 1.4 0.1; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete"
         animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete"
         animation__rotate="property: rotation; from: 0 0 45; to: 0 360 405; dur: 1800; startEvents: bloomComplete"></a-plane>
-
-      <a-plane class="bloom-petal" color="#e8a5c0" width="0.035" height="0.035"
-        position="0 0.3 0.05" rotation="0 0 30" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: -0.7 0.6 0.08; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 100"
+      <a-plane class="bloom-petal" color="#e8a5c0" width="0.07" height="0.07"
+        position="0 1 0.05" rotation="0 0 30" opacity="0"
+        animation__pos="property: position; from: 0 1 0.05; to: -1.4 1.2 0.08; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 100"
         animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 100"
         animation__rotate="property: rotation; from: 0 0 30; to: 0 -360 390; dur: 1800; startEvents: bloomComplete; delay: 100"></a-plane>
-
-      <a-plane class="bloom-petal" color="#f5d3de" width="0.03" height="0.03"
-        position="0 0.3 0.05" rotation="0 0 60" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: 0.5 -0.5 0.06; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 200"
+      <a-plane class="bloom-petal" color="#f5d3de" width="0.06" height="0.06"
+        position="0 1 0.05" rotation="0 0 60" opacity="0"
+        animation__pos="property: position; from: 0 1 0.05; to: 1 -1 0.06; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 200"
         animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 200"
         animation__rotate="property: rotation; from: 0 0 60; to: 0 360 420; dur: 1800; startEvents: bloomComplete; delay: 200"></a-plane>
-
-      <a-plane class="bloom-petal" color="#e8a5c0" width="0.025" height="0.025"
-        position="0 0.3 0.05" rotation="0 0 15" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: -0.6 -0.4 0.04; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 300"
-        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 300"
-        animation__rotate="property: rotation; from: 0 0 15; to: 0 -360 375; dur: 1800; startEvents: bloomComplete; delay: 300"></a-plane>
-
-      <a-plane class="bloom-petal" color="#c9a961" width="0.02" height="0.02"
-        position="0 0.3 0.05" rotation="0 0 0" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: 0.3 0.8 0.07; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 150"
+      <a-plane class="bloom-petal" color="#c9a961" width="0.04" height="0.04"
+        position="0 1 0.05" rotation="0 0 0" opacity="0"
+        animation__pos="property: position; from: 0 1 0.05; to: 0.6 1.6 0.07; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 150"
         animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 150"
         animation__rotate="property: rotation; from: 0 0 0; to: 0 720 360; dur: 1800; startEvents: bloomComplete; delay: 150"></a-plane>
-
-      <a-plane class="bloom-petal" color="#f5d3de" width="0.035" height="0.035"
-        position="0 0.3 0.05" rotation="0 0 75" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: -0.4 0.85 0.09; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 250"
-        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 250"
-        animation__rotate="property: rotation; from: 0 0 75; to: 0 360 435; dur: 1800; startEvents: bloomComplete; delay: 250"></a-plane>
-
-      <a-plane class="bloom-petal" color="#e8a5c0" width="0.03" height="0.03"
-        position="0 0.3 0.05" rotation="0 0 90" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: 0.7 -0.3 0.05; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 350"
-        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 350"
-        animation__rotate="property: rotation; from: 0 0 90; to: 0 -720 450; dur: 1800; startEvents: bloomComplete; delay: 350"></a-plane>
-
-      <a-plane class="bloom-petal" color="#f5d3de" width="0.028" height="0.028"
-        position="0 0.3 0.05" rotation="0 0 45" opacity="0"
-        animation__pos="property: position; from: 0 0.3 0.05; to: -0.5 0.2 0.06; dur: 1800; easing: easeOutQuart; startEvents: bloomComplete; delay: 400"
-        animation__opacity="property: opacity; from: 1; to: 0; dur: 1800; easing: easeInQuad; startEvents: bloomComplete; delay: 400"
-        animation__rotate="property: rotation; from: 0 0 45; to: 0 360 405; dur: 1800; startEvents: bloomComplete; delay: 400"></a-plane>
     </a-entity>
 
-    <!-- Floating Latin label above flower -->
+    <!-- Latin label -->
     <a-text value="Rhododendron x pulchrum"
-            color="#6d1b3e" align="center" width="2"
-            position="0 0.75 0"
+            color="#6d1b3e" align="center" width="4"
+            position="0 3.2 0"
             scale="0 0 0"
             font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
             animation__in="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 2200"
-            animation__out="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost"
-            animation__hover="property: position; to: 0 0.8 0; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine"></a-text>
+            animation__out="property: scale; to: 0 0 0; dur: 300; startEvents: panelHide"
+            animation__hover="property: position; to: 0 3.3 0; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine"></a-text>
 
-
-    <!-- ============ 4 PANELS — fly out from flower ============ -->
-    <!-- Each panel: scale-in from 0 + fly-out from center using position animation -->
-
-    <!-- Panel 01: BIO (top-left) -->
-    <a-entity id="panel-bio"
-      position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: -0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 2800"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 2800"
-      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
-      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
+    <!-- Panel 01 BIO -->
+    <a-entity id="panel-bio" position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: -1.6 1.4 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 2800"
+      animation__scl="property: scale; from: 0 0 0; to: 2.5 2.5 2.5; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 2800"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: panelHide">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#6d1b3e" position="0 0.0775 0.001"></a-plane>
       <a-text value="01" color="#6d1b3e" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
@@ -688,13 +651,11 @@
       <a-text value="生態" color="#6d1b3e" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- Panel 02: VIDEO (top-right) -->
-    <a-entity id="panel-video"
-      position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: 0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3000"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3000"
-      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
-      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
+    <!-- Panel 02 VIDEO -->
+    <a-entity id="panel-video" position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: 1.6 1.4 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3000"
+      animation__scl="property: scale; from: 0 0 0; to: 2.5 2.5 2.5; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3000"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: panelHide">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#4a6741" position="0 0.0775 0.001"></a-plane>
       <a-text value="02" color="#4a6741" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
@@ -702,13 +663,11 @@
       <a-text value="影片" color="#4a6741" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- Panel 03: LIFECYCLE (bottom-left) -->
-    <a-entity id="panel-life"
-      position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: -0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3200"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3200"
-      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
-      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
+    <!-- Panel 03 LIFECYCLE -->
+    <a-entity id="panel-life" position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: -1.6 -1.6 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3200"
+      animation__scl="property: scale; from: 0 0 0; to: 2.5 2.5 2.5; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3200"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: panelHide">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#c9a961" position="0 0.0775 0.001"></a-plane>
       <a-text value="03" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
@@ -716,13 +675,11 @@
       <a-text value="生命週期" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- Panel 04: AUDIO (bottom-right) -->
-    <a-entity id="panel-audio"
-      position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: 0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3400"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3400"
-      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
-      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
+    <!-- Panel 04 AUDIO -->
+    <a-entity id="panel-audio" position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: 1.6 -1.6 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 3400"
+      animation__scl="property: scale; from: 0 0 0; to: 2.5 2.5 2.5; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 3400"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: panelHide">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#1a0e14" position="0 0.0775 0.001"></a-plane>
       <a-text value="04" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
@@ -730,27 +687,18 @@
       <a-text value="聲音" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- ============ AR VIDEO PLAYER (time-lapse hoa nở thật) ============ -->
-    <!-- Đặt phía sau-trên hoa, hơi nghiêng để cảm giác như "kính chiếu phim" trong không gian.
-         Kích thước 0.7x0.4 (tỷ lệ 16:9 = 1280:720). 
-         Xuất hiện đồng bộ với panels (sau khi hoa nở xong). -->
-    <a-entity id="ar-video-frame"
-      position="0 0 0" scale="0 0 0"
-      animation__pos="property: position; from: 0 0 0; to: 0 0.95 -0.2; dur: 800; easing: easeOutCubic; startEvents: bloomComplete; delay: 600"
-      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: bloomComplete; delay: 600"
-      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
-      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
-      <!-- Khung viền vàng quanh video -->
+    <!-- AR Video Player -->
+    <a-entity id="ar-video-frame" position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: 0 4 -0.5; dur: 800; easing: easeOutCubic; startEvents: bloomComplete; delay: 600"
+      animation__scl="property: scale; from: 0 0 0; to: 3 3 3; dur: 600; easing: easeOutBack; startEvents: bloomComplete; delay: 600"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: panelHide">
       <a-plane width="0.74" height="0.44" color="#1a0e14" position="0 0 -0.001"></a-plane>
       <a-plane width="0.72" height="0.42" color="#c9a961" position="0 0 -0.0005"></a-plane>
-      <!-- Video chính -->
       <a-video src="#bloomVideo" width="0.7" height="0.4" position="0 0 0"></a-video>
-      <!-- Label phía trên video -->
       <a-text value="LIVE TIME-LAPSE" color="#c9a961"
               font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
               width="1.2" align="center"
               position="0 0.25 0" opacity="0.9"></a-text>
-      <!-- Decorative dot pulse -->
       <a-circle radius="0.012" color="#ff3838" position="-0.32 0.25 0"
                 animation="property: scale; to: 1.4 1.4 1.4; dir: alternate; loop: true; dur: 800; easing: easeInOutSine"></a-circle>
     </a-entity>
@@ -1140,25 +1088,31 @@
   }
 
   // ============================================================
-  // TARGET FOUND / LOST — cinematic reveal sequence
+  // TARGET FOUND / LOST — kiến trúc mới với display-layer tách rời
   // ============================================================
-  let flowerState = 'idle';
+  let flowerState = 'idle';  // 'idle' | 'tracking' | 'detached'
+  let trackingFrameLoop = null;
+  let lastKnownTransform = null; // lưu transform cuối cùng khi tracking
 
   arScene.addEventListener('loaded', () => {
     const target = document.querySelector('[mindar-image-target]');
-    if (!target) return;
+    const displayLayer = document.getElementById('display-layer');
+    if (!target || !displayLayer) return;
 
     target.addEventListener('targetFound', () => {
-      console.log('[TRACKING] targetFound fired, current state:', flowerState);
-
-      if (flowerState === 'detached') {
-        exitDetachedMode();
-      }
-
+      console.log('[TRACKING] targetFound, state was:', flowerState);
       flowerState = 'tracking';
       scanHint.classList.add('hide');
       document.getElementById('detach-controls').classList.remove('show');
 
+      // Show display layer
+      displayLayer.setAttribute('visible', 'true');
+      displayLayer.object3D.visible = true;
+
+      // Start follow loop: copy transform anchor → display layer mỗi frame
+      startTrackingFollow();
+
+      // Cinematic flash + reveal
       flash.classList.remove('fire');
       void flash.offsetWidth;
       flash.classList.add('fire');
@@ -1166,10 +1120,17 @@
       setTimeout(() => revealText.classList.add('show'), 300);
       setTimeout(() => revealText.classList.remove('show'), 2800);
 
+      // Emit bloomComplete event sau khi bloom xong
       setTimeout(() => {
         document.querySelectorAll('#azalea-flower, #bloom-particles .bloom-petal, [light], #ar-video-frame').forEach(el => {
           el.emit('bloomComplete');
         });
+
+        // Force play video sau khi bloomComplete (tránh autoplay block)
+        const video = document.getElementById('bloomVideo');
+        if (video) {
+          video.play().catch(e => console.warn('Video play blocked:', e));
+        }
       }, 2800);
 
       setTimeout(() => fabs.classList.add('show'), 3800);
@@ -1181,177 +1142,120 @@
       }, 4500);
     });
 
-    // KEY FIX: Listen với CAPTURE phase để chạy TRƯỚC MindAR's internal handler
-    // Capture phase chạy từ document → target, MindAR's handler thường ở bubble phase
-    target.addEventListener('targetLost', (e) => {
-      console.log('[TRACKING] targetLost fired, current state:', flowerState);
-
+    target.addEventListener('targetLost', () => {
+      console.log('[TRACKING] targetLost, state was:', flowerState);
+      // Chuyển sang detached mode: dừng follow loop, giữ position cuối
       if (flowerState === 'tracking') {
-        // Reparent NGAY LẬP TỨC, không đợi
         enterDetachedMode();
       }
-    }, true); // true = capture phase
+    });
   });
 
   // ============================================================
-  // DETACHED MODE: hoa "treo" trong không gian sau khi rời marker
+  // FOLLOW LOOP: copy world transform anchor → display layer
   // ============================================================
-  // STRATEGY: kết hợp 2 cách để đảm bảo không bị MindAR ẩn:
-  //   1. REPARENT object3D từ target → scene root (giải pháp chính)
-  //   2. requestAnimationFrame force visible=true (failsafe)
+  function startTrackingFollow() {
+    if (trackingFrameLoop) return;
 
-  let detachedEntities = [];
-  let detachedFrameLoop = null;
+    const anchor = document.getElementById('mindar-anchor');
+    const displayLayer = document.getElementById('display-layer');
+    if (!anchor || !displayLayer) return;
 
+    const followLoop = () => {
+      if (flowerState !== 'tracking') {
+        trackingFrameLoop = null;
+        return;
+      }
+
+      // Lấy world transform của anchor
+      const anchorObj = anchor.object3D;
+      if (anchorObj && anchorObj.parent) {
+        anchorObj.updateMatrixWorld(true);
+
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        const worldScale = new THREE.Vector3();
+        anchorObj.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+
+        // Apply lên display layer
+        const dispObj = displayLayer.object3D;
+        dispObj.position.copy(worldPos);
+        dispObj.quaternion.copy(worldQuat);
+        // Force scale = 1 để hoa không bị méo theo target scale
+        dispObj.scale.set(1, 1, 1);
+
+        // Lưu để dùng khi detached
+        lastKnownTransform = {
+          position: worldPos.clone(),
+          quaternion: worldQuat.clone()
+        };
+      }
+
+      trackingFrameLoop = requestAnimationFrame(followLoop);
+    };
+    followLoop();
+  }
+
+  // ============================================================
+  // DETACHED MODE: hoa "treo" tại vị trí cuối cùng
+  // ============================================================
   function enterDetachedMode() {
-    if (flowerState === 'detached') return;
-    console.log('[FREE MODE] Entering detached mode, time:', Date.now());
+    console.log('[FREE MODE] Entering detached mode');
     flowerState = 'detached';
 
-    const target = document.querySelector('[mindar-image-target]');
-    const sceneEl = document.querySelector('a-scene');
-    if (!target || !sceneEl) {
-      console.error('[FREE MODE] target or scene not found');
-      return;
+    // Stop follow loop → display layer freeze tại vị trí cuối
+    if (trackingFrameLoop) {
+      cancelAnimationFrame(trackingFrameLoop);
+      trackingFrameLoop = null;
     }
 
-    const ids = ['azalea-flower', 'ar-video-frame', 'panel-bio', 'panel-video', 'panel-life', 'panel-audio', 'bloom-particles'];
-    const entitiesToDetach = ids.map(id => document.getElementById(id)).filter(el => el !== null);
+    // Display layer KHÔNG bị MindAR ẩn vì không phải con của target
+    const displayLayer = document.getElementById('display-layer');
+    if (displayLayer) {
+      displayLayer.setAttribute('visible', 'true');
+      displayLayer.object3D.visible = true;
+    }
 
-    console.log('[FREE MODE] Will detach', entitiesToDetach.length, 'entities:', entitiesToDetach.map(e => e.id));
-
-    detachedEntities = [];
-
-    entitiesToDetach.forEach(el => {
-      const obj3D = el.object3D;
-      if (!obj3D) {
-        console.warn('[FREE MODE] no object3D for', el.id);
-        return;
-      }
-
-      const originalParent = obj3D.parent;
-      console.log('[FREE MODE]', el.id, 'parent:', originalParent ? originalParent.name || originalParent.type : 'none');
-
-      try {
-        sceneEl.object3D.attach(obj3D);
-        console.log('[FREE MODE] reparented', el.id, '→ scene root');
-      } catch (err) {
-        console.warn('[FREE MODE] attach failed for', el.id, err);
-      }
-
-      // DEEP visible: tất cả descendants + materials
-      forceDeepVisible(obj3D);
-
-      detachedEntities.push({ el, originalParent });
-    });
-
-    // Force scan-hint hide để không gây nhiễu
-    scanHint.classList.add('hide');
-
-    // FAILSAFE LOOP: chạy mạnh, traverse deep mỗi frame
-    if (detachedFrameLoop) cancelAnimationFrame(detachedFrameLoop);
-    let frameCount = 0;
-    const failsafeLoop = () => {
-      if (flowerState !== 'detached') {
-        console.log('[FREE MODE] failsafe loop stopped after', frameCount, 'frames');
-        detachedFrameLoop = null;
-        return;
-      }
-      frameCount++;
-      detachedEntities.forEach(({ el }) => {
-        if (el.object3D) forceDeepVisible(el.object3D);
-      });
-      detachedFrameLoop = requestAnimationFrame(failsafeLoop);
-    };
-    failsafeLoop();
-
-    // UI updates
     document.getElementById('detach-controls').classList.add('show');
     showToast(currentLang === 'zh' ? '✦ 樣本已拾取，可自由縮放拖曳' : '✦ Sample picked up · Free zoom & drag');
     revealText.classList.remove('show');
-
-    console.log('[FREE MODE] Activated successfully');
-  }
-
-  // Helper: Force visible deep — set visible cho mọi node + material trong subtree
-  function forceDeepVisible(obj3D) {
-    if (!obj3D) return;
-    obj3D.visible = true;
-    obj3D.traverse(child => {
-      child.visible = true;
-      // Một số models có material.visible riêng
-      if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(m => { if (m) m.visible = true; });
-        } else {
-          child.material.visible = true;
-        }
-      }
-    });
   }
 
   function exitDetachedMode() {
-    if (flowerState !== 'detached') return;
     console.log('[FREE MODE] Exiting');
-
-    // Stop failsafe loop
-    if (detachedFrameLoop) {
-      cancelAnimationFrame(detachedFrameLoop);
-      detachedFrameLoop = null;
-    }
-
-    // Reparent về target để MindAR tracking lại được
-    detachedEntities.forEach(({ el, originalParent }) => {
-      if (originalParent && el.object3D) {
-        try {
-          originalParent.attach(el.object3D);
-        } catch (err) {
-          console.warn('[FREE MODE] re-attach failed for', el.id, err);
-        }
-      }
-    });
-    detachedEntities = [];
-
     flowerState = 'tracking';
     document.getElementById('detach-controls').classList.remove('show');
   }
 
-  // Reset button: hoa biến mất, scan lại marker
+  // Reset button
   document.getElementById('btn-reset-flower')?.addEventListener('click', () => {
-    console.log('[RESET] User pressed reset');
-
-    // Stop failsafe loop
-    if (detachedFrameLoop) {
-      cancelAnimationFrame(detachedFrameLoop);
-      detachedFrameLoop = null;
-    }
-
-    // Reparent về target trước khi ẩn
-    detachedEntities.forEach(({ el, originalParent }) => {
-      if (originalParent && el.object3D) {
-        try {
-          originalParent.attach(el.object3D);
-        } catch (err) {}
-      }
-    });
-    detachedEntities = [];
-
+    console.log('[RESET]');
     flowerState = 'idle';
 
+    if (trackingFrameLoop) {
+      cancelAnimationFrame(trackingFrameLoop);
+      trackingFrameLoop = null;
+    }
+
     // Reset transform về mặc định
-    scaleStart = 12;
+    scaleStart = 24;
     posOffset = { x: 0, y: 0 };
+
+    // Hide display layer
+    const displayLayer = document.getElementById('display-layer');
+    if (displayLayer) {
+      displayLayer.setAttribute('visible', 'false');
+      displayLayer.object3D.visible = false;
+    }
+
+    // Trigger panelHide để các panels co lại
+    document.querySelectorAll('[id^="panel-"], #ar-video-frame, [light]').forEach(el => {
+      el.emit('panelHide');
+    });
 
     fabs.classList.remove('show');
     document.getElementById('detach-controls').classList.remove('show');
     closeAllModals();
-
-    // Ẩn các elements
-    document.querySelectorAll('#azalea-flower, #ar-video-frame, [id^="panel-"], #bloom-particles .bloom-petal').forEach(el => {
-      if (el.object3D) {
-        el.object3D.visible = false;
-      }
-    });
 
     showToast(currentLang === 'zh' ? '✦ 已重置 · 重新對準名片' : '✦ Reset · Point at the card again');
     scanHint.classList.remove('hide');
@@ -1360,17 +1264,16 @@
   // ============================================================
   // PINCH ZOOM + DRAG (touch & mouse)
   // ============================================================
-  let scaleStart = 12;
-  let scaleMin = 3;
-  let scaleMax = 30;
+  let scaleStart = 24;     // match phase 2 final scale
+  let scaleMin = 5;
+  let scaleMax = 60;
   let posOffset = { x: 0, y: 0 };
   let pinchStartDist = null;
   let pinchStartScale = null;
   let dragStartTouch = null;
   let dragStartOffset = null;
 
-  // Drag factor: scale 12 to nên cần multiplier lớn để cảm giác 1:1 với ngón tay
-  const DRAG_FACTOR = 8;
+  const DRAG_FACTOR = 12;  // Tăng từ 8 lên 12 cho cảm giác nhanh hơn nữa
 
   function getTouchDist(t1, t2) {
     const dx = t1.clientX - t2.clientX;
@@ -1381,31 +1284,13 @@
   function applyTransform() {
     const flower = document.getElementById('azalea-flower');
     if (!flower) return;
-
-    // KEY: Stop A-Frame animations đang chạy đè lên transform
-    // Phase 2 elastic + Phase 3 rotate có thể vẫn đang chạy. Pause chúng.
     const obj3D = flower.object3D;
     if (!obj3D) return;
 
-    // Set scale + position trực tiếp lên Object3D (bypass A-Frame attribute system)
     obj3D.scale.set(scaleStart, scaleStart, scaleStart);
-
-    // baseY = 1.5 (Phase 2 final). posOffset cộng thêm.
-    // Khi đang detached, position của object3D đã bị "attach" giữ lại world space
-    // nên cần update relative to scene root (chính nó đang là parent)
-    const baseY = 1.5;
-
-    if (flowerState === 'detached') {
-      // Trong detached mode, object3D đã reparent sang scene root
-      // World position của hoa = vị trí target (nơi quét cuối) + offset
-      // Đơn giản: ta set local position thẳng (vì giờ scene root là parent)
-      obj3D.position.x = posOffset.x;
-      obj3D.position.y = baseY + posOffset.y;
-      // z giữ nguyên
-    } else {
-      // Tracking mode: dùng setAttribute để A-Frame xử lý đúng
-      flower.setAttribute('position', `${posOffset.x} ${baseY + posOffset.y} 0`);
-    }
+    const baseY = 2;
+    obj3D.position.x = posOffset.x;
+    obj3D.position.y = baseY + posOffset.y;
   }
 
   // Touch handlers (mobile)

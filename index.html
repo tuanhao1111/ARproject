@@ -597,15 +597,15 @@
       scale="0.02 0.02 0.02"
       rotation="0 0 0"
 
-      animation__phase1-scale="property: scale; from: 0.02 0.02 0.02; to: 0.5 0.5 0.5; dur: 800; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
-      animation__phase1-pos="property: position; from: 0 0.05 0; to: 0 0.2 0; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
+      animation__phase1-scale="property: scale; from: 0.02 0.02 0.02; to: 4 4 4; dur: 800; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
+      animation__phase1-pos="property: position; from: 0 0.05 0; to: 0 0.5 0; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
       animation__phase1-spin="property: rotation; from: 0 0 0; to: 0 720 0; dur: 1000; easing: easeInOutQuad; startEvents: targetFound; delay: 200"
 
-      animation__phase2-scale="property: scale; from: 0.5 0.5 0.5; to: 1.2 1.2 1.2; dur: 1300; easing: easeOutElastic; startEvents: targetFound; delay: 1500"
-      animation__phase2-pos="property: position; from: 0 0.2 0; to: 0 0.4 0; dur: 1300; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
+      animation__phase2-scale="property: scale; from: 4 4 4; to: 12 12 12; dur: 1300; easing: easeOutElastic; startEvents: targetFound; delay: 1500"
+      animation__phase2-pos="property: position; from: 0 0.5 0; to: 0 1.5 0; dur: 1300; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
 
       animation__phase3-rotate="property: rotation; from: 0 720 0; to: 0 1080 0; loop: true; dur: 18000; easing: linear; startEvents: bloomComplete"
-      animation__phase3-breathe="property: scale; from: 1.2 1.2 1.2; to: 1.24 1.24 1.24; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine; startEvents: bloomComplete"></a-gltf-model>
+      animation__phase3-breathe="property: scale; from: 12 12 12; to: 12.4 12.4 12.4; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine; startEvents: bloomComplete"></a-gltf-model>
 
     <!-- ============ BLOOM PARTICLES (8 small petals burst out at peak) ============ -->
     <!-- Mỗi particle: scale 0 → bay ra → fade out, lệch pha nhẹ -->
@@ -1200,96 +1200,110 @@
   // ============================================================
   // DETACHED MODE: hoa "treo" trong không gian sau khi rời marker
   // ============================================================
-  // VẤN ĐỀ: MindAR tự động set target entity + children visible=false khi targetLost.
-  // GIẢI PHÁP: requestAnimationFrame loop, force visible=true cho hoa và video khi ở detached mode.
-  let detachedFrameLoop = null;
+  // VẤN ĐỀ: MindAR set target entity invisible khi targetLost. Children inherit visibility.
+  // GIẢI PHÁP: REPARENT các entity (hoa, video, panels) từ target → scene root.
+  // Khi đã ở scene root, MindAR không control nữa, hoa/video tự do tồn tại.
+
+  // Lưu original parent để khôi phục khi quay lại tracking
+  let detachedEntities = []; // {el, originalParent, savedPosition, savedScale, savedRotation}
 
   function enterDetachedMode() {
+    if (flowerState === 'detached') return; // đã trong mode này rồi
     flowerState = 'detached';
+
     const target = document.querySelector('[mindar-image-target]');
-    const flower = document.getElementById('azalea-flower');
-    const videoFrame = document.getElementById('ar-video-frame');
+    const sceneEl = document.querySelector('a-scene');
+    if (!target || !sceneEl) return;
 
-    if (!target || !flower) return;
+    // Các entity cần "tách" ra khỏi target
+    const entitiesToDetach = [
+      document.getElementById('azalea-flower'),
+      document.getElementById('ar-video-frame'),
+      document.getElementById('panel-bio'),
+      document.getElementById('panel-video'),
+      document.getElementById('panel-life'),
+      document.getElementById('panel-audio'),
+      document.getElementById('bloom-particles'),
+    ].filter(el => el !== null);
 
-    // Hiện UI controls cho detached mode
+    detachedEntities = [];
+
+    entitiesToDetach.forEach(el => {
+      // Lưu world transform hiện tại
+      const obj3D = el.object3D;
+      obj3D.updateMatrixWorld(true);
+
+      const worldPos = new THREE.Vector3();
+      const worldQuat = new THREE.Quaternion();
+      const worldScale = new THREE.Vector3();
+      obj3D.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+
+      // Lưu reference để restore sau
+      detachedEntities.push({
+        el: el,
+        originalParent: el.parentElement,
+      });
+
+      // KEY: Reparent THREE.js Object3D sang scene's object3D
+      // Vì <a-scene> root là parent của camera + target, đặt object3D ở đây
+      // làm hoa "tự do" khỏi target hierarchy
+      sceneEl.object3D.attach(obj3D); // attach giữ world transform
+
+      // Force visible (phòng trường hợp MindAR đã set false trước đó)
+      obj3D.visible = true;
+      obj3D.traverse(child => { child.visible = true; });
+    });
+
+    // UI updates
     document.getElementById('detach-controls').classList.add('show');
     showToast(currentLang === 'zh' ? '✦ 樣本已拾取，可自由縮放拖曳' : '✦ Sample picked up · Free zoom & drag');
-
-    // Hide reveal/text overlay
     revealText.classList.remove('show');
-
-    // KEY FIX: force visible mỗi frame, override MindAR auto-hide
-    if (detachedFrameLoop) cancelAnimationFrame(detachedFrameLoop);
-
-    const forceVisibleLoop = () => {
-      if (flowerState !== 'detached') {
-        detachedFrameLoop = null;
-        return;
-      }
-
-      // Force target entity visible
-      if (target.object3D) {
-        target.object3D.visible = true;
-      }
-
-      // Force flower visible
-      if (flower.object3D) {
-        flower.object3D.visible = true;
-      }
-
-      // Force video frame visible
-      if (videoFrame && videoFrame.object3D) {
-        videoFrame.object3D.visible = true;
-      }
-
-      // Force panels visible
-      document.querySelectorAll('[id^="panel-"]').forEach(p => {
-        if (p.object3D) p.object3D.visible = true;
-      });
-
-      // Force particles + light visible
-      document.querySelectorAll('#bloom-particles .bloom-petal, [light]').forEach(el => {
-        if (el.object3D) el.object3D.visible = true;
-      });
-
-      detachedFrameLoop = requestAnimationFrame(forceVisibleLoop);
-    };
-
-    forceVisibleLoop();
   }
 
   function exitDetachedMode() {
+    if (flowerState !== 'detached') return;
+
+    // Reparent ngược lại về target để MindAR có thể track lại
+    detachedEntities.forEach(({ el, originalParent }) => {
+      if (originalParent && originalParent.object3D) {
+        originalParent.object3D.attach(el.object3D);
+      }
+    });
+    detachedEntities = [];
+
     flowerState = 'tracking';
-    if (detachedFrameLoop) {
-      cancelAnimationFrame(detachedFrameLoop);
-      detachedFrameLoop = null;
-    }
     document.getElementById('detach-controls').classList.remove('show');
   }
 
-  // Reset button: quay lại trạng thái idle, ẩn hoa
+  // Reset button: hoa biến mất, scan lại marker
   document.getElementById('btn-reset-flower')?.addEventListener('click', () => {
+    // Reparent về target trước (cleanup)
+    detachedEntities.forEach(({ el, originalParent }) => {
+      if (originalParent && originalParent.object3D) {
+        originalParent.object3D.attach(el.object3D);
+      }
+    });
+    detachedEntities = [];
+
     flowerState = 'idle';
-    if (detachedFrameLoop) {
-      cancelAnimationFrame(detachedFrameLoop);
-      detachedFrameLoop = null;
-    }
 
     // Reset transform về mặc định
-    scaleStart = 1.2;
+    scaleStart = 12;
     posOffset = { x: 0, y: 0 };
+    const flower = document.getElementById('azalea-flower');
+    if (flower) {
+      flower.setAttribute('scale', '0.02 0.02 0.02');
+      flower.setAttribute('position', '0 0.05 0');
+    }
 
     fabs.classList.remove('show');
     document.getElementById('detach-controls').classList.remove('show');
     closeAllModals();
 
-    // Force ẩn các elements (sau khi loop dừng, cho phép MindAR control lại)
-    setTimeout(() => {
-      document.querySelectorAll('#azalea-flower, #ar-video-frame, [id^="panel-"], #bloom-particles .bloom-petal').forEach(el => {
-        if (el.object3D) el.object3D.visible = false;
-      });
-    }, 50);
+    // Ẩn các elements
+    document.querySelectorAll('#azalea-flower, #ar-video-frame, [id^="panel-"], #bloom-particles .bloom-petal').forEach(el => {
+      if (el.object3D) el.object3D.visible = false;
+    });
 
     showToast(currentLang === 'zh' ? '✦ 已重置 · 重新對準名片' : '✦ Reset · Point at the card again');
     scanHint.classList.remove('hide');
@@ -1298,11 +1312,10 @@
   // ============================================================
   // PINCH ZOOM + DRAG (touch & mouse)
   // ============================================================
-  // Áp dụng cho hoa (a-gltf-model). Khi ở detached mode hoặc tracking đều cho phép zoom/drag.
-  let scaleStart = 1.2;   // scale hiện tại của hoa (match với phase 2 cuối)
-  let scaleMin = 0.3;
-  let scaleMax = 3.0;
-  let posOffset = { x: 0, y: 0 }; // offset khi drag
+  let scaleStart = 12;     // scale hiện tại của hoa (match với phase 2 cuối)
+  let scaleMin = 3;
+  let scaleMax = 30;
+  let posOffset = { x: 0, y: 0 };
   let pinchStartDist = null;
   let pinchStartScale = null;
   let dragStartTouch = null;
@@ -1319,8 +1332,8 @@
     if (!flower) return;
     flower.setAttribute('scale', `${scaleStart} ${scaleStart} ${scaleStart}`);
 
-    // Apply position offset on top of base position (0, 0.4, 0) — matching phase 2 final
-    const baseY = 0.4;
+    // Apply position offset on top of base position (0, 1.5, 0) — matching phase 2 final
+    const baseY = 1.5;
     flower.setAttribute('position', `${posOffset.x} ${baseY + posOffset.y} 0`);
   }
 

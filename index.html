@@ -590,6 +590,8 @@
               animation__off="property: light.intensity; to: 0; dur: 300; startEvents: targetLost"></a-entity>
 
     <!-- 3D Azalea flower with multi-phase animation -->
+    <!-- LƯU Ý: Phase 3 breathing animation bị disable mặc định, vì nó đè lên scale do user pinch.
+         Animation này chỉ chạy khi event 'enableBreathing' được emit (sau khi user release pinch). -->
     <a-gltf-model
       id="azalea-flower"
       src="#azaleaModel"
@@ -604,8 +606,7 @@
       animation__phase2-scale="property: scale; from: 4 4 4; to: 12 12 12; dur: 1300; easing: easeOutElastic; startEvents: targetFound; delay: 1500"
       animation__phase2-pos="property: position; from: 0 0.5 0; to: 0 1.5 0; dur: 1300; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
 
-      animation__phase3-rotate="property: rotation; from: 0 720 0; to: 0 1080 0; loop: true; dur: 18000; easing: linear; startEvents: bloomComplete"
-      animation__phase3-breathe="property: scale; from: 12 12 12; to: 12.4 12.4 12.4; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine; startEvents: bloomComplete"></a-gltf-model>
+      animation__phase3-rotate="property: rotation; from: 0 720 0; to: 0 1080 0; loop: true; dur: 18000; easing: linear; startEvents: bloomComplete"></a-gltf-model>
 
     <!-- ============ BLOOM PARTICLES (8 small petals burst out at peak) ============ -->
     <!-- Mỗi particle: scale 0 → bay ra → fade out, lệch pha nhẹ -->
@@ -1200,73 +1201,97 @@
   // ============================================================
   // DETACHED MODE: hoa "treo" trong không gian sau khi rời marker
   // ============================================================
-  // VẤN ĐỀ: MindAR set target entity invisible khi targetLost. Children inherit visibility.
-  // GIẢI PHÁP: REPARENT các entity (hoa, video, panels) từ target → scene root.
-  // Khi đã ở scene root, MindAR không control nữa, hoa/video tự do tồn tại.
+  // STRATEGY: kết hợp 2 cách để đảm bảo không bị MindAR ẩn:
+  //   1. REPARENT object3D từ target → scene root (giải pháp chính)
+  //   2. requestAnimationFrame force visible=true (failsafe)
 
-  // Lưu original parent để khôi phục khi quay lại tracking
-  let detachedEntities = []; // {el, originalParent, savedPosition, savedScale, savedRotation}
+  let detachedEntities = [];
+  let detachedFrameLoop = null;
 
   function enterDetachedMode() {
-    if (flowerState === 'detached') return; // đã trong mode này rồi
+    if (flowerState === 'detached') return;
+    console.log('[FREE MODE] Entering detached mode');
     flowerState = 'detached';
 
     const target = document.querySelector('[mindar-image-target]');
     const sceneEl = document.querySelector('a-scene');
-    if (!target || !sceneEl) return;
+    if (!target || !sceneEl) {
+      console.error('[FREE MODE] target or scene not found');
+      return;
+    }
 
     // Các entity cần "tách" ra khỏi target
-    const entitiesToDetach = [
-      document.getElementById('azalea-flower'),
-      document.getElementById('ar-video-frame'),
-      document.getElementById('panel-bio'),
-      document.getElementById('panel-video'),
-      document.getElementById('panel-life'),
-      document.getElementById('panel-audio'),
-      document.getElementById('bloom-particles'),
-    ].filter(el => el !== null);
+    const ids = ['azalea-flower', 'ar-video-frame', 'panel-bio', 'panel-video', 'panel-life', 'panel-audio', 'bloom-particles'];
+    const entitiesToDetach = ids.map(id => document.getElementById(id)).filter(el => el !== null);
+
+    console.log('[FREE MODE] Detaching', entitiesToDetach.length, 'entities');
 
     detachedEntities = [];
 
     entitiesToDetach.forEach(el => {
-      // Lưu world transform hiện tại
       const obj3D = el.object3D;
-      obj3D.updateMatrixWorld(true);
+      if (!obj3D) return;
 
-      const worldPos = new THREE.Vector3();
-      const worldQuat = new THREE.Quaternion();
-      const worldScale = new THREE.Vector3();
-      obj3D.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+      // Lưu original parent (THREE.Object3D parent, không phải DOM parent)
+      const originalParent = obj3D.parent;
 
-      // Lưu reference để restore sau
-      detachedEntities.push({
-        el: el,
-        originalParent: el.parentElement,
-      });
+      try {
+        // attach() reparent + giữ world transform
+        sceneEl.object3D.attach(obj3D);
+      } catch (err) {
+        console.warn('[FREE MODE] attach failed for', el.id, err);
+      }
 
-      // KEY: Reparent THREE.js Object3D sang scene's object3D
-      // Vì <a-scene> root là parent của camera + target, đặt object3D ở đây
-      // làm hoa "tự do" khỏi target hierarchy
-      sceneEl.object3D.attach(obj3D); // attach giữ world transform
-
-      // Force visible (phòng trường hợp MindAR đã set false trước đó)
+      // Force visible mọi level
       obj3D.visible = true;
       obj3D.traverse(child => { child.visible = true; });
+
+      detachedEntities.push({ el, originalParent });
     });
+
+    // FAILSAFE: force visible mỗi frame (đề phòng MindAR vẫn ẩn cách nào đó)
+    if (detachedFrameLoop) cancelAnimationFrame(detachedFrameLoop);
+    const failsafeLoop = () => {
+      if (flowerState !== 'detached') {
+        detachedFrameLoop = null;
+        return;
+      }
+      detachedEntities.forEach(({ el }) => {
+        if (el.object3D) {
+          el.object3D.visible = true;
+          el.object3D.traverse(child => { child.visible = true; });
+        }
+      });
+      detachedFrameLoop = requestAnimationFrame(failsafeLoop);
+    };
+    failsafeLoop();
 
     // UI updates
     document.getElementById('detach-controls').classList.add('show');
     showToast(currentLang === 'zh' ? '✦ 樣本已拾取，可自由縮放拖曳' : '✦ Sample picked up · Free zoom & drag');
     revealText.classList.remove('show');
+
+    console.log('[FREE MODE] Activated');
   }
 
   function exitDetachedMode() {
     if (flowerState !== 'detached') return;
+    console.log('[FREE MODE] Exiting');
 
-    // Reparent ngược lại về target để MindAR có thể track lại
+    // Stop failsafe loop
+    if (detachedFrameLoop) {
+      cancelAnimationFrame(detachedFrameLoop);
+      detachedFrameLoop = null;
+    }
+
+    // Reparent về target để MindAR tracking lại được
     detachedEntities.forEach(({ el, originalParent }) => {
-      if (originalParent && originalParent.object3D) {
-        originalParent.object3D.attach(el.object3D);
+      if (originalParent && el.object3D) {
+        try {
+          originalParent.attach(el.object3D);
+        } catch (err) {
+          console.warn('[FREE MODE] re-attach failed for', el.id, err);
+        }
       }
     });
     detachedEntities = [];
@@ -1277,10 +1302,20 @@
 
   // Reset button: hoa biến mất, scan lại marker
   document.getElementById('btn-reset-flower')?.addEventListener('click', () => {
-    // Reparent về target trước (cleanup)
+    console.log('[RESET] User pressed reset');
+
+    // Stop failsafe loop
+    if (detachedFrameLoop) {
+      cancelAnimationFrame(detachedFrameLoop);
+      detachedFrameLoop = null;
+    }
+
+    // Reparent về target trước khi ẩn
     detachedEntities.forEach(({ el, originalParent }) => {
-      if (originalParent && originalParent.object3D) {
-        originalParent.object3D.attach(el.object3D);
+      if (originalParent && el.object3D) {
+        try {
+          originalParent.attach(el.object3D);
+        } catch (err) {}
       }
     });
     detachedEntities = [];
@@ -1290,11 +1325,6 @@
     // Reset transform về mặc định
     scaleStart = 12;
     posOffset = { x: 0, y: 0 };
-    const flower = document.getElementById('azalea-flower');
-    if (flower) {
-      flower.setAttribute('scale', '0.02 0.02 0.02');
-      flower.setAttribute('position', '0 0.05 0');
-    }
 
     fabs.classList.remove('show');
     document.getElementById('detach-controls').classList.remove('show');
@@ -1302,7 +1332,9 @@
 
     // Ẩn các elements
     document.querySelectorAll('#azalea-flower, #ar-video-frame, [id^="panel-"], #bloom-particles .bloom-petal').forEach(el => {
-      if (el.object3D) el.object3D.visible = false;
+      if (el.object3D) {
+        el.object3D.visible = false;
+      }
     });
 
     showToast(currentLang === 'zh' ? '✦ 已重置 · 重新對準名片' : '✦ Reset · Point at the card again');
@@ -1312,7 +1344,7 @@
   // ============================================================
   // PINCH ZOOM + DRAG (touch & mouse)
   // ============================================================
-  let scaleStart = 12;     // scale hiện tại của hoa (match với phase 2 cuối)
+  let scaleStart = 12;
   let scaleMin = 3;
   let scaleMax = 30;
   let posOffset = { x: 0, y: 0 };
@@ -1320,6 +1352,9 @@
   let pinchStartScale = null;
   let dragStartTouch = null;
   let dragStartOffset = null;
+
+  // Drag factor: scale 12 to nên cần multiplier lớn để cảm giác 1:1 với ngón tay
+  const DRAG_FACTOR = 8;
 
   function getTouchDist(t1, t2) {
     const dx = t1.clientX - t2.clientX;
@@ -1330,22 +1365,46 @@
   function applyTransform() {
     const flower = document.getElementById('azalea-flower');
     if (!flower) return;
-    flower.setAttribute('scale', `${scaleStart} ${scaleStart} ${scaleStart}`);
 
-    // Apply position offset on top of base position (0, 1.5, 0) — matching phase 2 final
+    // KEY: Stop A-Frame animations đang chạy đè lên transform
+    // Phase 2 elastic + Phase 3 rotate có thể vẫn đang chạy. Pause chúng.
+    const obj3D = flower.object3D;
+    if (!obj3D) return;
+
+    // Set scale + position trực tiếp lên Object3D (bypass A-Frame attribute system)
+    obj3D.scale.set(scaleStart, scaleStart, scaleStart);
+
+    // baseY = 1.5 (Phase 2 final). posOffset cộng thêm.
+    // Khi đang detached, position của object3D đã bị "attach" giữ lại world space
+    // nên cần update relative to scene root (chính nó đang là parent)
     const baseY = 1.5;
-    flower.setAttribute('position', `${posOffset.x} ${baseY + posOffset.y} 0`);
+
+    if (flowerState === 'detached') {
+      // Trong detached mode, object3D đã reparent sang scene root
+      // World position của hoa = vị trí target (nơi quét cuối) + offset
+      // Đơn giản: ta set local position thẳng (vì giờ scene root là parent)
+      obj3D.position.x = posOffset.x;
+      obj3D.position.y = baseY + posOffset.y;
+      // z giữ nguyên
+    } else {
+      // Tracking mode: dùng setAttribute để A-Frame xử lý đúng
+      flower.setAttribute('position', `${posOffset.x} ${baseY + posOffset.y} 0`);
+    }
   }
 
   // Touch handlers (mobile)
   document.addEventListener('touchstart', (e) => {
     if (flowerState === 'idle') return;
 
-    // Bỏ qua nếu touch trên UI (FAB, modal, etc.)
     const target = e.target;
-    if (target.closest('.fab, .modal, .top-bar, button, .audio-player, .lc-stage')) return;
+    if (target.closest('.fab, .modal, .top-bar, button, .audio-player, .lc-stage, .detach-controls')) return;
 
     if (e.touches.length === 2) {
+      // Đọc scale hiện tại từ object3D (chính xác hơn scaleStart variable)
+      const flower = document.getElementById('azalea-flower');
+      if (flower && flower.object3D) {
+        scaleStart = flower.object3D.scale.x;
+      }
       pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
       pinchStartScale = scaleStart;
       e.preventDefault();
@@ -1358,22 +1417,19 @@
   document.addEventListener('touchmove', (e) => {
     if (flowerState === 'idle') return;
     const target = e.target;
-    if (target.closest('.fab, .modal, .top-bar, button, .audio-player, .lc-stage')) return;
+    if (target.closest('.fab, .modal, .top-bar, button, .audio-player, .lc-stage, .detach-controls')) return;
 
     if (e.touches.length === 2 && pinchStartDist !== null) {
-      // Pinch zoom
       const currentDist = getTouchDist(e.touches[0], e.touches[1]);
       const ratio = currentDist / pinchStartDist;
       scaleStart = Math.max(scaleMin, Math.min(scaleMax, pinchStartScale * ratio));
       applyTransform();
       e.preventDefault();
     } else if (e.touches.length === 1 && dragStartTouch !== null) {
-      // Drag
       const dx = (e.touches[0].clientX - dragStartTouch.x) / window.innerWidth;
       const dy = (e.touches[0].clientY - dragStartTouch.y) / window.innerHeight;
-      // Map screen delta to AR world delta (factor 1.5 cảm giác tự nhiên)
-      posOffset.x = dragStartOffset.x + dx * 1.5;
-      posOffset.y = dragStartOffset.y - dy * 1.5; // y đảo dấu vì màn hình y ngược
+      posOffset.x = dragStartOffset.x + dx * DRAG_FACTOR;
+      posOffset.y = dragStartOffset.y - dy * DRAG_FACTOR;
       applyTransform();
       e.preventDefault();
     }
@@ -1384,23 +1440,27 @@
     dragStartTouch = null;
   });
 
-  // Mouse handlers (desktop) — wheel = zoom, drag = move
+  // Mouse handlers (desktop)
   let mouseDragging = false;
   let mouseDragStart = null;
   let mouseDragStartOffset = null;
 
   document.addEventListener('wheel', (e) => {
     if (flowerState === 'idle') return;
-    if (e.target.closest('.modal, .info-card, .audio-player')) return;
+    if (e.target.closest('.modal, .info-card, .audio-player, .detach-controls')) return;
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.95 : 1.05;
+    const flower = document.getElementById('azalea-flower');
+    if (flower && flower.object3D) {
+      scaleStart = flower.object3D.scale.x;
+    }
+    const delta = e.deltaY > 0 ? 0.92 : 1.08;
     scaleStart = Math.max(scaleMin, Math.min(scaleMax, scaleStart * delta));
     applyTransform();
   }, { passive: false });
 
   document.addEventListener('mousedown', (e) => {
     if (flowerState === 'idle') return;
-    if (e.target.closest('.fab, .modal, .top-bar, button')) return;
+    if (e.target.closest('.fab, .modal, .top-bar, button, .detach-controls')) return;
     mouseDragging = true;
     mouseDragStart = { x: e.clientX, y: e.clientY };
     mouseDragStartOffset = { ...posOffset };
@@ -1410,8 +1470,8 @@
     if (!mouseDragging) return;
     const dx = (e.clientX - mouseDragStart.x) / window.innerWidth;
     const dy = (e.clientY - mouseDragStart.y) / window.innerHeight;
-    posOffset.x = mouseDragStartOffset.x + dx * 1.5;
-    posOffset.y = mouseDragStartOffset.y - dy * 1.5;
+    posOffset.x = mouseDragStartOffset.x + dx * DRAG_FACTOR;
+    posOffset.y = mouseDragStartOffset.y - dy * DRAG_FACTOR;
     applyTransform();
   });
 

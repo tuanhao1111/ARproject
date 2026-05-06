@@ -3,575 +3,242 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>杜鵑花 AR 尋寶 · Azalea AR Hunt</title>
+  <title>杜鵑花 AR · Azalea</title>
 
-  <!-- Fonts: Noto Serif TC (display) + Cormorant Garamond (English display) + Noto Sans TC (body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400;1,500&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" />
 
-  <!-- A-Frame + MindAR -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-  <!-- Patch: register pbrSpecularGlossiness extension handler so old Sketchfab models render correctly -->
-  <script>
-    // This patch makes Three.js GLTFLoader convert spec-gloss materials to standard PBR
-    // so models from older Sketchfab exports display with proper materials
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.THREE && window.THREE.GLTFLoader) {
-        const loader = window.THREE.GLTFLoader;
-        // Force loaded materials to use standard color even if extension fails
-        console.log('THREE GLTFLoader available, version:', THREE.REVISION);
-      }
-    });
-  </script>
 
   <style>
     :root {
       --azalea-deep: #6d1b3e;
       --azalea-blush: #e8a5c0;
-      --azalea-petal: #f5d3de;
       --azalea-leaf: #4a6741;
-      --azalea-leaf-dark: #2d3d28;
       --ink: #1a0e14;
       --paper: #faf6f1;
-      --paper-warm: #f0e8db;
       --gold: #c9a961;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body {
-      height: 100%;
-      overflow: hidden;
-      background: var(--paper);
-      color: var(--ink);
+      height: 100%; overflow: hidden;
+      background: var(--paper); color: var(--ink);
       font-family: 'Noto Sans TC', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
+    a-scene { display: none; }
+    a-scene.active { display: block; }
 
     /* ============ INTRO SCREEN ============ */
     #intro {
       position: fixed; inset: 0; z-index: 100;
       background:
-        radial-gradient(ellipse at top right, rgba(232, 165, 192, 0.4), transparent 60%),
-        radial-gradient(ellipse at bottom left, rgba(74, 103, 65, 0.25), transparent 50%),
-        linear-gradient(135deg, var(--paper) 0%, var(--paper-warm) 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 5vh 6vw;
-      transition: opacity 0.8s ease, transform 0.8s ease;
+        radial-gradient(ellipse at top right, rgba(232,165,192,0.4), transparent 60%),
+        radial-gradient(ellipse at bottom left, rgba(74,103,65,0.25), transparent 50%),
+        var(--paper);
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 32px 24px;
+      transition: opacity 0.6s ease;
     }
+    #intro.fade-out { opacity: 0; pointer-events: none; }
 
-    #intro.hidden {
-      opacity: 0;
-      transform: translateY(-20px);
-      pointer-events: none;
-    }
-
-    /* Decorative noise overlay */
-    #intro::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.1 0 0 0 0 0.2 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      opacity: 0.4;
-      pointer-events: none;
-      mix-blend-mode: multiply;
-    }
-
-    /* Decorative floating petals */
-    .petal {
-      position: absolute;
-      width: 24px; height: 24px;
-      background: radial-gradient(circle at 30% 30%, var(--azalea-petal), var(--azalea-blush) 60%, var(--azalea-deep));
-      border-radius: 60% 40% 50% 50% / 70% 60% 40% 50%;
-      opacity: 0.6;
-      animation: float 8s ease-in-out infinite;
-      filter: blur(0.3px);
-    }
-    .petal:nth-child(1) { top: 12%; right: 15%; animation-delay: 0s; transform: rotate(20deg); }
-    .petal:nth-child(2) { top: 40%; right: 8%; animation-delay: 2s; width: 18px; height: 18px; }
-    .petal:nth-child(3) { bottom: 30%; left: 12%; animation-delay: 4s; width: 30px; height: 30px; }
-    .petal:nth-child(4) { top: 22%; left: 18%; animation-delay: 1s; width: 16px; height: 16px; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(20deg); }
-      50% { transform: translateY(-20px) rotate(40deg); }
-    }
-
-    .intro-header {
-      position: relative; z-index: 2;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      animation: slideDown 1s ease 0.2s both;
-    }
-
+    .intro-header { display: flex; justify-content: space-between; }
     .badge {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 13px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: var(--azalea-deep);
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 13px; letter-spacing: 0.2em; color: var(--azalea-deep);
       border-top: 1px solid var(--azalea-deep);
       border-bottom: 1px solid var(--azalea-deep);
-      padding: 6px 0;
+      padding: 4px 0;
     }
-
-    .lang-toggle {
-      display: flex;
-      gap: 0;
-      border: 1px solid var(--ink);
-      font-size: 12px;
-      letter-spacing: 0.15em;
-    }
-    .lang-toggle button {
-      background: transparent;
-      border: none;
-      padding: 8px 14px;
-      font-family: inherit;
-      cursor: pointer;
-      color: var(--ink);
-      transition: all 0.3s;
-    }
-    .lang-toggle button.active {
-      background: var(--ink);
-      color: var(--paper);
-    }
-
-    .intro-main {
-      position: relative; z-index: 2;
-      animation: slideUp 1.2s ease 0.4s both;
-    }
-
-    .title-zh {
-      font-family: 'Noto Serif TC', serif;
-      font-weight: 900;
-      font-size: clamp(48px, 14vw, 120px);
-      line-height: 0.95;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-    }
-    .title-zh .accent { color: var(--azalea-deep); display: block; }
-
-    .title-en {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-weight: 400;
-      font-size: clamp(20px, 5vw, 32px);
-      color: var(--azalea-deep);
-      margin-top: 8px;
-      letter-spacing: 0.02em;
-    }
-
+    .intro-main { max-width: 600px; margin: auto 0; }
     .meta-line {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 24px;
-      font-size: 11px;
-      letter-spacing: 0.25em;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 11px; letter-spacing: 0.3em;
+      color: var(--azalea-deep); margin-bottom: 24px;
       text-transform: uppercase;
-      color: var(--azalea-leaf-dark);
     }
-    .meta-line .dot {
-      width: 4px; height: 4px;
-      background: var(--gold);
-      border-radius: 50%;
+    .dot { width: 4px; height: 4px; background: var(--azalea-deep); border-radius: 50%; }
+    .title-zh {
+      font-family: 'Noto Serif TC', serif; font-weight: 900;
+      font-size: clamp(56px, 14vw, 120px); line-height: 0.9;
+      margin-bottom: 8px;
     }
-
+    .title-zh .accent {
+      display: inline-block; color: var(--azalea-deep); position: relative;
+    }
+    .title-zh .accent::after {
+      content: ''; position: absolute;
+      bottom: 8px; left: -4px; right: -4px; height: 12px;
+      background: var(--azalea-blush); opacity: 0.4; z-index: -1;
+    }
+    .title-en {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: clamp(20px, 4vw, 28px);
+      color: var(--azalea-leaf); margin-bottom: 32px;
+    }
     .description {
-      max-width: 520px;
-      margin-top: 32px;
-      font-size: 15px;
-      line-height: 1.7;
-      color: rgba(26, 14, 20, 0.75);
-      font-weight: 300;
+      font-size: 15px; line-height: 1.7; color: #3a2530;
+      max-width: 480px; margin-bottom: 40px;
     }
     .description em {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
       color: var(--azalea-deep);
-      font-size: 17px;
-      font-style: italic;
-      font-weight: 600;
     }
-
     .intro-footer {
-      position: relative; z-index: 2;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 20px;
-      animation: slideUp 1.2s ease 0.7s both;
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
     }
-
-    .stats {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--azalea-leaf-dark);
-    }
-    .stats strong {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-weight: 600;
-      font-size: 28px;
-      letter-spacing: 0;
-      text-transform: none;
-      color: var(--ink);
-      line-height: 1;
-    }
-
     .start-btn {
-      background: var(--ink);
-      color: var(--paper);
-      border: none;
-      padding: 22px 36px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.4s ease;
-      position: relative;
-      overflow: hidden;
+      background: var(--ink); color: var(--paper); border: none;
+      padding: 18px 32px;
+      font-family: 'Noto Serif TC', serif; font-weight: 700;
+      font-size: 15px; letter-spacing: 0.3em; cursor: pointer;
+      transition: all 0.3s; position: relative; overflow: hidden;
     }
-    .start-btn:hover {
+    .start-btn::before {
+      content: ''; position: absolute; inset: 0;
       background: var(--azalea-deep);
-      letter-spacing: 0.4em;
+      transform: translateX(-100%); transition: transform 0.4s ease;
     }
-    .start-btn .arrow {
-      display: inline-block;
-      margin-left: 8px;
-      transition: transform 0.4s;
-    }
-    .start-btn:hover .arrow { transform: translateX(6px); }
-
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+    .start-btn span { position: relative; z-index: 1; }
+    .start-btn:hover::before { transform: translateX(0); }
+    .credits {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 12px; color: var(--azalea-leaf); text-align: right;
     }
 
-    /* ============ AR SCENE UI OVERLAY ============ */
-    /* Force a-scene to fullscreen — critical for MindAR camera */
-    #ar-scene {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      z-index: 1 !important;
+    /* ============ LOADING / ERROR ============ */
+    #loading, #error-screen {
+      position: fixed; inset: 0; z-index: 150;
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 20px; padding: 32px;
     }
-    #ar-scene.hidden {
-      visibility: hidden;
-      pointer-events: none;
+    #loading { background: var(--ink); color: var(--paper); }
+    #error-screen { background: var(--paper); text-align: center; }
+    #loading.active, #error-screen.active { display: flex; }
+    .loader {
+      width: 40px; height: 40px;
+      border: 2px solid rgba(232,165,192,0.3);
+      border-top-color: var(--azalea-blush);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 16px; letter-spacing: 0.2em; opacity: 0.7;
+    }
+    #error-screen h2 {
+      font-family: 'Noto Serif TC', serif; font-size: 24px;
+      color: var(--azalea-deep);
+    }
+    #error-screen p { font-size: 14px; line-height: 1.7; max-width: 400px; }
+    #error-screen .err-detail {
+      font-family: monospace; font-size: 11px;
+      background: rgba(109,27,62,0.08); padding: 12px;
+      border-left: 3px solid var(--azalea-deep);
+      max-width: 90%; word-break: break-all; text-align: left;
+      white-space: pre-wrap;
+    }
+    #error-screen button {
+      padding: 12px 24px; background: var(--ink); color: var(--paper);
+      border: none; cursor: pointer; font-family: inherit;
+      letter-spacing: 0.2em; font-size: 12px;
     }
 
-    /* MindAR injects video directly into body, not into a-scene — target it globally */
-    video {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      object-fit: cover !important;
-      z-index: 0 !important;
-    }
-    .a-canvas,
-    canvas.a-canvas {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      z-index: 2 !important;
-    }
-
+    /* ============ AR UI OVERLAY ============ */
     #ar-ui {
-      position: fixed; inset: 0;
-      pointer-events: none;
-      z-index: 50;
-      display: none;
+      position: fixed; inset: 0; z-index: 50;
+      pointer-events: none; display: none;
     }
     #ar-ui.active { display: block; }
 
-    .ar-top {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+    .top-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 20px 24px;
+      display: flex; justify-content: space-between; align-items: center;
       pointer-events: auto;
+      background: linear-gradient(to bottom, rgba(26,14,20,0.7), transparent);
+    }
+    .back-btn {
+      background: transparent; border: 1px solid white; color: white;
+      padding: 8px 14px; font-size: 11px; letter-spacing: 0.2em;
+      cursor: pointer; font-family: inherit;
+    }
+    .top-meta { color: white; text-align: right; font-size: 10px; letter-spacing: 0.3em; }
+    .top-meta .num {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 22px; color: var(--azalea-blush);
     }
 
-    .exit-btn {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: rgba(26, 14, 20, 0.7);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: white;
-      font-size: 20px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .progress-card {
-      background: rgba(250, 246, 241, 0.92);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(109, 27, 62, 0.15);
-      padding: 12px 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    .progress-card .label {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 11px;
-      color: var(--azalea-deep);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-    }
-    .progress-card .count {
-      font-family: 'Noto Serif TC', serif;
-      font-weight: 700;
-      font-size: 22px;
-      color: var(--ink);
-      line-height: 1;
-    }
-    .progress-card .total {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 14px;
-      color: var(--azalea-leaf-dark);
-    }
-
-    /* Scanning hint */
     .scan-hint {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: min(70vw, 280px);
-      aspect-ratio: 1;
-      border: 1.5px solid rgba(255, 255, 255, 0.6);
-      border-radius: 8px;
-      pointer-events: none;
+      width: 240px; height: 240px;
+      pointer-events: none; transition: opacity 0.4s;
     }
-    .scan-hint::before, .scan-hint::after {
-      content: '';
-      position: absolute;
-      width: 24px; height: 24px;
-      border: 2px solid var(--azalea-blush);
+    .scan-hint.hide { opacity: 0; }
+    .scan-hint .corner {
+      position: absolute; width: 24px; height: 24px;
+      border: 2px solid white; mix-blend-mode: difference;
     }
-    .scan-hint::before {
-      top: -2px; left: -2px;
-      border-right: none; border-bottom: none;
+    .scan-hint .c1 { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .scan-hint .c2 { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .scan-hint .c3 { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .scan-hint .c4 { bottom: 0; right: 0; border-left: none; border-top: none; }
+    .scan-hint .label {
+      position: absolute; top: calc(100% + 24px); left: 50%;
+      transform: translateX(-50%); white-space: nowrap;
+      color: white; font-size: 11px; letter-spacing: 0.3em;
+      mix-blend-mode: difference; animation: pulse 2s infinite;
     }
-    .scan-hint::after {
-      bottom: -2px; right: -2px;
-      border-left: none; border-top: none;
+    @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* ============ CINEMATIC FLASH (white flash + reveal) ============ */
+    .flash {
+      position: absolute; inset: 0;
+      background: white;
+      pointer-events: none; opacity: 0;
+      z-index: 60;
     }
-    .scan-hint .corner-tr, .scan-hint .corner-bl {
-      content: '';
-      position: absolute;
-      width: 24px; height: 24px;
-      border: 2px solid var(--azalea-blush);
+    .flash.fire {
+      animation: flashAnim 1.2s ease-out forwards;
     }
-    .scan-hint .corner-tr {
-      top: -2px; right: -2px;
-      border-left: none; border-bottom: none;
-    }
-    .scan-hint .corner-bl {
-      bottom: -2px; left: -2px;
-      border-right: none; border-top: none;
+    @keyframes flashAnim {
+      0% { opacity: 0; }
+      15% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
-    .scan-text {
-      position: absolute;
-      bottom: -50px; left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 16px;
-      color: white;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      letter-spacing: 0.1em;
-    }
-    .scan-text-zh {
-      display: block;
-      font-family: 'Noto Sans TC', sans-serif;
-      font-style: normal;
-      font-size: 13px;
-      letter-spacing: 0.3em;
-      margin-top: 4px;
-      opacity: 0.85;
-    }
-
-    .scan-hint.found { display: none; }
-
-    /* Info panel when target found */
-    .info-panel {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(to top, var(--paper) 0%, var(--paper) 70%, transparent 100%);
-      padding: 30px 24px 24px;
-      pointer-events: auto;
-      transform: translateY(100%);
-      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .info-panel.visible { transform: translateY(0); }
-
-    .info-eyebrow {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 13px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: var(--azalea-deep);
-      margin-bottom: 8px;
-    }
-    .info-name-zh {
-      font-family: 'Noto Serif TC', serif;
-      font-weight: 700;
-      font-size: 32px;
-      line-height: 1;
-      color: var(--ink);
-    }
-    .info-name-latin {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic;
-      font-size: 18px;
-      color: var(--azalea-leaf-dark);
-      margin-top: 4px;
-    }
-
-    .info-tabs {
-      display: flex;
-      gap: 0;
-      margin-top: 20px;
-      border-bottom: 1px solid rgba(26, 14, 20, 0.15);
-    }
-    .info-tab {
-      flex: 1;
-      background: none;
-      border: none;
-      padding: 12px 8px;
-      font-family: inherit;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(26, 14, 20, 0.5);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.3s;
-    }
-    .info-tab.active {
-      color: var(--azalea-deep);
-      border-bottom-color: var(--azalea-deep);
-    }
-
-    .info-content {
-      margin-top: 16px;
-      font-size: 14px;
-      line-height: 1.65;
-      color: rgba(26, 14, 20, 0.85);
-      min-height: 80px;
-    }
-
-    .info-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-    }
-    .info-actions button {
-      flex: 1;
-      padding: 14px;
-      font-family: inherit;
-      font-size: 12px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .btn-collect {
-      background: var(--azalea-deep);
-      color: white;
-      border: 1px solid var(--azalea-deep);
-    }
-    .btn-collect:hover { background: var(--ink); }
-    .btn-collect.collected {
-      background: var(--azalea-leaf);
-      border-color: var(--azalea-leaf);
-    }
-    .btn-close {
-      background: transparent;
-      color: var(--ink);
-      border: 1px solid var(--ink);
-    }
-    .btn-close:hover { background: var(--ink); color: white; }
-
-    /* Toast */
-    .toast {
-      position: absolute;
-      top: 90px; left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: var(--azalea-deep);
-      color: white;
-      padding: 12px 24px;
-      font-size: 13px;
-      letter-spacing: 0.15em;
-      box-shadow: 0 8px 24px rgba(109, 27, 62, 0.4);
-      opacity: 0;
-      transition: all 0.4s;
-      pointer-events: none;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* ============ REVEAL INTRO (cinematic) ============ */
-    .reveal-intro {
+    .reveal-text {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
       pointer-events: none; opacity: 0; z-index: 55;
       transition: opacity 0.6s ease;
     }
-    .reveal-intro.show { opacity: 1; }
-    .reveal-intro-content {
+    .reveal-text.show { opacity: 1; }
+    .reveal-text-content {
       text-align: center; color: white;
       mix-blend-mode: difference;
-      transform: translateY(30px);
+      transform: scale(0.85);
       transition: transform 0.8s ease;
     }
-    .reveal-intro.show .reveal-intro-content { transform: translateY(0); }
-    .reveal-intro-meta { font-size: 10px; letter-spacing: 0.4em; opacity: 0.7; margin-bottom: 12px; }
-    .reveal-intro-zh {
-      font-family: 'Noto Serif TC', serif; font-weight: 700;
-      font-size: 48px; letter-spacing: 0.05em; margin-bottom: 8px;
+    .reveal-text.show .reveal-text-content { transform: scale(1); }
+    .reveal-meta { font-size: 10px; letter-spacing: 0.4em; opacity: 0.8; margin-bottom: 12px; }
+    .reveal-zh {
+      font-family: 'Noto Serif TC', serif; font-weight: 900;
+      font-size: 56px; letter-spacing: 0.05em; margin-bottom: 8px;
     }
-    .reveal-intro-en { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 20px; }
+    .reveal-en {
+      font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 22px;
+    }
 
-    /* ============ FLOATING ACTION BUTTONS (Visual Feeder style) ============ */
-    .floating-actions {
+    /* ============ FAB (floating action buttons) ============ */
+    .fabs {
       position: absolute;
       bottom: 32px; left: 0; right: 0;
-      display: flex; justify-content: center;
-      gap: 12px;
+      display: flex; justify-content: center; gap: 12px;
       padding: 0 16px;
       pointer-events: auto;
       opacity: 0;
@@ -579,62 +246,55 @@
       transition: opacity 0.5s ease, transform 0.5s ease;
       z-index: 45;
     }
-    .floating-actions.show { opacity: 1; transform: translateY(0); }
+    .fabs.show { opacity: 1; transform: translateY(0); }
     .fab {
       flex: 1; max-width: 90px;
-      background: rgba(250, 246, 241, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(109, 27, 62, 0.2);
-      padding: 12px 8px;
-      cursor: pointer;
-      font-family: inherit;
+      background: rgba(250,246,241,0.95);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(109,27,62,0.2);
+      padding: 12px 8px; cursor: pointer; font-family: inherit;
       display: flex; flex-direction: column; align-items: center; gap: 4px;
-      transition: all 0.2s;
+      transition: all 0.2s; color: var(--azalea-deep);
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      color: var(--azalea-deep);
     }
     .fab:hover, .fab:active {
       background: var(--azalea-deep); color: white; transform: translateY(-2px);
     }
-    .fab svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
-    .fab .label-zh {
-      font-family: 'Noto Serif TC', serif; font-weight: 700;
-      font-size: 13px; letter-spacing: 0.05em;
+    .fab svg {
+      width: 22px; height: 22px;
+      stroke: currentColor; fill: none; stroke-width: 1.5;
     }
-    .fab .label-en {
+    .fab .lab-zh {
+      font-family: 'Noto Serif TC', serif; font-weight: 700;
+      font-size: 13px;
+    }
+    .fab .lab-en {
       font-family: 'Cormorant Garamond', serif; font-style: italic;
       font-size: 10px; opacity: 0.7;
     }
 
-    /* ============ MODAL OVERLAY ============ */
+    /* ============ MODAL ============ */
     .modal {
       position: fixed; inset: 0;
-      background: rgba(26, 14, 20, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      display: none;
-      align-items: center; justify-content: center;
-      padding: 24px;
-      pointer-events: auto;
-      z-index: 200;
+      background: rgba(26,14,20,0.85);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px; pointer-events: auto; z-index: 200;
     }
-    .modal.show { display: flex; animation: modalFadeIn 0.3s ease; }
-    @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+    .modal.show { display: flex; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .modal-content {
       background: var(--paper);
-      max-width: 500px; width: 100%;
-      max-height: 80vh; overflow-y: auto;
+      max-width: 500px; width: 100%; max-height: 80vh;
+      overflow-y: auto;
       border-top: 3px solid var(--azalea-deep);
-      animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
     }
-    @keyframes modalSlideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-header {
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: flex-start;
       padding: 20px 24px;
-      border-bottom: 1px solid rgba(26, 14, 20, 0.1);
+      border-bottom: 1px solid rgba(26,14,20,0.1);
     }
     .modal-title {
       font-family: 'Noto Serif TC', serif; font-size: 18px;
@@ -643,13 +303,11 @@
     .modal-title .latin {
       display: block;
       font-family: 'Cormorant Garamond', serif; font-style: italic;
-      font-size: 12px; color: var(--azalea-leaf-dark);
-      margin-top: 2px;
+      font-size: 12px; color: var(--azalea-leaf); margin-top: 2px;
     }
     .modal-close {
       background: transparent; border: none;
-      width: 32px; height: 32px; cursor: pointer;
-      font-size: 20px; color: var(--ink);
+      width: 32px; height: 32px; cursor: pointer; font-size: 20px;
     }
     .modal-body { padding: 24px; }
     .modal-body h3 {
@@ -658,293 +316,138 @@
     }
     .modal-body h3:first-child { margin-top: 0; }
     .modal-body p {
-      font-size: 13px; line-height: 1.7; color: #3a2530;
-      margin-bottom: 8px;
+      font-size: 13px; line-height: 1.7; color: #3a2530; margin-bottom: 8px;
     }
-    .modal-body .video-wrap {
+    .modal-body .tag {
+      display: inline-block; font-size: 10px; letter-spacing: 0.2em;
+      padding: 3px 8px; background: rgba(232,165,192,0.4);
+      color: var(--azalea-deep); margin-right: 6px; margin-bottom: 6px;
+    }
+    .video-wrap {
       position: relative; padding-bottom: 56.25%; height: 0;
       background: #000; margin-bottom: 16px;
     }
-    .modal-body .video-wrap iframe {
+    .video-wrap iframe {
       position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
     }
-    .modal-body .map-wrap {
-      background: var(--paper-warm); padding: 16px;
+
+    /* ============ LIFECYCLE ANIMATION ============ */
+    .lifecycle {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; margin-bottom: 16px;
+    }
+    .lc-stage {
+      text-align: center; padding: 16px 4px;
+      background: rgba(232,165,192,0.15);
+      border-bottom: 2px solid var(--azalea-deep);
+      cursor: pointer; transition: all 0.3s;
+    }
+    .lc-stage.active {
+      background: var(--azalea-deep); color: white; transform: translateY(-2px);
+    }
+    .lc-stage svg { width: 40px; height: 50px; margin-bottom: 6px; }
+    .lc-stage .lc-num {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 11px; opacity: 0.6;
+    }
+    .lc-stage .lc-name {
+      font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 700;
+    }
+    .lc-stage .lc-month {
+      font-size: 10px; opacity: 0.7; letter-spacing: 0.1em;
+    }
+    .lc-detail {
+      padding: 12px;
+      background: rgba(109,27,62,0.04);
+      border-left: 3px solid var(--azalea-deep);
+      min-height: 80px;
+    }
+
+    /* ============ AUDIO PLAYER ============ */
+    .audio-player {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px;
+      background: rgba(26,14,20,0.04);
       border-left: 3px solid var(--azalea-leaf);
       margin-bottom: 12px;
     }
-    .modal-body .map-wrap .coord {
-      font-family: monospace; font-size: 12px;
-      color: var(--azalea-leaf-dark);
+    .audio-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--azalea-deep); color: white; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
     }
-    .modal-body ul { list-style: none; padding: 0; }
-    .modal-body ul li {
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(26, 14, 20, 0.08);
-      font-size: 13px;
+    .audio-btn:hover { background: var(--ink); transform: scale(1.05); }
+    .audio-btn.playing {
+      background: var(--azalea-leaf);
+      animation: pulseBtn 1.5s infinite;
     }
-    .modal-body ul li:last-child { border-bottom: none; }
-    .modal-body ul li a {
-      color: var(--azalea-deep); text-decoration: none;
-      font-family: 'Cormorant Garamond', serif; font-style: italic;
+    @keyframes pulseBtn { 0%, 100% { box-shadow: 0 0 0 0 rgba(74,103,65,0.5); } 50% { box-shadow: 0 0 0 12px rgba(74,103,65,0); } }
+    .audio-btn svg { width: 18px; height: 18px; fill: currentColor; }
+    .audio-info { flex: 1; }
+    .audio-info .audio-title {
+      font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 14px;
     }
-    .modal-body ul li a:hover { text-decoration: underline; }
-    .modal-body ul li .ref-meta {
-      display: block;
-      font-size: 11px; color: var(--azalea-leaf-dark); margin-top: 2px;
+    .audio-info .audio-sub {
+      font-size: 11px; color: var(--azalea-leaf); margin-top: 2px;
     }
+
   </style>
 </head>
 <body>
 
 <!-- ============ INTRO SCREEN ============ -->
 <div id="intro">
-  <span class="petal"></span>
-  <span class="petal"></span>
-  <span class="petal"></span>
-  <span class="petal"></span>
-
   <div class="intro-header">
-    <div class="badge" data-zh="校園生態 · AR 導覽" data-en="Campus Ecology · AR Guide">校園生態 · AR 導覽</div>
-    <div class="lang-toggle">
-      <button class="active" data-lang="zh">中</button>
-      <button data-lang="en">EN</button>
-    </div>
+    <div class="badge">校園生態 · AR 導覽</div>
   </div>
 
   <div class="intro-main">
     <div class="meta-line">
-      <span data-zh="第一章" data-en="Chapter One">第一章</span>
+      <span>生物學專題報告</span>
       <span class="dot"></span>
-      <span data-zh="尋花記" data-en="In Search of Azalea">尋花記</span>
+      <span>2026</span>
     </div>
-    <h1 class="title-zh">
-      <span data-zh="尋見" data-en="Finding">尋見</span>
-      <span class="accent" data-zh="杜鵑" data-en="Azalea">杜鵑</span>
-    </h1>
+    <h1 class="title-zh">尋見<span class="accent">杜鵑</span></h1>
     <p class="title-en">A bloom that lives by conditions</p>
-
-    <p class="description" data-zh-html="杜鵑花以柔美的姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>之下方能成形。透過擴增實境，與校園裡的每一叢杜鵑相遇——觀察其生命週期，傾聽其植物學秘密，收藏屬於你的數位花譜。" data-en-html="The azalea blooms with delicate beauty, yet only thrives under <em>acidic soil and cool temperatures</em>. Through augmented reality, encounter every azalea on campus—witness its life cycle, learn its botanical secrets, and collect your own digital herbarium.">
-      杜鵑花以柔美的姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>之下方能成形。透過擴增實境，與校園裡的每一叢杜鵑相遇——觀察其生命週期，傾聽其植物學秘密，收藏屬於你的數位花譜。
+    <p class="description">
+      杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。
+      將鏡頭對準名片，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
     </p>
   </div>
 
   <div class="intro-footer">
-    <div class="stats">
-      <span data-zh="可收集品種" data-en="Species to Collect">可收集品種</span>
-      <strong>03 / <span style="font-size:18px; opacity:0.5;">12</span></strong>
-    </div>
-    <button class="start-btn" id="startBtn">
-      <span data-zh="開始尋花" data-en="Begin Hunt">開始尋花</span>
-      <span class="arrow">→</span>
+    <button class="start-btn" id="start-btn">
+      <span>開始尋花 →</span>
     </button>
+    <div class="credits">校園植物學社</div>
   </div>
 </div>
 
-<!-- ============ AR UI OVERLAY ============ -->
-<div id="ar-ui">
-  <div class="ar-top">
-    <button class="exit-btn" id="exitBtn">×</button>
-    <div class="progress-card">
-      <div>
-        <div class="label" data-zh="已收集" data-en="Collected">已收集</div>
-      </div>
-      <div>
-        <span class="count" id="collectCount">0</span><span class="total"> / 3</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="scan-hint" id="scanHint">
-    <span class="corner-tr"></span>
-    <span class="corner-bl"></span>
-    <div class="scan-text">
-      Point at an azalea marker
-      <span class="scan-text-zh" data-zh="請對準杜鵑花標記" data-en="Point at an azalea marker">請對準杜鵑花標記</span>
-    </div>
-  </div>
-
-  <div class="info-panel" id="infoPanel">
-    <div class="info-eyebrow" data-zh="品種發現" data-en="Species Discovered">品種發現</div>
-    <div class="info-name-zh" id="speciesName">平戶杜鵑</div>
-    <div class="info-name-latin" id="speciesLatin">Rhododendron × pulchrum</div>
-
-    <div class="info-tabs">
-      <button class="info-tab active" data-tab="bio" data-zh="生態" data-en="Biology">生態</button>
-      <button class="info-tab" data-tab="culture" data-zh="文化" data-en="Culture">文化</button>
-      <button class="info-tab" data-tab="care" data-zh="照護" data-en="Care">照護</button>
-    </div>
-
-    <div class="info-content" id="infoContent">
-      杜鵑花喜酸性土壤（pH 4.5–6.0），偏好排水良好的腐植土，需要充足散射光與涼爽濕潤的環境。台灣校園常見的平戶杜鵑為大型雜交種，花期 3–5 月。
-    </div>
-
-    <div class="info-actions">
-      <button class="btn-collect" id="collectBtn" data-zh="收藏花譜" data-en="Collect">收藏花譜</button>
-      <button class="btn-close" id="closeInfo" data-zh="繼續尋花" data-en="Keep Hunting">繼續尋花</button>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
+<!-- ============ LOADING ============ -->
+<div id="loading">
+  <div class="loader"></div>
+  <div class="loading-text" id="loading-text">Initializing camera...</div>
 </div>
 
-<!-- ============ REVEAL INTRO (cinematic) ============ -->
-<div class="reveal-intro" id="reveal-intro">
-  <div class="reveal-intro-content">
-    <div class="reveal-intro-meta" data-zh="標本 · No. 001" data-en="SPECIMEN · No. 001">標本 · No. 001</div>
-    <div class="reveal-intro-zh">杜鵑現身</div>
-    <div class="reveal-intro-en">Azalea unfolds</div>
-  </div>
-</div>
-
-<!-- ============ FLOATING ACTION BUTTONS ============ -->
-<div class="floating-actions" id="floating-actions">
-  <button class="fab" data-action="bio">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z"/>
-      <circle cx="12" cy="14" r="2"/>
-    </svg>
-    <span class="label-zh" data-zh="生態" data-en="Ecology">生態</span>
-    <span class="label-en">Ecology</span>
-  </button>
-
-  <button class="fab" data-action="video">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="6" width="18" height="12" rx="1"/>
-      <path d="M10 10l4 2-4 2v-4z" fill="currentColor" stroke="none"/>
-    </svg>
-    <span class="label-zh" data-zh="影片" data-en="Video">影片</span>
-    <span class="label-en">Video</span>
-  </button>
-
-  <button class="fab" data-action="map">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C8.5 2 6 4.5 6 8c0 4 6 12 6 12s6-8 6-12c0-3.5-2.5-6-6-6z"/>
-      <circle cx="12" cy="8" r="2"/>
-    </svg>
-    <span class="label-zh" data-zh="地圖" data-en="Map">地圖</span>
-    <span class="label-en">Map</span>
-  </button>
-
-  <button class="fab" data-action="refs">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 3h12a2 2 0 012 2v16l-8-4-8 4V5a2 2 0 012-2z"/>
-      <line x1="9" y1="8" x2="15" y2="8"/>
-      <line x1="9" y1="12" x2="13" y2="12"/>
-    </svg>
-    <span class="label-zh" data-zh="文獻" data-en="Refs">文獻</span>
-    <span class="label-en">Refs</span>
-  </button>
-</div>
-
-<!-- ============ MODALS ============ -->
-
-<!-- Modal: Video -->
-<div class="modal" id="modal-video">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-zh="花開時序" data-en="Bloom Timeline">花開時序</span>
-        <span class="latin">Time-lapse footage</span>
-      </div>
-      <button class="modal-close" data-close>×</button>
-    </div>
-    <div class="modal-body">
-      <div class="video-wrap">
-        <iframe src="https://www.youtube.com/embed/9bcdy9tpfrs?rel=0"
-                title="Azalea bloom time-lapse"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen></iframe>
-      </div>
-      <p data-zh="從花苞至盛開的縮時影像，呈現杜鵑於春日早晨的綻放過程。"
-         data-en="Time-lapse footage showing the azalea unfolding from bud to full bloom on a spring morning.">
-      </p>
-      <p style="font-size:11px;color:var(--azalea-leaf-dark);margin-top:12px;"
-         data-zh="※ 替換 iframe 中的 YouTube ID 即可換成你的影片。"
-         data-en="※ Replace the YouTube ID in the iframe to use your own video.">
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Map -->
-<div class="modal" id="modal-map">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-zh="校園分布圖" data-en="Campus Distribution">校園分布圖</span>
-        <span class="latin">Survey locations</span>
-      </div>
-      <button class="modal-close" data-close>×</button>
-    </div>
-    <div class="modal-body">
-      <div class="map-wrap">
-        <strong data-zh="調查點 A · 行政大樓前" data-en="Site A · Admin Building">調查點 A · 行政大樓前</strong>
-        <div class="coord">24.1469° N, 120.6839° E</div>
-        <p style="margin-top:8px;font-size:12px;" data-zh="共記錄 12 株成熟個體，土壤 pH 4.8。"
-           data-en="12 mature individuals recorded; soil pH 4.8.">
-        </p>
-      </div>
-      <div class="map-wrap">
-        <strong data-zh="調查點 B · 圖書館後庭" data-en="Site B · Library Garden">調查點 B · 圖書館後庭</strong>
-        <div class="coord">24.1472° N, 120.6845° E</div>
-        <p style="margin-top:8px;font-size:12px;" data-zh="共記錄 8 株，半遮蔭環境。"
-           data-en="8 individuals; semi-shaded environment.">
-        </p>
-      </div>
-      <p style="font-size:11px;margin-top:12px;color:var(--azalea-leaf-dark);"
-         data-zh="※ 修改此區的座標和文字以符合你的調查地點。"
-         data-en="※ Edit the coordinates and text to match your survey sites.">
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: References -->
-<div class="modal" id="modal-refs">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-zh="參考文獻" data-en="References">參考文獻</span>
-        <span class="latin">Selected bibliography</span>
-      </div>
-      <button class="modal-close" data-close>×</button>
-    </div>
-    <div class="modal-body">
-      <ul>
-        <li>
-          <a href="https://en.wikipedia.org/wiki/Rhododendron" target="_blank" rel="noopener">Rhododendron — Wikipedia</a>
-          <span class="ref-meta">General taxonomy and species overview.</span>
-        </li>
-        <li>
-          <a href="https://www.gbif.org/species/2882769" target="_blank" rel="noopener">GBIF · Rhododendron simsii</a>
-          <span class="ref-meta">Global biodiversity occurrence data.</span>
-        </li>
-        <li>
-          <a href="https://powo.science.kew.org/results?q=rhododendron" target="_blank" rel="noopener">Plants of the World Online — Kew</a>
-          <span class="ref-meta">Authoritative botanical reference.</span>
-        </li>
-        <li>
-          <a href="#" target="_blank" rel="noopener" data-zh="校園植物調查報告 (PDF)" data-en="Campus Botanical Survey (PDF)">校園植物調查報告 (PDF)</a>
-          <span class="ref-meta" data-zh="替換為你的報告連結。" data-en="Replace with your own document link.">替換為你的報告連結。</span>
-        </li>
-      </ul>
-    </div>
-  </div>
+<!-- ============ ERROR ============ -->
+<div id="error-screen">
+  <h2 id="error-title">Camera Access Required</h2>
+  <p id="error-msg">This experience needs your camera.</p>
+  <div class="err-detail" id="err-detail"></div>
+  <button id="error-retry">Try Again</button>
 </div>
 
 <!-- ============ A-FRAME / MINDAR SCENE ============ -->
 <a-scene
   id="ar-scene"
-  class="hidden"
   mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
   color-space="sRGB"
   renderer="colorManagement: true"
   vr-mode-ui="enabled: false"
-  device-orientation-permission-ui="enabled: false"
-  embedded>
+  device-orientation-permission-ui="enabled: false">
 
-  <!-- Preload GLB asset (must be inside a-scene) -->
   <a-assets timeout="30000">
     <a-asset-item id="azaleaModel" src="./azalea.glb"></a-asset-item>
   </a-assets>
@@ -956,87 +459,60 @@
   <a-entity light="type: directional; color: #ffffff; intensity: 0.8" position="1 1 1"></a-entity>
   <a-entity light="type: directional; color: #ffd9e6; intensity: 0.4" position="-1 0.5 -1"></a-entity>
 
-  <!-- Target 0: Hirado Azalea -->
-  <a-entity mindar-image-target="targetIndex: 0" id="target-0">
+  <a-entity mindar-image-target="targetIndex: 0">
 
-    <!-- Decorative rotating ring -->
-    <a-ring color="#6d1b3e"
-            radius-inner="0.55"
-            radius-outer="0.58"
-            position="0 0 0"
-            rotation="-90 0 0"
-            opacity="0.6"
+    <!-- Decorative rings -->
+    <a-ring color="#6d1b3e" radius-inner="0.55" radius-outer="0.58"
+            rotation="-90 0 0" opacity="0.6"
             animation="property: rotation; to: -90 0 360; loop: true; dur: 20000; easing: linear"></a-ring>
-
-    <!-- Outer dashed ring -->
-    <a-ring color="#e8a5c0"
-            radius-inner="0.7"
-            radius-outer="0.72"
-            position="0 0 0"
-            rotation="-90 0 0"
-            opacity="0.4"
+    <a-ring color="#e8a5c0" radius-inner="0.7" radius-outer="0.72"
+            rotation="-90 0 0" opacity="0.4"
             animation="property: rotation; to: -90 0 -360; loop: true; dur: 30000; easing: linear"></a-ring>
 
-    <!-- 3D Azalea flower model (loaded from GLB) -->
+    <!-- 3D Azalea flower (GLB model) -->
     <a-gltf-model
       id="azalea-flower"
       src="#azaleaModel"
       position="0 0.3 0"
-      rotation="0 0 0"
-      scale="0.3 0.3 0.3"
-      visible="true"
-      animation__scale="property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound"
-      animation__rotate="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound"></a-gltf-model>
+      scale="0.05 0.05 0.05"
+      animation__bloom="property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound; delay: 600"
+      animation__shrink="property: scale; to: 0.05 0.05 0.05; dur: 400; startEvents: targetLost"
+      animation__rotate="property: rotation; to: 0 360 0; loop: true; dur: 18000; easing: linear; startEvents: targetFound"></a-gltf-model>
 
-    <!-- FALLBACK: procedural flower (shown if GLB fails to load) -->
-    <a-entity id="fallback-flower" position="0 0.3 0" scale="0.3 0.3 0.3" visible="false">
-      <!-- 5 petals arranged in flower shape -->
-      <a-sphere color="#e8a5c0" radius="0.15" position="0 0 0" scale="1 0.4 1"></a-sphere>
-      <a-sphere color="#f5d3de" radius="0.13" position="0.2 0 0" scale="1.3 0.4 0.9"></a-sphere>
-      <a-sphere color="#f5d3de" radius="0.13" position="-0.2 0 0" scale="1.3 0.4 0.9"></a-sphere>
-      <a-sphere color="#e8a5c0" radius="0.13" position="0 0 0.2" scale="0.9 0.4 1.3"></a-sphere>
-      <a-sphere color="#e8a5c0" radius="0.13" position="0 0 -0.2" scale="0.9 0.4 1.3"></a-sphere>
-      <!-- Yellow center -->
-      <a-sphere color="#c9a961" radius="0.06" position="0 0.04 0"></a-sphere>
-      <!-- Stamens -->
-      <a-cylinder color="#6d1b3e" radius="0.008" height="0.12" position="0.03 0.08 0" rotation="-15 0 0"></a-cylinder>
-      <a-cylinder color="#6d1b3e" radius="0.008" height="0.12" position="-0.03 0.08 0.03" rotation="15 0 0"></a-cylinder>
-      <a-cylinder color="#6d1b3e" radius="0.008" height="0.12" position="0 0.08 -0.03" rotation="0 0 15"></a-cylinder>
-    </a-entity>
-
-    <!-- Floating particles around flower -->
-    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 12000; easing: linear">
-      <a-sphere color="#f5d3de" radius="0.012" position="0.4 0.1 0" opacity="0.7"></a-sphere>
-      <a-sphere color="#e8a5c0" radius="0.01" position="-0.35 0.2 0.15" opacity="0.6"></a-sphere>
-      <a-sphere color="#f5d3de" radius="0.008" position="0.15 0.3 -0.35" opacity="0.5"></a-sphere>
-      <a-sphere color="#c9a961" radius="0.01" position="-0.2 0.05 -0.3" opacity="0.6"></a-sphere>
-    </a-entity>
-
-    <!-- Floating label above flower -->
+    <!-- Floating Latin label above flower -->
     <a-text value="Rhododendron x pulchrum"
-            color="#6d1b3e"
-            align="center"
-            width="2"
-            position="0 0.7 0"
+            color="#6d1b3e" align="center" width="2"
+            position="0 0.75 0"
+            scale="0 0 0"
             font="https://cdn.aframe.io/fonts/Roboto-msdf.json"
-            animation="property: position; to: 0 0.75 0; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine"></a-text>
+            animation__in="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1400"
+            animation__out="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost"
+            animation__hover="property: position; to: 0 0.8 0; dir: alternate; loop: true; dur: 2500; easing: easeInOutSine"></a-text>
 
-    <!-- ============ FLOATING UI PANELS (Visual Feeder style) ============ -->
-    <!-- 4 panels at corners, scale-in with staggered delay after targetFound -->
+    <!-- ============ 4 PANELS — fly out from flower ============ -->
+    <!-- Each panel: scale-in from 0 + fly-out from center using position animation -->
 
-    <!-- Panel 01: Top-left · Ecology -->
-    <a-entity position="-0.55 0.45 0.05" scale="0 0 0"
-      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 800">
+    <!-- Panel 01: BIO (top-left) -->
+    <a-entity id="panel-bio"
+      position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: -0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 1500"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 1500"
+      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#6d1b3e" position="0 0.0775 0.001"></a-plane>
       <a-text value="01" color="#6d1b3e" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
-      <a-text value="ECOLOGY" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="BIO" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
       <a-text value="生態" color="#6d1b3e" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- Panel 02: Top-right · Video -->
-    <a-entity position="0.55 0.45 0.05" scale="0 0 0"
-      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1000">
+    <!-- Panel 02: VIDEO (top-right) -->
+    <a-entity id="panel-video"
+      position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: 0.55 0.45 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 1700"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 1700"
+      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#4a6741" position="0 0.0775 0.001"></a-plane>
       <a-text value="02" color="#4a6741" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
@@ -1044,496 +520,257 @@
       <a-text value="影片" color="#4a6741" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- Panel 03: Bottom-left · Map -->
-    <a-entity position="-0.55 -0.5 0.05" scale="0 0 0"
-      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1200">
+    <!-- Panel 03: LIFECYCLE (bottom-left) -->
+    <a-entity id="panel-life"
+      position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: -0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 1900"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 1900"
+      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#c9a961" position="0 0.0775 0.001"></a-plane>
       <a-text value="03" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
-      <a-text value="MAP" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
-      <a-text value="地圖" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
+      <a-text value="LIFECYCLE" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="生命週期" color="#c9a961" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
 
-    <!-- Panel 04: Bottom-right · References -->
-    <a-entity position="0.55 -0.5 0.05" scale="0 0 0"
-      animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 600; easing: easeOutBack; startEvents: targetFound; delay: 1400">
+    <!-- Panel 04: AUDIO (bottom-right) -->
+    <a-entity id="panel-audio"
+      position="0 0 0" scale="0 0 0"
+      animation__pos="property: position; from: 0 0 0; to: 0.55 -0.5 0.05; dur: 700; easing: easeOutCubic; startEvents: targetFound; delay: 2100"
+      animation__scl="property: scale; from: 0 0 0; to: 1 1 1; dur: 500; easing: easeOutBack; startEvents: targetFound; delay: 2100"
+      animation__exit-pos="property: position; to: 0 0 0; dur: 300; startEvents: targetLost"
+      animation__exit-scl="property: scale; to: 0 0 0; dur: 300; startEvents: targetLost">
       <a-plane width="0.35" height="0.18" color="#faf6f1" opacity="0.95"></a-plane>
       <a-plane width="0.35" height="0.025" color="#1a0e14" position="0 0.0775 0.001"></a-plane>
       <a-text value="04" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.6" align="left" position="-0.13 0.04 0.002" opacity="0.4"></a-text>
-      <a-text value="REFS" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
-      <a-text value="文獻" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
+      <a-text value="AUDIO" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.7" align="left" position="-0.13 -0.005 0.002"></a-text>
+      <a-text value="聲音" color="#1a0e14" font="https://cdn.aframe.io/fonts/Roboto-msdf.json" width="0.5" align="left" position="-0.13 -0.05 0.002"></a-text>
     </a-entity>
-  </a-entity>
 
+  </a-entity>
 </a-scene>
 
+<!-- ============ AR UI OVERLAY ============ -->
+<div id="ar-ui">
+  <div class="top-bar">
+    <button class="back-btn" id="back-btn">← BACK</button>
+    <div class="top-meta">
+      <div>標本 SPECIMEN</div>
+      <div><span class="num">001</span> / 03</div>
+    </div>
+  </div>
+
+  <div class="scan-hint" id="scan-hint">
+    <span class="corner c1"></span><span class="corner c2"></span>
+    <span class="corner c3"></span><span class="corner c4"></span>
+    <span class="label">POINT AT THE CARD · 將鏡頭對準名片</span>
+  </div>
+
+  <!-- Cinematic flash -->
+  <div class="flash" id="flash"></div>
+
+  <!-- Reveal text overlay -->
+  <div class="reveal-text" id="reveal-text">
+    <div class="reveal-text-content">
+      <div class="reveal-meta">SPECIMEN · No. 001</div>
+      <div class="reveal-zh">杜鵑現身</div>
+      <div class="reveal-en">Azalea unfolds</div>
+    </div>
+  </div>
+
+  <!-- 4 FAB buttons -->
+  <div class="fabs" id="fabs">
+    <button class="fab" data-action="bio">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z"/><circle cx="12" cy="14" r="2"/></svg>
+      <span class="lab-zh">生態</span>
+      <span class="lab-en">Bio</span>
+    </button>
+    <button class="fab" data-action="video">
+      <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M10 10l4 2-4 2v-4z" fill="currentColor" stroke="none"/></svg>
+      <span class="lab-zh">影片</span>
+      <span class="lab-en">Video</span>
+    </button>
+    <button class="fab" data-action="life">
+      <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="lab-zh">生命</span>
+      <span class="lab-en">Life</span>
+    </button>
+    <button class="fab" data-action="audio">
+      <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14"/></svg>
+      <span class="lab-zh">聲音</span>
+      <span class="lab-en">Audio</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+
+<!-- Modal: BIO -->
+<div class="modal" id="modal-bio">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        平戶杜鵑
+        <span class="latin">Rhododendron × pulchrum</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <h3>生長條件 · Growth Conditions</h3>
+      <p>常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。</p>
+      <span class="tag">酸性土</span><span class="tag">半遮蔭</span><span class="tag">春季</span>
+      <h3>形態 · Form</h3>
+      <p>株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。</p>
+      <h3>注意 · Caution</h3>
+      <p>⚠️ 全株含 grayanotoxin 毒素，誤食可致中毒。賞花無虞，請勿採食。</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: VIDEO -->
+<div class="modal" id="modal-video">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        花開時序
+        <span class="latin">Time-lapse footage</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="video-wrap">
+        <iframe src="https://www.youtube.com/embed/9bcdy9tpfrs?rel=0"
+                title="Azalea bloom time-lapse"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <p>從花苞至盛開的縮時影像，記錄杜鵑於春日清晨綻放的瞬間。</p>
+      <p style="font-size:11px;color:var(--azalea-leaf);margin-top:8px;">
+        ※ 替換 iframe 中的 YouTube ID 即可換成你的影片。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: LIFECYCLE -->
+<div class="modal" id="modal-life">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        生命週期
+        <span class="latin">Annual lifecycle</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px;">點選各階段以查看詳細說明 · Tap a stage to see details</p>
+
+      <div class="lifecycle">
+        <div class="lc-stage active" data-stage="0">
+          <svg viewBox="0 0 40 50">
+            <!-- Bud sprouting -->
+            <line x1="20" y1="50" x2="20" y2="32" stroke="#4a6741" stroke-width="2"/>
+            <ellipse cx="20" cy="28" rx="5" ry="8" fill="#4a6741"/>
+          </svg>
+          <div class="lc-num">01</div>
+          <div class="lc-name">芽</div>
+          <div class="lc-month">JAN</div>
+        </div>
+        <div class="lc-stage" data-stage="1">
+          <svg viewBox="0 0 40 50">
+            <line x1="20" y1="50" x2="20" y2="28" stroke="#4a6741" stroke-width="2"/>
+            <path d="M14 28 Q20 18 26 28 Q26 22 20 18 Q14 22 14 28 Z" fill="#e8a5c0"/>
+            <ellipse cx="20" cy="22" rx="5" ry="7" fill="#6d1b3e"/>
+          </svg>
+          <div class="lc-num">02</div>
+          <div class="lc-name">蕾</div>
+          <div class="lc-month">FEB</div>
+        </div>
+        <div class="lc-stage" data-stage="2">
+          <svg viewBox="0 0 40 50">
+            <line x1="20" y1="50" x2="20" y2="35" stroke="#4a6741" stroke-width="2"/>
+            <path d="M20 12 L24 22 L34 22 L26 28 L29 38 L20 32 L11 38 L14 28 L6 22 L16 22 Z" fill="#e8a5c0"/>
+            <circle cx="20" cy="25" r="3" fill="#c9a961"/>
+          </svg>
+          <div class="lc-num">03</div>
+          <div class="lc-name">花</div>
+          <div class="lc-month">MAR</div>
+        </div>
+        <div class="lc-stage" data-stage="3">
+          <svg viewBox="0 0 40 50">
+            <line x1="20" y1="50" x2="20" y2="38" stroke="#4a6741" stroke-width="2"/>
+            <path d="M20 38 Q14 30 12 38" stroke="#c9a961" stroke-width="2" fill="none"/>
+            <path d="M20 38 Q26 30 28 38" stroke="#c9a961" stroke-width="2" fill="none"/>
+            <ellipse cx="14" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6"/>
+            <ellipse cx="26" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6"/>
+          </svg>
+          <div class="lc-num">04</div>
+          <div class="lc-name">果</div>
+          <div class="lc-month">JUN</div>
+        </div>
+      </div>
+
+      <div class="lc-detail" id="lc-detail">
+        <h3 style="margin-top:0;font-size:14px;" id="lc-title">芽期 · Bud Stage</h3>
+        <p id="lc-desc" style="margin-bottom:0;">冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: AUDIO -->
+<div class="modal" id="modal-audio">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        聲音導覽
+        <span class="latin">Audio narration</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="audio-player">
+        <button class="audio-btn" id="audio-btn-zh" data-lang="zh-TW">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="audio-info">
+          <div class="audio-title">中文導覽</div>
+          <div class="audio-sub">~ 30 秒</div>
+        </div>
+      </div>
+
+      <div class="audio-player">
+        <button class="audio-btn" id="audio-btn-en" data-lang="en-US">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="audio-info">
+          <div class="audio-title">English Narration</div>
+          <div class="audio-sub">~ 30 sec</div>
+        </div>
+      </div>
+
+      <p style="font-size:11px;color:var(--azalea-leaf);margin-top:16px;">
+        ※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。
+      </p>
+    </div>
+  </div>
+</div>
+
 <script>
-  // =========================
-  // SPECIES DATABASE
-  // =========================
-  const species = [
-    {
-      nameZh: '平戶杜鵑',
-      nameLatin: 'Rhododendron × pulchrum',
-      bio: {
-        zh: '杜鵑花喜酸性土壤（pH 4.5–6.0），偏好排水良好的腐植土，需要充足散射光與涼爽濕潤的環境。台灣校園常見的平戶杜鵑為大型雜交種，花期 3–5 月，花色多為淡紫紅至粉白。',
-        en: 'Azaleas thrive in acidic soil (pH 4.5–6.0) with well-drained humus, indirect light, and cool humid air. Hirado azalea — a large hybrid common on Taiwanese campuses — blooms March to May in shades from soft mauve to blush.'
-      },
-      culture: {
-        zh: '在印尼，杜鵑花並非文化象徵，僅在 Puncak、Bandung 等高地與茂物植物園可見，被視為觀賞植物。其有限的生長條件成為「條件性之美」的隱喻——只有在被悉心照料的環境中方能存在。',
-        en: 'In Indonesia, the azalea is not a cultural symbol — found only in highlands like Puncak, Bandung, and Kebun Raya Bogor as ornamentals. Its restricted conditions become a metaphor for "conditional beauty" — existing only under carefully managed care.'
-      },
-      care: {
-        zh: '澆水：保持土壤濕潤但不積水，使用雨水或軟水更佳。施肥：花期前施用酸性肥料。修剪：花後立即進行，避免影響來年花芽。注意：植株含有梫木毒素，誤食有害。',
-        en: 'Water: keep soil moist, never waterlogged — rainwater preferred. Feed: apply acidic fertilizer before bloom. Prune: immediately after flowering. Caution: leaves contain grayanotoxins — toxic if ingested.'
-      }
-    }
-  ];
-
-  // =========================
-  // STATE
-  // =========================
-  const state = {
-    lang: 'zh',
-    collected: new Set(),
-    currentTarget: null,
-    currentTab: 'bio',
-    arActive: false
-  };
-
-  // =========================
-  // LANGUAGE SWITCHING
-  // =========================
-  function applyLang() {
-    document.documentElement.lang = state.lang === 'zh' ? 'zh-TW' : 'en';
-
-    document.querySelectorAll('[data-zh]').forEach(el => {
-      const text = el.getAttribute(state.lang === 'zh' ? 'data-zh' : 'data-en');
-      if (text) el.textContent = text;
-    });
-    document.querySelectorAll('[data-zh-html]').forEach(el => {
-      const html = el.getAttribute(state.lang === 'zh' ? 'data-zh-html' : 'data-en-html');
-      if (html) el.innerHTML = html;
-    });
-
-    // Update info content if visible
-    if (state.currentTarget !== null) {
-      updateInfoContent();
-    }
-  }
-
-  document.querySelectorAll('.lang-toggle button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.lang = btn.dataset.lang;
-      applyLang();
-    });
-  });
-
-  // =========================
-  // START AR
-  // =========================
-  const intro = document.getElementById('intro');
-  const arUI = document.getElementById('ar-ui');
-  const arScene = document.getElementById('ar-scene');
-  const startBtn = document.getElementById('startBtn');
-
-  startBtn.addEventListener('click', async () => {
-    intro.classList.add('hidden');
-
-    // STEP 1: Request camera permission proactively BEFORE MindAR starts
-    // This way we get a clear error if denied, instead of MindAR silently failing
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      // Stop our test stream — MindAR will request its own
-      stream.getTracks().forEach(track => track.stop());
-      console.log('✓ Camera permission granted');
-    } catch (permErr) {
-      console.error('Camera permission error:', permErr);
-      let msg;
-      if (permErr.name === 'NotAllowedError') {
-        msg = state.lang === 'zh'
-          ? '相機權限被拒絕。請點擊網址列旁的鎖頭圖示 → 允許相機'
-          : 'Camera blocked. Click 🔒 icon → Allow camera';
-      } else if (permErr.name === 'NotFoundError') {
-        msg = state.lang === 'zh' ? '找不到相機裝置' : 'No camera device found';
-      } else {
-        msg = state.lang === 'zh' ? '相機錯誤：' + permErr.message : 'Camera error: ' + permErr.message;
-      }
-      showToast(msg);
-      intro.classList.remove('hidden');
-      return;
-    }
-
-    setTimeout(async () => {
-      arScene.classList.remove('hidden');
-      arUI.classList.add('active');
-
-      showToast(state.lang === 'zh' ? '正在啟動相機...' : 'Starting camera...');
-
-      const sceneEl = document.querySelector('a-scene');
-
-      if (!sceneEl.hasLoaded) {
-        await new Promise(resolve => sceneEl.addEventListener('loaded', resolve, { once: true }));
-      }
-
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
-      const arSystem = sceneEl.systems['mindar-image-system'];
-
-      if (!arSystem) {
-        showToast(state.lang === 'zh' ? 'AR 系統載入失敗' : 'AR system failed to load');
-        console.error('mindar-image-system not found');
-        return;
-      }
-
-      try {
-        await arSystem.start();
-        state.arActive = true;
-
-        // Debug: check if video element was created
-        setTimeout(() => {
-          const videos = document.querySelectorAll('video');
-          console.log('Videos found in DOM:', videos.length);
-          videos.forEach((v, i) => {
-            console.log(`Video ${i}:`, {
-              srcObject: !!v.srcObject,
-              width: v.videoWidth,
-              height: v.videoHeight,
-              paused: v.paused,
-              display: getComputedStyle(v).display,
-              visibility: getComputedStyle(v).visibility,
-              zIndex: getComputedStyle(v).zIndex,
-              position: getComputedStyle(v).position
-            });
-            // Force play if paused
-            if (v.paused && v.srcObject) {
-              v.play().catch(e => console.warn('Video play failed:', e));
-            }
-          });
-          window.dispatchEvent(new Event('resize'));
-        }, 1000);
-
-        showToast(state.lang === 'zh' ? '✓ 請對準標記' : '✓ Point at marker');
-      } catch (err) {
-        showToast(state.lang === 'zh' ? '相機啟動失敗：' + err.message : 'Camera failed: ' + err.message);
-        console.error('AR start error:', err);
-      }
-    }, 800);
-  });
-
-  // =========================
-  // EXIT AR
-  // =========================
-  document.getElementById('exitBtn').addEventListener('click', () => {
-    const sceneEl = document.querySelector('a-scene');
-    const arSystem = sceneEl.systems['mindar-image-system'];
-    if (state.arActive) arSystem.stop();
-    state.arActive = false;
-
-    arScene.classList.add('hidden');
-    arUI.classList.remove('active');
-    intro.classList.remove('hidden');
-    document.getElementById('infoPanel').classList.remove('visible');
-    document.getElementById('scanHint').classList.remove('found');
-  });
-
-  // =========================
-  // TARGET FOUND / LOST
-  // =========================
-  function setupTargetListeners() {
-    species.forEach((_, idx) => {
-      const target = document.querySelector(`#target-${idx}`);
-      if (!target) return;
-
-      target.addEventListener('targetFound', () => {
-        state.currentTarget = idx;
-        document.getElementById('scanHint').classList.add('found');
-        showInfoPanel(idx);
-
-        // ============ VISUAL FEEDER REVEAL SEQUENCE ============
-        const revealEl = document.getElementById('reveal-intro');
-        const fabEl = document.getElementById('floating-actions');
-        if (revealEl && fabEl) {
-          setTimeout(() => revealEl.classList.add('show'), 400);
-          setTimeout(() => revealEl.classList.remove('show'), 2900);
-          setTimeout(() => fabEl.classList.add('show'), 1800);
-        }
-      });
-
-      target.addEventListener('targetLost', () => {
-        // Hide reveal & FAB on target lost
-        const revealEl = document.getElementById('reveal-intro');
-        const fabEl = document.getElementById('floating-actions');
-        if (revealEl) revealEl.classList.remove('show');
-        if (fabEl) fabEl.classList.remove('show');
-      });
-    });
-  }
-
-  // Wait for scene to be ready
-  document.querySelector('a-scene').addEventListener('loaded', () => {
-    setupTargetListeners();
-    setupModelFallback();
-  });
-
-  // =========================
-  // GLB MODEL LOAD DETECTION
-  // =========================
-  function setupModelFallback() {
-    const glbModel = document.getElementById('azalea-flower');
-    const fallback = document.getElementById('fallback-flower');
-
-    if (!glbModel || !fallback) return;
-
-    let modelLoaded = false;
-
-    // Listen for successful GLB load
-    glbModel.addEventListener('model-loaded', (e) => {
-      modelLoaded = true;
-      console.log('✓ GLB model loaded successfully');
-
-      const obj = e.detail.model;
-      let meshCount = 0;
-      let flowerMesh = null;
-
-      // STEP 1: Hide Insect/non-flower nodes BEFORE computing bbox
-      obj.traverse((node) => {
-        // Hide nodes by name
-        if (node.name) {
-          const lname = node.name.toLowerCase();
-          if (lname.includes('insect') || lname.includes('bee') || lname === 'object_5') {
-            node.visible = false;
-            console.log('Hidden node:', node.name);
-          }
-        }
-      });
-
-      // STEP 2: Process materials — extract diffuse texture from spec-gloss extension
-      obj.traverse((node) => {
-        if (node.isMesh && node.visible) {
-          meshCount++;
-          flowerMesh = node;
-
-          if (node.material) {
-            const mat = node.material;
-
-            // Try to find any existing texture (diffuse/map/specGlossiness)
-            let foundTexture = mat.map;
-
-            // Three.js sometimes loads spec-gloss textures into different properties
-            // Check userData and traverse for textures
-            if (!foundTexture && mat.userData) {
-              for (const key in mat.userData) {
-                if (mat.userData[key] && mat.userData[key].isTexture) {
-                  foundTexture = mat.userData[key];
-                  console.log('Found texture in userData:', key);
-                  break;
-                }
-              }
-            }
-
-            // Check material's all properties for any texture
-            if (!foundTexture) {
-              for (const key in mat) {
-                if (mat[key] && mat[key].isTexture && key !== 'normalMap' && key !== 'envMap') {
-                  foundTexture = mat[key];
-                  console.log('Found texture at:', key);
-                  break;
-                }
-              }
-            }
-
-            // Create a fresh standard material (replaces broken spec-gloss)
-            const newMat = new THREE.MeshStandardMaterial({
-              map: foundTexture || null,
-              color: foundTexture ? 0xffffff : 0xe85d5d, // white if texture, red if not (azalea red)
-              side: THREE.DoubleSide,
-              roughness: 0.6,
-              metalness: 0.0,
-              transparent: false,
-              opacity: 1.0
-            });
-
-            // Preserve normal map if exists
-            if (mat.normalMap) {
-              newMat.normalMap = mat.normalMap;
-            }
-
-            node.material = newMat;
-            node.material.needsUpdate = true;
-
-            console.log('Material applied:', {
-              hasTexture: !!foundTexture,
-              meshName: node.name
-            });
-          }
-        }
-      });
-      console.log(`Visible meshes: ${meshCount}`);
-
-      // STEP 3: Compute bounding box ONLY of visible meshes (excludes hidden Insect)
-      const box = new THREE.Box3();
-      obj.traverse((node) => {
-        if (node.isMesh && node.visible) {
-          node.geometry.computeBoundingBox();
-          const meshBox = node.geometry.boundingBox.clone();
-          meshBox.applyMatrix4(node.matrixWorld);
-          box.union(meshBox);
-        }
-      });
-
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-
-      console.log('Flower bbox size:', size.x.toFixed(3), size.y.toFixed(3), size.z.toFixed(3));
-      console.log('Flower bbox center:', center.x.toFixed(3), center.y.toFixed(3), center.z.toFixed(3));
-
-      // STEP 4: Auto-scale to fit marker (~0.6 units max dimension)
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const targetSize = 0.5;
-      const autoScale = maxDim > 0 ? targetSize / maxDim : 0.5;
-
-      console.log('Auto-scale factor:', autoScale.toFixed(4));
-
-      // STEP 5: Apply scale and center the flower above marker
-      glbModel.setAttribute('scale', `${autoScale} ${autoScale} ${autoScale}`);
-
-      const offsetX = -center.x * autoScale;
-      const offsetY = -center.y * autoScale + 0.25; // float above marker
-      const offsetZ = -center.z * autoScale;
-      glbModel.setAttribute('position', `${offsetX} ${offsetY} ${offsetZ}`);
-
-      // Remove conflicting animations
-      glbModel.removeAttribute('animation__scale');
-
-      // Add gentle pop-in animation that respects auto-scale
-      glbModel.setAttribute('animation__bounce',
-        `property: scale; from: ${autoScale*0.1} ${autoScale*0.1} ${autoScale*0.1}; to: ${autoScale} ${autoScale} ${autoScale}; dur: 1500; easing: easeOutElastic; startEvents: targetFound`);
-    });
-
-    glbModel.addEventListener('model-error', (e) => {
-      console.error('✗ GLB model failed to load:', e.detail);
-      glbModel.setAttribute('visible', 'false');
-      fallback.setAttribute('visible', 'true');
-      fallback.setAttribute('animation__scale',
-        'property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound');
-      fallback.setAttribute('animation__rotate',
-        'property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound');
-    });
-
-    setTimeout(() => {
-      if (!modelLoaded) {
-        console.warn('GLB load timeout — showing fallback flower');
-        glbModel.setAttribute('visible', 'false');
-        fallback.setAttribute('visible', 'true');
-        fallback.setAttribute('animation__scale',
-          'property: scale; from: 0.05 0.05 0.05; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: targetFound');
-        fallback.setAttribute('animation__rotate',
-          'property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear; startEvents: targetFound');
-      }
-    }, 5000);
-  }
-
-  // =========================
-  // INFO PANEL
-  // =========================
-  function showInfoPanel(idx) {
-    const sp = species[idx];
-    document.getElementById('speciesName').textContent = sp.nameZh;
-    document.getElementById('speciesLatin').textContent = sp.nameLatin;
-    state.currentTab = 'bio';
-    document.querySelectorAll('.info-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === 'bio');
-    });
-    updateInfoContent();
-    document.getElementById('infoPanel').classList.add('visible');
-
-    // Update collect button state
-    const collectBtn = document.getElementById('collectBtn');
-    if (state.collected.has(idx)) {
-      collectBtn.classList.add('collected');
-      collectBtn.textContent = state.lang === 'zh' ? '已收藏 ✓' : 'Collected ✓';
-    } else {
-      collectBtn.classList.remove('collected');
-      collectBtn.textContent = state.lang === 'zh' ? '收藏花譜' : 'Collect';
-    }
-  }
-
-  function updateInfoContent() {
-    if (state.currentTarget === null) return;
-    const sp = species[state.currentTarget];
-    const content = sp[state.currentTab][state.lang];
-    document.getElementById('infoContent').textContent = content;
-  }
-
-  document.querySelectorAll('.info-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.info-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      state.currentTab = tab.dataset.tab;
-      updateInfoContent();
-    });
-  });
-
-  document.getElementById('closeInfo').addEventListener('click', () => {
-    document.getElementById('infoPanel').classList.remove('visible');
-    document.getElementById('scanHint').classList.remove('found');
-    state.currentTarget = null;
-  });
-
-  // =========================
-  // COLLECT
-  // =========================
-  document.getElementById('collectBtn').addEventListener('click', () => {
-    if (state.currentTarget === null) return;
-    if (state.collected.has(state.currentTarget)) return;
-
-    state.collected.add(state.currentTarget);
-    document.getElementById('collectCount').textContent = state.collected.size;
-
-    const collectBtn = document.getElementById('collectBtn');
-    collectBtn.classList.add('collected');
-    collectBtn.textContent = state.lang === 'zh' ? '已收藏 ✓' : 'Collected ✓';
-
-    showToast(state.lang === 'zh' ? '✿ 已加入花譜' : '✿ Added to herbarium');
-  });
-
-  // =========================
-  // TOAST
-  // =========================
-  let toastTimeout;
-  function showToast(message) {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-      toast.classList.remove('show');
-    }, 2500);
-  }
-
-  // Initial language application
-  applyLang();
-
   // ============================================================
-  // CAMERA FALLBACK PATCH (cho desktop dùng camera trước)
+  // CAMERA FALLBACK (desktop dùng camera trước)
   // ============================================================
-  // MindAR mặc định request facingMode: 'environment' (camera sau).
-  // Trên desktop chỉ có camera trước → patch tự fallback về { video: true }.
   (function patchGetUserMedia() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    if (!navigator.mediaDevices?.getUserMedia) return;
     const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
     navigator.mediaDevices.getUserMedia = async function(constraints) {
       try {
         return await original(constraints);
       } catch (err) {
-        if ((err.name === 'OverconstrainedError' || err.name === 'NotFoundError' || err.name === 'NotReadableError')
-            && constraints && constraints.video && typeof constraints.video === 'object') {
-          console.warn('Camera environment not available, falling back to default camera:', err.name);
+        if (['OverconstrainedError', 'NotFoundError', 'NotReadableError'].includes(err.name)
+            && constraints?.video && typeof constraints.video === 'object') {
+          console.warn('Falling back to default camera:', err.name);
           return await original({ ...constraints, video: true });
         }
         throw err;
@@ -1542,56 +779,237 @@
   })();
 
   // ============================================================
-  // FAB (Floating Action Button) handlers
+  // DOM REFS
+  // ============================================================
+  const intro = document.getElementById('intro');
+  const loading = document.getElementById('loading');
+  const loadingText = document.getElementById('loading-text');
+  const errorScreen = document.getElementById('error-screen');
+  const errDetail = document.getElementById('err-detail');
+  const arUI = document.getElementById('ar-ui');
+  const arScene = document.getElementById('ar-scene');
+  const scanHint = document.getElementById('scan-hint');
+  const flash = document.getElementById('flash');
+  const revealText = document.getElementById('reveal-text');
+  const fabs = document.getElementById('fabs');
+
+  function showError(title, msg, detail) {
+    document.getElementById('error-title').textContent = title;
+    document.getElementById('error-msg').textContent = msg;
+    errDetail.textContent = detail || '';
+    errDetail.style.display = detail ? 'block' : 'none';
+    loading.classList.remove('active');
+    errorScreen.classList.add('active');
+  }
+  document.getElementById('error-retry').addEventListener('click', () => {
+    errorScreen.classList.remove('active');
+    intro.classList.remove('fade-out');
+  });
+
+  // ============================================================
+  // START AR
+  // ============================================================
+  document.getElementById('start-btn').addEventListener('click', async () => {
+    const isSecure = window.isSecureContext ||
+                     ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (!isSecure) {
+      showError(
+        'Insecure Context',
+        'Web AR requires HTTPS or localhost. Run "python -m http.server 8000" then visit http://localhost:8000',
+        'Current URL: ' + location.href
+      );
+      return;
+    }
+
+    intro.classList.add('fade-out');
+    setTimeout(() => intro.style.display = 'none', 600);
+    loading.classList.add('active');
+    loadingText.textContent = 'Requesting camera...';
+
+    try {
+      const test = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      test.getTracks().forEach(t => t.stop());
+    } catch (err) {
+      showError('Camera Permission Denied',
+        'Please allow camera access and try again.',
+        err.name + ': ' + err.message);
+      return;
+    }
+
+    loadingText.textContent = 'Loading AR engine...';
+    arScene.classList.add('active');
+
+    if (arScene.hasLoaded) startMindAR();
+    else arScene.addEventListener('loaded', startMindAR, { once: true });
+  });
+
+  async function startMindAR() {
+    try {
+      const sys = arScene.systems['mindar-image-system'];
+      if (!sys) throw new Error('mindar-image-system not found');
+      loadingText.textContent = 'Starting camera...';
+      await sys.start();
+      loading.classList.remove('active');
+      arUI.classList.add('active');
+    } catch (err) {
+      console.error('MindAR start error:', err);
+      showError('AR Start Failed', 'Could not start MindAR.',
+        err.message || String(err));
+    }
+  }
+
+  // ============================================================
+  // TARGET FOUND / LOST — cinematic reveal sequence
+  // ============================================================
+  arScene.addEventListener('loaded', () => {
+    const target = document.querySelector('[mindar-image-target]');
+    if (!target) return;
+
+    target.addEventListener('targetFound', () => {
+      scanHint.classList.add('hide');
+
+      // 1. Flash trắng (0ms)
+      flash.classList.remove('fire');
+      void flash.offsetWidth; // force reflow
+      flash.classList.add('fire');
+
+      // 2. Reveal text "杜鵑現身" (300ms - 2800ms)
+      setTimeout(() => revealText.classList.add('show'), 300);
+      setTimeout(() => revealText.classList.remove('show'), 2800);
+
+      // 3. FAB buttons hiện sau khi panels đã bay xong (2400ms)
+      setTimeout(() => fabs.classList.add('show'), 2400);
+    });
+
+    target.addEventListener('targetLost', () => {
+      scanHint.classList.remove('hide');
+      revealText.classList.remove('show');
+      fabs.classList.remove('show');
+      closeAllModals();
+    });
+  });
+
+  // ============================================================
+  // BACK
+  // ============================================================
+  document.getElementById('back-btn').addEventListener('click', async () => {
+    try {
+      const sys = arScene.systems['mindar-image-system'];
+      if (sys?.stop) await sys.stop();
+    } catch (e) { console.warn(e); }
+    closeAllModals();
+    arUI.classList.remove('active');
+    arScene.classList.remove('active');
+    fabs.classList.remove('show');
+    revealText.classList.remove('show');
+    intro.style.display = 'flex';
+    intro.classList.remove('fade-out');
+  });
+
+  // ============================================================
+  // FAB → MODAL
   // ============================================================
   document.querySelectorAll('.fab').forEach(fab => {
     fab.addEventListener('click', () => {
+      closeAllModals();
       const action = fab.dataset.action;
-      if (action === 'bio') {
-        // Mở info panel cũ (đã có sẵn)
-        document.getElementById('infoPanel').classList.add('visible');
-      } else {
-        // Mở modal mới (video / map / refs)
-        closeAllModals();
-        const modal = document.getElementById('modal-' + action);
-        if (modal) modal.classList.add('show');
-      }
+      const modal = document.getElementById('modal-' + action);
+      if (modal) modal.classList.add('show');
     });
   });
 
-  // Close modal handlers
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => {
       const modal = btn.closest('.modal');
-      if (modal) {
-        modal.classList.remove('show');
-        modal.querySelectorAll('iframe').forEach(iframe => {
-          const src = iframe.src; iframe.src = ''; iframe.src = src;
-        });
-      }
+      if (modal) closeModal(modal);
     });
   });
 
-  // Click outside modal to close
   document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('show');
-        modal.querySelectorAll('iframe').forEach(iframe => {
-          const src = iframe.src; iframe.src = ''; iframe.src = src;
-        });
-      }
+    modal.addEventListener('click', e => {
+      if (e.target === modal) closeModal(modal);
     });
   });
+
+  function closeModal(modal) {
+    modal.classList.remove('show');
+    // Stop YouTube playback
+    modal.querySelectorAll('iframe').forEach(i => {
+      const src = i.src; i.src = ''; i.src = src;
+    });
+    // Stop speech
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    document.querySelectorAll('.audio-btn.playing').forEach(b => b.classList.remove('playing'));
+  }
 
   function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(m => {
-      m.classList.remove('show');
-      m.querySelectorAll('iframe').forEach(iframe => {
-        const src = iframe.src; iframe.src = ''; iframe.src = src;
-      });
-    });
+    document.querySelectorAll('.modal').forEach(m => closeModal(m));
   }
+
+  // ============================================================
+  // LIFECYCLE STAGES
+  // ============================================================
+  const lifecycleData = [
+    { title: '芽期 · Bud Stage', desc: '冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。' },
+    { title: '蕾期 · Pre-bloom', desc: '花苞膨大，外層鱗片裂開，露出粉紅色花瓣。此時需要充足光照與適度濕度，溫度回升加速綻放。' },
+    { title: '花期 · Bloom', desc: '3–5 月盛放，五瓣對稱，雄蕊外露。花色由純白、淡粉至深桃紅，吸引蝴蝶與蜜蜂授粉。' },
+    { title: '果期 · Fruit', desc: '花後結蒴果，6 月成熟裂開，散播微小種子。一個蒴果可含數百枚種子，藉風力傳播。' }
+  ];
+  document.querySelectorAll('.lc-stage').forEach(stage => {
+    stage.addEventListener('click', () => {
+      document.querySelectorAll('.lc-stage').forEach(s => s.classList.remove('active'));
+      stage.classList.add('active');
+      const idx = parseInt(stage.dataset.stage);
+      const data = lifecycleData[idx];
+      document.getElementById('lc-title').textContent = data.title;
+      document.getElementById('lc-desc').textContent = data.desc;
+    });
+  });
+
+  // ============================================================
+  // AUDIO (Web Speech API)
+  // ============================================================
+  // CÁCH ĐỔI SANG FILE MP3 RIÊNG:
+  //   1. Đặt file vào folder, ví dụ: azalea-zh.mp3, azalea-en.mp3
+  //   2. Thay button bằng: <audio controls src="./azalea-zh.mp3"></audio>
+  //   3. Xoá đoạn handler bên dưới
+  const narrationText = {
+    'zh-TW': '杜鵑花，學名 Rhododendron pulchrum，原產於東亞地區。是常綠灌木，喜酸性土壤與半遮蔭環境。每年三月至五月盛開，花色從純白到深粉紅，象徵春日的回歸與校園的青春記憶。',
+    'en-US': 'The Hirado azalea, scientific name Rhododendron pulchrum, is native to East Asia. It is an evergreen shrub that thrives in acidic soil and semi-shaded conditions. Blooming from March to May, its flowers range from pure white to deep pink, symbolizing the return of spring and the memory of campus youth.'
+  };
+
+  document.querySelectorAll('.audio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      const text = narrationText[lang];
+
+      if (!window.speechSynthesis) {
+        alert('Your browser does not support speech synthesis.');
+        return;
+      }
+
+      // If this button is playing, stop it
+      if (btn.classList.contains('playing')) {
+        speechSynthesis.cancel();
+        btn.classList.remove('playing');
+        return;
+      }
+
+      // Cancel any other playing speech
+      speechSynthesis.cancel();
+      document.querySelectorAll('.audio-btn').forEach(b => b.classList.remove('playing'));
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = lang;
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      utter.onend = () => btn.classList.remove('playing');
+      utter.onerror = () => btn.classList.remove('playing');
+
+      btn.classList.add('playing');
+      speechSynthesis.speak(utter);
+    });
+  });
 </script>
 
 </body>

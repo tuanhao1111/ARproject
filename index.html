@@ -656,46 +656,45 @@
   <a-entity light="type: directional; color: #ffd9e6; intensity: 0.4" position="-1 0.5 -1"></a-entity>
 
   <!-- ============ MINDAR TARGET ============ -->
+  <!-- COORDINATE SYSTEM REMINDER (MindAR image target):
+       - Marker plane = XY (X right, Y up).
+       - Z = OUT of marker (toward camera). Z > 0 floats above card.
+       - 1 unit ≈ marker WIDTH. Marker fits in roughly x:[-0.5,0.5], y:[-0.5/aspect, 0.5/aspect].
+       LAYOUT (Visual Feeder style):
+       - Video lies FLAT ON the card, fills the marker area, acts as a "screen" on the card.
+       - Flower floats ABOVE the card (positive Z) at center, user can rotate it freely.
+  -->
   <a-entity mindar-image-target="targetIndex: 0">
 
-    <!-- Decorative rings (tĩnh — auto-rotate đã tắt theo yêu cầu) -->
-    <a-ring color="#6d1b3e" radius-inner="0.55" radius-outer="0.58"
-            rotation="-90 0 0" opacity="0.6"></a-ring>
-    <a-ring color="#e8a5c0" radius-inner="0.7" radius-outer="0.72"
-            rotation="-90 0 0" opacity="0.4"></a-ring>
-
     <!-- ============ PINCH-WRAPPER ============ -->
-    <!-- Wrapper entity: user pinch/drag áp lên ĐÂY (không phải lên hoa).
-         MindAR áp transform lên target. Wrapper là child của target nên kế thừa tracking,
-         nhưng pinch/drag trên wrapper không xung đột với MindAR matrix.
-         → KHÔNG còn rung giật. -->
+    <!-- All user-controlled transforms (pinch/drag/pan) apply HERE, not on the flower.
+         MindAR controls the target matrix; we control the wrapper. Two independent
+         layers → no jitter. -->
     <a-entity id="pinch-wrapper" position="0 0 0" scale="1 1 1">
 
-      <!-- 3D Azalea flower - GIỮA marker, KHÔNG auto-rotate (user xoay bằng ngón tay) -->
+      <!-- ============ AR VIDEO (background, on the card) ============ -->
+      <!-- Lies on the marker plane, slightly above to avoid z-fighting (z=0.001).
+           Width 1 fills the marker; height 0.5625 keeps 16:9.
+           Animation: fade-in + subtle scale-up on targetFound. -->
+      <a-video id="ar-video"
+        src="#bloomVideo"
+        width="1" height="0.5625"
+        position="0 0 0.001"
+        rotation="0 0 0"
+        opacity="0"
+        animation__fade="property: opacity; from: 0; to: 1; dur: 600; easing: easeOutQuad; startEvents: targetFound"
+        animation__exit="property: opacity; to: 0; dur: 250; startEvents: targetLost">
+      </a-video>
+
+      <!-- ============ 3D Azalea flower (floats above card) ============ -->
+      <!-- Centered on marker, raised in Z so it pops above the video background.
+           User rotates via touch/mouse drag — applied directly to this entity by JS. -->
       <a-gltf-model
         id="azalea-flower"
         src="#azaleaModel"
-        position="-1 1.2 0"
-        scale="15 15 15"
+        position="0 0 0.3"
+        scale="8 8 8"
         rotation="0 0 0"></a-gltf-model>
-
-      <!-- Latin label nhỏ trên đầu hoa (tĩnh — đã tắt hover animation) -->
-      <a-text id="ar-label" value="Rhododendron x pulchrum"
-              color="#6d1b3e" align="center" width="2"
-              position="-1 2.5 0"
-              font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
-
-      <!-- ============ AR VIDEO FRAME ============ -->
-      <!-- Video nằm BÊN PHẢI hoa, cùng độ cao với hoa (y=1.2 trùng hoa).
-           Hoa ở (-1, 1.2), scale 15 → video phải ở x >= 2.0 mới không chồng. -->
-      <a-entity id="ar-video-frame"
-        position="0 0 0" scale="0 0 0"
-        animation__slide-pos="property: position; from: 0 0 0; to: 2.2 1.2 0.05; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
-        animation__slide-scl="property: scale; from: 0 0 0; to: 2 2 2; dur: 700; easing: easeOutBack; startEvents: targetFound; delay: 200"
-        animation__exit-scl="property: scale; to: 0 0 0; dur: 250; startEvents: targetLost">
-        <!-- Video tỷ lệ 16:9 sạch, không viền -->
-        <a-video src="#bloomVideo" width="1.6" height="0.9" position="0 0 0"></a-video>
-      </a-entity>
 
     </a-entity>
 

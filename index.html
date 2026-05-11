@@ -126,24 +126,195 @@
     .intro-footer {
       display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
     }
-    .start-btn {
-      background: var(--ink); color: var(--paper); border: none;
+    /* Stack the two CTA buttons vertically; game button sits ABOVE explore */
+    .intro-cta-stack {
+      display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+    }
+    .start-btn, .game-btn {
       padding: 18px 32px;
       font-family: 'Noto Serif TC', serif; font-weight: 700;
       font-size: 15px; letter-spacing: 0.3em; cursor: pointer;
       transition: all 0.3s; position: relative; overflow: hidden;
+      border: none;
     }
+    /* EXPLORE button (default educational mode) — solid ink */
+    .start-btn { background: var(--ink); color: var(--paper); }
     .start-btn::before {
       content: ''; position: absolute; inset: 0;
       background: var(--azalea-deep);
       transform: translateX(-100%); transition: transform 0.4s ease;
     }
-    .start-btn span { position: relative; z-index: 1; }
     .start-btn:hover::before { transform: translateX(0); }
+    /* GAME button (gamified mode) — outlined azalea, distinct from explore */
+    .game-btn {
+      background: transparent; color: var(--azalea-deep);
+      border: 2px solid var(--azalea-deep);
+    }
+    .game-btn::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--azalea-deep);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .game-btn span { position: relative; z-index: 1; transition: color 0.3s; }
+    .game-btn:hover::before { transform: scaleX(1); }
+    .game-btn:hover span { color: var(--paper); }
+    .game-btn .game-icon {
+      display: inline-block; margin-right: 8px; font-size: 13px;
+      transform: translateY(-1px);
+    }
+    .start-btn span { position: relative; z-index: 1; }
     .credits {
       font-family: 'Cormorant Garamond', serif; font-style: italic;
       font-size: 12px; color: var(--azalea-leaf); text-align: right;
     }
+
+    /* ============ GAME HUD (score panel, mission text) ============ */
+    #game-hud {
+      position: fixed; top: 70px; right: 16px; z-index: 90;
+      background: rgba(255, 252, 247, 0.92); backdrop-filter: blur(8px);
+      border: 1px solid var(--azalea-deep);
+      padding: 10px 14px; min-width: 130px;
+      font-family: 'Noto Serif TC', serif;
+      color: var(--ink);
+      display: none;
+      box-shadow: 0 2px 12px rgba(109, 27, 62, 0.15);
+    }
+    #game-hud.active { display: block; }
+    #game-hud .hud-label {
+      font-size: 10px; letter-spacing: 0.25em;
+      color: var(--azalea-leaf); margin-bottom: 4px;
+    }
+    #game-hud .hud-score {
+      font-size: 28px; font-weight: 700; line-height: 1;
+      color: var(--azalea-deep);
+      display: flex; align-items: baseline; gap: 4px;
+    }
+    #game-hud .hud-score .total {
+      font-size: 14px; color: var(--azalea-leaf); font-weight: 400;
+    }
+    #game-hud .hud-best {
+      font-size: 10px; letter-spacing: 0.1em;
+      color: var(--azalea-leaf); margin-top: 6px;
+      padding-top: 6px; border-top: 1px solid rgba(109, 27, 62, 0.2);
+    }
+
+    /* Mission line at bottom-center (above FABs) */
+    #game-mission {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+      z-index: 90;
+      background: var(--ink); color: var(--paper);
+      padding: 10px 20px; font-family: 'Noto Serif TC', serif;
+      font-size: 13px; letter-spacing: 0.15em;
+      white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+      display: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+    #game-mission.active { display: block; }
+    #game-mission.glow {
+      animation: missionGlow 1.8s ease-in-out infinite;
+    }
+    @keyframes missionGlow {
+      0%, 100% { box-shadow: 0 4px 16px rgba(109, 27, 62, 0.4); }
+      50%      { box-shadow: 0 4px 28px rgba(109, 27, 62, 0.85); }
+    }
+
+    /* Toast popup when a flower is collected */
+    #game-toast {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      z-index: 200; opacity: 0; pointer-events: none;
+      background: var(--azalea-deep); color: var(--paper);
+      padding: 18px 32px; font-family: 'Noto Serif TC', serif;
+      font-size: 22px; font-weight: 700; letter-spacing: 0.2em;
+      box-shadow: 0 8px 32px rgba(109, 27, 62, 0.5);
+      transition: opacity 0.3s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #game-toast.show {
+      opacity: 1; transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* ============ REWARD MODAL (game completion) ============ */
+    #reward-modal {
+      position: fixed; inset: 0; z-index: 300;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(20, 10, 18, 0.85); backdrop-filter: blur(6px);
+      padding: 20px;
+    }
+    #reward-modal.active { display: flex; }
+    .reward-card {
+      background: var(--paper); max-width: 420px; width: 100%;
+      padding: 40px 30px; text-align: center;
+      border: 2px solid var(--azalea-deep);
+      position: relative;
+      animation: rewardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes rewardIn {
+      from { opacity: 0; transform: scale(0.7) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .reward-stamp {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 13px; letter-spacing: 0.3em;
+      color: var(--azalea-leaf); margin-bottom: 16px;
+    }
+    .reward-title {
+      font-family: 'Noto Serif TC', serif; font-size: 32px; font-weight: 700;
+      color: var(--azalea-deep); margin-bottom: 8px;
+    }
+    .reward-subtitle {
+      font-family: 'Cormorant Garamond', serif; font-style: italic;
+      font-size: 16px; color: var(--ink); margin-bottom: 24px;
+    }
+    .reward-score-big {
+      font-family: 'Noto Serif TC', serif; font-size: 64px; font-weight: 700;
+      color: var(--azalea-deep); line-height: 1;
+    }
+    .reward-score-big .of {
+      font-size: 24px; color: var(--azalea-leaf); font-weight: 400;
+    }
+    .reward-message {
+      font-family: 'Noto Serif TC', serif; font-size: 14px; line-height: 1.7;
+      color: var(--ink); margin: 20px 0; padding: 16px;
+      background: rgba(232, 165, 192, 0.15);
+      border-left: 3px solid var(--azalea-deep);
+      text-align: left;
+    }
+    .reward-stats {
+      display: flex; justify-content: space-around; gap: 12px;
+      margin: 20px 0; padding: 14px 0;
+      border-top: 1px solid rgba(109, 27, 62, 0.2);
+      border-bottom: 1px solid rgba(109, 27, 62, 0.2);
+    }
+    .reward-stat {
+      font-family: 'Noto Serif TC', serif;
+    }
+    .reward-stat .num {
+      font-size: 22px; font-weight: 700; color: var(--azalea-deep);
+      display: block;
+    }
+    .reward-stat .lbl {
+      font-size: 10px; letter-spacing: 0.2em;
+      color: var(--azalea-leaf); margin-top: 2px;
+    }
+    .reward-actions {
+      display: flex; gap: 10px; margin-top: 24px;
+    }
+    .reward-btn {
+      flex: 1; padding: 14px;
+      font-family: 'Noto Serif TC', serif; font-weight: 700;
+      font-size: 13px; letter-spacing: 0.2em;
+      cursor: pointer; border: none; transition: all 0.3s;
+    }
+    .reward-btn-primary {
+      background: var(--azalea-deep); color: var(--paper);
+    }
+    .reward-btn-primary:hover { background: var(--ink); }
+    .reward-btn-secondary {
+      background: transparent; color: var(--ink);
+      border: 1px solid var(--ink);
+    }
+    .reward-btn-secondary:hover { background: var(--ink); color: var(--paper); }
 
     /* ============ LOADING / ERROR ============ */
     #loading, #error-screen {
@@ -611,9 +782,14 @@
   </div>
 
   <div class="intro-footer">
-    <button class="start-btn" id="start-btn">
-      <span>開始尋花 →</span>
-    </button>
+    <div class="intro-cta-stack">
+      <button class="game-btn" id="game-btn">
+        <span><span class="game-icon">✦</span><span data-i18n="game_btn">遊戲模式 · GAME MODE</span></span>
+      </button>
+      <button class="start-btn" id="start-btn">
+        <span data-i18n="explore_btn">開始尋花 · EXPLORE</span>
+      </button>
+    </div>
     <div class="credits">校園植物學社</div>
   </div>
 </div>
@@ -699,6 +875,58 @@
     </a-entity>
 
   </a-entity>
+
+  <!-- ============ FLOWER TARGETS (targetIndex 1-8) ============
+       Each flower marker is its OWN MindAR target. When the user scans any of
+       these in GAME mode, JS counts it once. Visual feedback on each target is
+       intentionally minimal — a small bloom + the flower number — so the game
+       feels light. The full educational hero scene only shows on START (index 0).
+
+       NOTE: These 8 entities will stay invisible until you compile a new
+       targets.mind with 9 images (1 START + 8 flowers). With the current
+       single-marker .mind file, they exist in the DOM but never receive
+       targetFound events. Safe to leave in production.
+  -->
+  <a-entity mindar-image-target="targetIndex: 1" class="flower-target" data-flower="1">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="01" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 2" class="flower-target" data-flower="2">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="02" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 3" class="flower-target" data-flower="3">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="03" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 4" class="flower-target" data-flower="4">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="04" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 5" class="flower-target" data-flower="5">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="05" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 6" class="flower-target" data-flower="6">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="06" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 7" class="flower-target" data-flower="7">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="07" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
+  <a-entity mindar-image-target="targetIndex: 8" class="flower-target" data-flower="8">
+    <a-gltf-model src="#azaleaModel" position="0 0 0.2" scale="5 5 5"></a-gltf-model>
+    <a-text value="08" color="#6d1b3e" align="center" width="2" position="0 0.6 0.05"
+            font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
+  </a-entity>
 </a-scene>
 
 <!-- ============ AR UI OVERLAY ============ -->
@@ -754,6 +982,65 @@
       <span class="lab-zh">聲音</span>
       <span class="lab-en">Audio</span>
     </button>
+  </div>
+</div>
+
+<!-- ============ GAME MODE UI (HUD + mission + toast + reward) ============ -->
+<!-- Only shown when user enters via Game Mode button. JS toggles .active class. -->
+
+<!-- HUD: score panel top-right -->
+<div id="game-hud">
+  <div class="hud-label" data-i18n="hud_collected">收集 · COLLECTED</div>
+  <div class="hud-score">
+    <span id="hud-score-current">0</span>
+    <span class="total">/ <span id="hud-score-total">8</span></span>
+  </div>
+  <div class="hud-best">
+    <span data-i18n="hud_best">最佳 · BEST</span>:
+    <span id="hud-best-value">—</span>
+  </div>
+</div>
+
+<!-- Mission line: bottom center, above FABs -->
+<div id="game-mission" class="glow">
+  <span id="mission-text" data-i18n="mission_start">掃描 START 名片開始 · SCAN START CARD</span>
+</div>
+
+<!-- Toast: pops in middle when a flower is collected -->
+<div id="game-toast">
+  <span id="toast-text">+1</span>
+</div>
+
+<!-- Reward modal: shown when user completes the loop -->
+<div id="reward-modal">
+  <div class="reward-card">
+    <div class="reward-stamp" data-i18n="reward_stamp">尋花已成 · QUEST COMPLETE</div>
+    <div class="reward-title" data-i18n="reward_title">恭喜！</div>
+    <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
+
+    <div class="reward-score-big">
+      <span id="reward-score">8</span><span class="of"> / 8</span>
+    </div>
+
+    <div class="reward-message" id="reward-message">
+      <!-- filled by JS based on score -->
+    </div>
+
+    <div class="reward-stats">
+      <div class="reward-stat">
+        <span class="num" id="reward-best">0</span>
+        <span class="lbl" data-i18n="reward_best">最佳 · BEST</span>
+      </div>
+      <div class="reward-stat">
+        <span class="num" id="reward-runs">1</span>
+        <span class="lbl" data-i18n="reward_runs">完成次數 · RUNS</span>
+      </div>
+    </div>
+
+    <div class="reward-actions">
+      <button class="reward-btn reward-btn-secondary" id="reward-close" data-i18n="reward_close">關閉 · CLOSE</button>
+      <button class="reward-btn reward-btn-primary" id="reward-replay" data-i18n="reward_replay">再玩一次 · PLAY AGAIN</button>
+    </div>
   </div>
 </div>
 
@@ -960,9 +1247,153 @@
   });
 
   // ============================================================
-  // START AR
+  // GAME MODE — state, persistence, target counting, reward
   // ============================================================
-  document.getElementById('start-btn').addEventListener('click', async () => {
+  // Setup (when the new targets.mind is compiled):
+  //   targetIndex 0       = START marker (also the educational hero scene)
+  //   targetIndex 1..8    = FLOWER markers (count once each in game mode)
+  //
+  // Flow:
+  //   1. User picks "Game Mode" on intro  → currentMode = 'game'
+  //   2. HUD shows 0/8, mission = "Scan START to begin"
+  //   3. User scans START                 → game starts, mission = "Find 8 flowers"
+  //   4. User scans each flower           → +1, ignored if already collected
+  //   5. After 8/8, mission = "Return to START"
+  //   6. User scans START again           → reward modal shown, run logged
+  //
+  // Storage keys (localStorage):
+  //   azalea_game_best          → highest score from a completed run (0-8)
+  //   azalea_game_runs          → number of completed runs
+  //
+  // Mode is a single GLOBAL (no per-target attribute) because MindAR fires
+  // the SAME 'targetFound' event regardless of mode; behavior diverges in JS.
+
+  let currentMode = 'explore'; // 'explore' | 'game'
+  const TOTAL_FLOWERS = 8;
+  const LS_BEST = 'azalea_game_best';
+  const LS_RUNS = 'azalea_game_runs';
+
+  const gameState = {
+    started: false,            // user scanned START at least once
+    finished: false,           // user has returned to START after collecting
+    collected: new Set(),      // Set<number> of flower indices already counted
+  };
+
+  function resetGameState() {
+    gameState.started = false;
+    gameState.finished = false;
+    gameState.collected = new Set();
+  }
+
+  function getBest()  { return parseInt(localStorage.getItem(LS_BEST) || '0', 10); }
+  function getRuns()  { return parseInt(localStorage.getItem(LS_RUNS) || '0', 10); }
+  function setBest(n) { localStorage.setItem(LS_BEST, String(n)); }
+  function incRuns()  { localStorage.setItem(LS_RUNS, String(getRuns() + 1)); }
+
+  function initGameUI() {
+    // Reveal HUD + mission, hide if user clicks Explore later. (No need to
+    // hide explicitly — they only appear when initGameUI is called.)
+    document.getElementById('game-hud').classList.add('active');
+    document.getElementById('game-mission').classList.add('active');
+    refreshHUD();
+  }
+
+  function refreshHUD() {
+    document.getElementById('hud-score-current').textContent = gameState.collected.size;
+    document.getElementById('hud-score-total').textContent   = TOTAL_FLOWERS;
+    const best = getBest();
+    document.getElementById('hud-best-value').textContent = best > 0 ? `${best}/${TOTAL_FLOWERS}` : '—';
+  }
+
+  function setMission(textKey, glow) {
+    const el = document.getElementById('game-mission');
+    const span = document.getElementById('mission-text');
+    span.setAttribute('data-i18n', textKey);
+    span.textContent = i18n[currentLang][textKey] || span.textContent;
+    if (glow) el.classList.add('glow'); else el.classList.remove('glow');
+  }
+
+  function showToast(text, durationMs) {
+    const toast = document.getElementById('game-toast');
+    document.getElementById('toast-text').textContent = text;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), durationMs || 1200);
+  }
+
+  // Called when a flower marker is found (targetIndex 1-8) while in game mode.
+  // First-time scan: +1 score. Subsequent scans: ignored. Idempotent.
+  function onFlowerScanned(flowerIdx) {
+    if (currentMode !== 'game') return;
+    if (!gameState.started || gameState.finished) return;
+    if (gameState.collected.has(flowerIdx)) return; // already counted
+
+    gameState.collected.add(flowerIdx);
+    refreshHUD();
+    showToast(`+1 · ${gameState.collected.size}/${TOTAL_FLOWERS}`, 1200);
+
+    if (gameState.collected.size >= TOTAL_FLOWERS) {
+      // All flowers collected → ask to return to start
+      setMission('mission_return', true);
+    } else {
+      setMission('mission_find', false);
+    }
+  }
+
+  // Called when START marker (targetIndex 0) is found in game mode.
+  function onStartScanned() {
+    if (currentMode !== 'game') return;
+
+    if (!gameState.started) {
+      // First time scanning START → begin the game
+      gameState.started = true;
+      setMission('mission_find', false);
+      showToast(i18n[currentLang].toast_started || 'GO!', 1500);
+      return;
+    }
+
+    if (gameState.collected.size >= TOTAL_FLOWERS && !gameState.finished) {
+      // Returned to START after collecting all flowers → complete the run
+      gameState.finished = true;
+      completeRun();
+    }
+    // else: scanning START again mid-game — ignore, leave educational scene as-is
+  }
+
+  function completeRun() {
+    const score = gameState.collected.size;
+    incRuns();
+    if (score > getBest()) setBest(score);
+
+    // Populate reward modal
+    document.getElementById('reward-score').textContent = score;
+    document.getElementById('reward-best').textContent  = getBest();
+    document.getElementById('reward-runs').textContent  = getRuns();
+    document.getElementById('reward-message').textContent =
+      i18n[currentLang].reward_message_perfect || '';
+
+    document.getElementById('reward-modal').classList.add('active');
+  }
+
+  // Reward modal buttons
+  document.getElementById('reward-close').addEventListener('click', () => {
+    document.getElementById('reward-modal').classList.remove('active');
+  });
+  document.getElementById('reward-replay').addEventListener('click', () => {
+    document.getElementById('reward-modal').classList.remove('active');
+    resetGameState();
+    refreshHUD();
+    setMission('mission_start', true);
+  });
+
+  // ============================================================
+  // START AR — shared entry point for both EXPLORE and GAME modes.
+  // The `mode` flag is read later by the target listeners; the camera /
+  // MindAR boot sequence is identical for both.
+  // ============================================================
+  async function enterAR(mode) {
+    currentMode = mode; // 'explore' | 'game' — set BEFORE arScene 'loaded' fires
+
     const isSecure = window.isSecureContext ||
                      ['localhost', '127.0.0.1'].includes(location.hostname);
     if (!isSecure) {
@@ -990,9 +1421,15 @@
     loadingText.textContent = 'Loading AR engine...';
     arScene.classList.add('active');
 
+    // Activate game UI if entering in game mode
+    if (mode === 'game') initGameUI();
+
     if (arScene.hasLoaded) startMindAR();
     else arScene.addEventListener('loaded', startMindAR, { once: true });
-  });
+  }
+
+  document.getElementById('start-btn').addEventListener('click', () => enterAR('explore'));
+  document.getElementById('game-btn').addEventListener('click', () => enterAR('game'));
 
   async function startMindAR() {
     try {
@@ -1041,48 +1478,76 @@
   }
 
   // ============================================================
-  // TARGET FOUND / LOST + FLOATING UI MODE (FREE MODE)
+  // TARGET FOUND / LOST — handle START (index 0) + 8 flowers (index 1-8)
   // ============================================================
+  // START target (index 0): full educational scene (flower + video + FABs).
+  //                         In game mode: also triggers onStartScanned().
+  // FLOWER targets (index 1-8): minimal visual (small bloom + number).
+  //                             In game mode: count toward score via onFlowerScanned().
+  //                             In explore mode: do nothing (DOM still renders the
+  //                             entity, but user wouldn't normally scan these cards).
   const floatingMode = document.getElementById('floating-mode');
 
   arScene.addEventListener('loaded', () => {
-    const target = document.querySelector('[mindar-image-target]');
-    if (!target) return;
+    const targets = document.querySelectorAll('[mindar-image-target]');
+    if (!targets.length) return;
 
-    target.addEventListener('targetFound', () => {
-      console.log('[AR] targetFound');
-      scanHint.classList.add('hide');
-      floatingMode.classList.remove('active');
+    targets.forEach((target) => {
+      // Read targetIndex from the component data
+      const idxAttr = target.getAttribute('mindar-image-target') || '';
+      const idxMatch = idxAttr.match(/targetIndex:\s*(\d+)/);
+      const idx = idxMatch ? parseInt(idxMatch[1], 10) : 0;
+      const isStart = (idx === 0);
 
-      // Reset user transform để hoa quay về mặc định khi quét lại
-      userScale = 1;
-      userPosOffset = { x: 0, y: 0 };
-      userRotation = { x: 0, y: 0 };
-      applyUserTransform();
-      applyFlowerRotation();
+      target.addEventListener('targetFound', () => {
+        console.log('[AR] targetFound idx=' + idx);
 
-      // Force play video
-      const video = document.getElementById('bloomVideo');
-      if (video && video.paused) {
-        video.play().catch(e => console.warn('Video play failed:', e));
-      }
+        if (isStart) {
+          // ===== START / hero target — full educational behavior =====
+          scanHint.classList.add('hide');
+          floatingMode.classList.remove('active');
 
-      // Force render
-      if (arScene.renderer && arScene.camera) {
-        requestAnimationFrame(() => {
-          arScene.renderer.render(arScene.object3D, arScene.camera);
-        });
-      }
+          // Reset user transform — flower returns to default pose
+          userScale = 1;
+          userPosOffset = { x: 0, y: 0 };
+          userRotation = { x: 0, y: 0 };
+          applyUserTransform();
+          applyFlowerRotation();
 
-      setTimeout(() => fabs.classList.add('show'), 500);
-    });
+          // Force play video
+          const video = document.getElementById('bloomVideo');
+          if (video && video.paused) {
+            video.play().catch(e => console.warn('Video play failed:', e));
+          }
 
-    target.addEventListener('targetLost', () => {
-      console.log('[AR] targetLost - entering FLOATING MODE');
-      // Hiện floating UI - chỉ video phát giữa màn hình
-      floatingMode.classList.add('active');
-      scanHint.classList.add('hide'); // Ẩn scan-hint để không đè lên video
-      // FAB buttons GIỮ NGUYÊN để user vẫn vào được modals
+          // Force render — wakes up render loop on some mobile browsers
+          if (arScene.renderer && arScene.camera) {
+            requestAnimationFrame(() => {
+              arScene.renderer.render(arScene.object3D, arScene.camera);
+            });
+          }
+
+          setTimeout(() => fabs.classList.add('show'), 500);
+
+          // Game hook: scanning START in game mode either begins or ends the run
+          onStartScanned();
+        } else {
+          // ===== FLOWER target (index 1-8) — game scoring only =====
+          // Tiny visual feedback (entity itself shows model+number via A-Frame),
+          // no FABs, no big video, no scan-hint dismissal.
+          onFlowerScanned(idx);
+        }
+      });
+
+      target.addEventListener('targetLost', () => {
+        console.log('[AR] targetLost idx=' + idx);
+        if (isStart) {
+          // Only the START target controls floating UI mode.
+          floatingMode.classList.add('active');
+          scanHint.classList.add('hide');
+        }
+        // Flower targets: nothing to do on loss — score is already locked in.
+      });
     });
   });
 
@@ -1098,6 +1563,13 @@
     arUI.classList.remove('active');
     arScene.classList.remove('active');
     fabs.classList.remove('show');
+
+    // Reset game UI (no-op for explore mode, but keeps the DOM clean)
+    document.getElementById('game-hud').classList.remove('active');
+    document.getElementById('game-mission').classList.remove('active');
+    document.getElementById('reward-modal').classList.remove('active');
+    resetGameState();
+
     intro.style.display = 'flex';
     intro.classList.remove('fade-out');
   });
@@ -1398,7 +1870,9 @@
       specimen_en: '',
       scan_hint: '將鏡頭對準名片 · POINT AT THE CARD',
       floating_status: '自由模式 · FREE MODE',
-      // FAB labels (giữ song ngữ)
+      // Intro CTA buttons
+      explore_btn: '開始尋花 · EXPLORE',
+      game_btn: '遊戲模式 · GAME MODE',
       // Modal titles
       modal_bio_title: '生態說明',
       modal_bio_subtitle: 'Ecological Profile',
@@ -1408,6 +1882,23 @@
       modal_life_subtitle: 'Life Cycle',
       modal_audio_title: '聲音導覽',
       modal_audio_subtitle: 'Audio Guide',
+      // Game HUD
+      hud_collected: '收集 · COLLECTED',
+      hud_best: '最佳 · BEST',
+      // Game missions
+      mission_start:  '掃描 START 名片開始 · SCAN START CARD',
+      mission_find:   '尋找 8 朵杜鵑 · FIND 8 AZALEAS',
+      mission_return: '返回 START 領取獎勵 · RETURN TO START',
+      toast_started:  '遊戲開始 · GO!',
+      // Reward modal
+      reward_stamp:    '尋花已成 · QUEST COMPLETE',
+      reward_title:    '恭喜！',
+      reward_subtitle: 'You found every azalea',
+      reward_message_perfect: '你已完成校園杜鵑尋花地圖，請至植物學社攤位出示此畫面，領取限量明信片一張。',
+      reward_best:    '最佳 · BEST',
+      reward_runs:    '完成次數 · RUNS',
+      reward_close:   '關閉 · CLOSE',
+      reward_replay:  '再玩一次 · PLAY AGAIN',
     },
     en: {
       back: '← BACK',
@@ -1415,6 +1906,8 @@
       specimen_en: '',
       scan_hint: 'POINT AT THE CARD · 將鏡頭對準名片',
       floating_status: 'FREE MODE · 自由模式',
+      explore_btn: 'EXPLORE · 開始尋花',
+      game_btn:    'GAME MODE · 遊戲模式',
       modal_bio_title: 'Ecological Profile',
       modal_bio_subtitle: '生態說明',
       modal_video_title: 'Time-lapse',
@@ -1423,6 +1916,20 @@
       modal_life_subtitle: '生命週期',
       modal_audio_title: 'Audio Guide',
       modal_audio_subtitle: '聲音導覽',
+      hud_collected: 'COLLECTED · 收集',
+      hud_best:      'BEST · 最佳',
+      mission_start:  'SCAN START CARD · 掃描 START 名片開始',
+      mission_find:   'FIND 8 AZALEAS · 尋找 8 朵杜鵑',
+      mission_return: 'RETURN TO START · 返回 START 領取獎勵',
+      toast_started:  'GO! · 遊戲開始',
+      reward_stamp:    'QUEST COMPLETE · 尋花已成',
+      reward_title:    'Congratulations!',
+      reward_subtitle: '你找齊全部杜鵑了',
+      reward_message_perfect: 'You completed the campus azalea map. Show this screen at the Botany Club booth to claim a limited postcard.',
+      reward_best:    'BEST · 最佳',
+      reward_runs:    'RUNS · 完成次數',
+      reward_close:   'CLOSE · 關閉',
+      reward_replay:  'PLAY AGAIN · 再玩一次',
     }
   };
 

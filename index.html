@@ -520,7 +520,7 @@
     .lang-btn.en .lang-inactive { color: var(--azalea-deep); opacity: 1; font-weight: 700; }
 
     /* ============ FLOATING UI MODE ============ */
-    /* Khi target lost, hiện overlay với hoa screenshot + video floating ở giữa màn hình */
+    /* Khi target lost, chỉ video phát giữa màn hình, không có box hoa nữa */
     .floating-mode {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -528,30 +528,20 @@
       z-index: 35;
       display: none;
       align-items: center; justify-content: center;
-      gap: 24px;
       padding: 100px 24px 180px;
     }
     .floating-mode.active {
       display: flex;
       animation: floatFadeIn 0.5s ease-out;
     }
+    /* Khi floating mode active, ẩn scan-hint để không đè lên video */
+    .floating-mode.active ~ * .scan-hint,
+    #ar-ui:has(.floating-mode.active) .scan-hint {
+      opacity: 0 !important;
+    }
     @keyframes floatFadeIn {
       from { opacity: 0; transform: scale(0.92); }
       to { opacity: 1; transform: scale(1); }
-    }
-    .floating-flower {
-      flex: 0 0 auto;
-      width: 38vw; max-width: 220px;
-      aspect-ratio: 1;
-      background: linear-gradient(135deg, rgba(232,165,192,0.08), rgba(109,27,62,0.04));
-      border: 1px solid rgba(109,27,62,0.15);
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      animation: floatHover 3s infinite ease-in-out;
-    }
-    .floating-flower img {
-      width: 90%; height: 90%; object-fit: contain;
-      filter: drop-shadow(0 8px 24px rgba(109,27,62,0.3));
     }
     @keyframes floatHover {
       0%, 100% { transform: translateY(0); }
@@ -559,12 +549,13 @@
     }
     .floating-video {
       flex: 0 0 auto;
-      width: 50vw; max-width: 320px;
+      width: 70vw; max-width: 380px;
       aspect-ratio: 16/9;
       overflow: hidden;
       background: #000;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-      animation: floatHover 3s infinite ease-in-out 0.4s;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,165,192,0.2);
+      border-radius: 2px;
+      animation: floatHover 3.5s infinite ease-in-out;
     }
     .floating-video video {
       width: 100%; height: 100%; object-fit: cover;
@@ -589,11 +580,10 @@
       animation: pulse 1.5s infinite;
     }
 
-    /* Mobile portrait: stack vertical */
+    /* Mobile portrait */
     @media (max-width: 600px) {
-      .floating-mode { flex-direction: column; gap: 16px; padding: 110px 24px 160px; }
-      .floating-flower { width: 50vw; max-width: 200px; }
-      .floating-video { width: 80vw; max-width: 320px; }
+      .floating-mode { padding: 110px 24px 160px; }
+      .floating-video { width: 85vw; max-width: 380px; }
     }
 
   </style>
@@ -734,13 +724,9 @@
   </div>
 
   <!-- ============ FLOATING UI MODE (FREE MODE) ============ -->
-  <!-- Hiện khi camera lia khỏi marker. Hoa + video "treo" giữa màn hình -->
+  <!-- Hiện khi camera lia khỏi marker. Chỉ video phát ở giữa, gọn gàng. -->
   <div class="floating-mode" id="floating-mode">
     <div class="floating-status" data-i18n="floating_status">FREE MODE · 自由模式</div>
-    <div class="floating-flower">
-      <!-- Snapshot của hoa Azalea (PNG transparent) - tải từ marker hoặc dùng emoji fallback -->
-      <img id="floating-flower-img" src="" alt="Azalea" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;font-size:88px;line-height:1;&quot;>🌸</div>';" />
-    </div>
     <div class="floating-video">
       <video id="floating-video-el" src="./azalea-bloom.mp4" autoplay loop muted playsinline></video>
     </div>
@@ -1059,7 +1045,6 @@
   // TARGET FOUND / LOST + FLOATING UI MODE (FREE MODE)
   // ============================================================
   const floatingMode = document.getElementById('floating-mode');
-  const floatingFlowerImg = document.getElementById('floating-flower-img');
 
   arScene.addEventListener('loaded', () => {
     const target = document.querySelector('[mindar-image-target]');
@@ -1090,43 +1075,17 @@
         });
       }
 
-      // Capture marker image cho floating mode (sau bloom xong)
-      setTimeout(captureFlowerSnapshot, 500);
-
       setTimeout(() => fabs.classList.add('show'), 500);
     });
 
     target.addEventListener('targetLost', () => {
       console.log('[AR] targetLost - entering FLOATING MODE');
-      // Hiện floating UI - hoa và video tiếp tục hiển thị giữa màn hình
+      // Hiện floating UI - chỉ video phát giữa màn hình
       floatingMode.classList.add('active');
-      scanHint.classList.remove('hide'); // vẫn hiện hint quét lại
+      scanHint.classList.add('hide'); // Ẩn scan-hint để không đè lên video
       // FAB buttons GIỮ NGUYÊN để user vẫn vào được modals
-      // closeAllModals(); // không close modals nữa
     });
   });
-
-  // ============================================================
-  // CAPTURE FLOWER SNAPSHOT cho floating mode
-  // ============================================================
-  // Lý tưởng: chụp snapshot 3D scene render → đặt vào <img> floating.
-  // Đơn giản: dùng marker-azalea.jpg làm placeholder nếu canvas chưa render kịp.
-  function captureFlowerSnapshot() {
-    try {
-      const canvas = arScene.canvas;
-      if (canvas && canvas.toDataURL) {
-        const dataUrl = canvas.toDataURL('image/png');
-        if (dataUrl && dataUrl.length > 1000) {
-          floatingFlowerImg.src = dataUrl;
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Canvas capture failed:', e);
-    }
-    // Fallback: dùng marker image
-    floatingFlowerImg.src = './marker-azalea.jpg';
-  }
 
   // ============================================================
   // BACK

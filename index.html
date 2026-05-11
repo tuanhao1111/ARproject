@@ -696,11 +696,11 @@
               font="https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-text>
 
       <!-- ============ AR VIDEO FRAME ============ -->
-      <!-- Video nằm BÊN PHẢI hoa, cùng độ cao, không bay lên cao.
-           Animation slide từ giữa marker → phải, cùng level với hoa. -->
+      <!-- Video nằm BÊN PHẢI hoa, cùng độ cao với hoa (y=1.2 trùng hoa).
+           Hoa ở (-1, 1.2), scale 15 → video phải ở x >= 2.0 mới không chồng. -->
       <a-entity id="ar-video-frame"
         position="0 0 0" scale="0 0 0"
-        animation__slide-pos="property: position; from: 0 0 0; to: 1.2 0 0.05; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
+        animation__slide-pos="property: position; from: 0 0 0; to: 2.2 1.2 0.05; dur: 800; easing: easeOutCubic; startEvents: targetFound; delay: 200"
         animation__slide-scl="property: scale; from: 0 0 0; to: 2 2 2; dur: 700; easing: easeOutBack; startEvents: targetFound; delay: 200"
         animation__exit-scl="property: scale; to: 0 0 0; dur: 250; startEvents: targetLost">
         <!-- Video tỷ lệ 16:9 sạch, không viền -->

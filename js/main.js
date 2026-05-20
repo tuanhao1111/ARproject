@@ -107,11 +107,24 @@ function resetGameState() {
   gameState.collected = new Set();
 }
 
-// Toggle 3D visibility cho marker hoa game. Explore mode + game-chưa-start
-// đều cần hide để user không thấy flower 3D nhảy ra khi quét QR sai.
-function setFlowerMarkersVisible(visible) {
-  document.querySelectorAll('.flower-target').forEach(m => {
-    m.setAttribute('visible', visible ? 'true' : 'false');
+// Toggle visibility CHỈ trên 3D children bên trong marker, KHÔNG trên a-marker
+// itself. Lý do: setting `visible=false` trên <a-marker> làm AR.js skip
+// detection hoàn toàn (markerFound không fire) → user quét QR mà không có gì
+// xảy ra. Hide từng gltf-model/a-text/a-video con thì marker vẫn track,
+// event vẫn fire, ta vẫn gate được logic ở handler level.
+
+function setHeroContentVisible(visible) {
+  // ID 0 hero content: bloom video + azalea GLB (chỉ hiện trong explore mode)
+  document.querySelectorAll('#ar-video, #azalea-flower').forEach(el => {
+    el.setAttribute('visible', visible ? 'true' : 'false');
+  });
+}
+
+function setFlowerContentVisible(visible) {
+  // ID 1/2/3 flower content: gltf-model + label text (chỉ hiện game mode
+  // SAU khi user scan START).
+  document.querySelectorAll('.flower-target a-gltf-model, .flower-target a-text').forEach(el => {
+    el.setAttribute('visible', visible ? 'true' : 'false');
   });
 }
 
@@ -187,8 +200,8 @@ function onStartScanned() {
     gameState.started = true;
     setMission('mission_find', false);
     showGameToast(i18n[currentLang].toast_started || 'GO!', 1500);
-    // Unlock flower markers — chỉ render 3D model sau khi user đã scan START.
-    setFlowerMarkersVisible(true);
+    // Unlock flower content — chỉ render 3D model sau khi user đã scan START.
+    setFlowerContentVisible(true);
     return;
   }
 
@@ -222,7 +235,7 @@ document.getElementById('reward-replay').addEventListener('click', () => {
   refreshHUD();
   setMission('mission_start', true);
   // Re-hide flowers cho lượt chơi mới — đợi user scan START lại.
-  setFlowerMarkersVisible(false);
+  setFlowerContentVisible(false);
 });
 
 // ============================================================
@@ -278,10 +291,12 @@ async function enterAR(mode) {
   document.body.classList.toggle('game-mode',    mode === 'game');
   document.body.classList.toggle('explore-mode', mode === 'explore');
 
-  // Flower markers ban đầu LUÔN ẩn (cả explore lẫn game-chưa-start).
-  // Game mode chỉ unhide sau khi user scan QR 0 (START) — onStartScanned().
-  // Explore mode hiện chưa support flower content, giữ ẩn vĩnh viễn.
-  setFlowerMarkersVisible(false);
+  // Visibility theo mode:
+  //   - explore: hero ON (FABs + video + GLB azalea hero), flowers OFF (chưa support content)
+  //   - game:    hero OFF (chỉ cần trigger started, không show 3D), flowers OFF
+  //              (mở khoá sau khi scan START — onStartScanned)
+  setHeroContentVisible(mode === 'explore');
+  setFlowerContentVisible(false);
 
   const isSecure = window.isSecureContext ||
                    ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -416,33 +431,32 @@ dom.arScene.addEventListener('loaded', () => {
       console.log('[AR] markerFound value=' + idx + ' mode=' + currentMode);
 
       // Flower marker (1-3): chỉ react trong game mode.
-      // Explore mode: model entity đã visible=false từ enterAR → user
-      // không thấy gì xuất hiện, không gọi gì.
+      // Inner GLB/text đã visible=false (cả explore và game-chưa-start) → user
+      // không thấy 3D xuất hiện, nhưng markerFound vẫn fire để ta gate ở handler.
       if (!isStart) {
         if (currentMode === 'game') onFlowerScanned(idx);
         return;
       }
 
-      // ID 0 = hero/start: share UI giữa 2 mode (reset transform, video play)
+      // ID 0 (START / hero)
       dom.scanHint.classList.add('hide');
       dom.floatingMode.classList.remove('active');
 
-      userScale = 1;
-      userPosOffset = { x: 0, y: 0 };
-      userRotation = { x: 0, y: 0 };
-      applyUserTransform();
-      applyFlowerRotation();
-
-      const video = document.getElementById('bloomVideo');
-      if (video?.paused) {
-        video.play().catch(e => console.warn('Video play failed:', e));
-      }
-
       if (currentMode === 'explore') {
-        // Explore: bật FABs để xem content (bio/video/lifecycle/audio)
+        // Explore: play hero video + show 3D azalea + bật FABs
+        userScale = 1;
+        userPosOffset = { x: 0, y: 0 };
+        userRotation = { x: 0, y: 0 };
+        applyUserTransform();
+        applyFlowerRotation();
+        const video = document.getElementById('bloomVideo');
+        if (video?.paused) {
+          video.play().catch(e => console.warn('Video play failed:', e));
+        }
         setTimeout(() => dom.fabs.classList.add('show'), 500);
       } else {
-        // Game: không hiện FABs (game-focused). Chỉ check start/end.
+        // Game: chỉ trigger started state — không play video, không hiện 3D
+        // (hero content đã visible=false từ enterAR).
         onStartScanned();
       }
     });
@@ -475,7 +489,8 @@ document.getElementById('back-btn').addEventListener('click', async () => {
   dom.gameMission.classList.remove('active');
   dom.rewardModal.classList.remove('active');
   resetGameState();
-  setFlowerMarkersVisible(false);
+  setHeroContentVisible(false);
+  setFlowerContentVisible(false);
 
   // Stop enforce camera resize loop khi rời AR view
   window.removeEventListener('resize', enforceCameraSize);

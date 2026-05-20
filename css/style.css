@@ -17,11 +17,11 @@ a-scene { display: none; }
 a-scene.active { display: block; }
 
 /* ============ CRITICAL: AR.js camera video display ============ */
-/* AR.js inject <video id="arjs-video"> ở body level. Target chính xác
-   bằng ID — KHÔNG dùng selector `video` rộng vì sẽ force-show cả
-   <video> inside <a-assets> (bloomVideo) đè lên camera. */
-video#arjs-video,
-body > video {
+/* AR.js 3.4.5 inject <video id="arjs-video"> ở body level. Target CHÍNH XÁC
+   bằng ID — không dùng `body > video` rộng vì A-Frame sẽ move asset video
+   (bloomVideo) ra body, selector rộng sẽ biến nó thành overlay fullscreen
+   đè camera. */
+video#arjs-video {
   position: fixed !important;
   top: 0 !important; left: 0 !important;
   width: 100vw !important; height: 100vh !important;
@@ -31,6 +31,14 @@ body > video {
   z-index: 1 !important;
   transform: none !important;
   margin: 0 !important; padding: 0 !important;
+}
+/* Asset videos moved ra body bởi A-Frame phải bị ẩn — texture vẫn update
+   bình thường (three.js sample từ video element bất kể display). */
+body > video:not(#arjs-video) {
+  display: none !important;
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  z-index: -1 !important;
 }
 /* Override cho video trong modal, video-wrap, VÀ floating-video. */
 .modal video, .video-wrap video, .floating-video video {

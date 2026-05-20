@@ -114,9 +114,12 @@ function resetGameState() {
 // event vẫn fire, ta vẫn gate được logic ở handler level.
 
 function setHeroContentVisible(visible) {
-  // ID 0 hero content: bloom video + azalea GLB (chỉ hiện trong explore mode)
+  // ID 0 hero content: bloom video + azalea GLB (chỉ hiện trong explore mode).
+  // Set cả attribute và object3D.visible — A-Frame's visible component
+  // sometimes lag if entity init timing chưa xong.
   document.querySelectorAll('#ar-video, #azalea-flower').forEach(el => {
     el.setAttribute('visible', visible ? 'true' : 'false');
+    if (el.object3D) el.object3D.visible = visible;
   });
 }
 
@@ -125,6 +128,7 @@ function setFlowerContentVisible(visible) {
   // SAU khi user scan START).
   document.querySelectorAll('.flower-target a-gltf-model, .flower-target a-text').forEach(el => {
     el.setAttribute('visible', visible ? 'true' : 'false');
+    if (el.object3D) el.object3D.visible = visible;
   });
 }
 
@@ -334,25 +338,23 @@ async function enterAR(mode) {
 document.getElementById('start-btn').addEventListener('click', () => enterAR('explore'));
 document.getElementById('game-btn').addEventListener('click', () => enterAR('game'));
 
-// Force camera video full-viewport. AR.js inline-styles có thể đè CSS, dùng
-// setProperty + 'important' để vào layer cao hơn. Cũng skip video trong
-// a-assets / modal / floating để không xài kẹp đè nhầm chỗ.
+// Force camera video full-viewport. CHỈ target #arjs-video — không dùng
+// selector rộng, A-Frame có thể move asset video ra body → biến chúng
+// thành fullscreen overlay che camera (đã xảy ra một lần).
 function enforceCameraSize() {
-  document.querySelectorAll('video').forEach(v => {
-    if (v.closest('a-assets, .modal, .floating-video, .video-wrap')) return;
-    v.style.setProperty('position', 'fixed', 'important');
-    v.style.setProperty('top', '0', 'important');
-    v.style.setProperty('left', '0', 'important');
-    v.style.setProperty('width', '100vw', 'important');
-    v.style.setProperty('height', '100vh', 'important');
-    v.style.setProperty('min-width', '100vw', 'important');
-    v.style.setProperty('min-height', '100vh', 'important');
-    v.style.setProperty('max-width', 'none', 'important');
-    v.style.setProperty('max-height', 'none', 'important');
-    v.style.setProperty('object-fit', 'cover', 'important');
-    v.style.setProperty('transform', 'none', 'important');
-    v.style.setProperty('margin', '0', 'important');
-  });
+  const v = document.getElementById('arjs-video');
+  if (!v) return;
+  v.style.setProperty('position', 'fixed', 'important');
+  v.style.setProperty('top', '0', 'important');
+  v.style.setProperty('left', '0', 'important');
+  v.style.setProperty('width', '100vw', 'important');
+  v.style.setProperty('height', '100vh', 'important');
+  v.style.setProperty('min-width', '100vw', 'important');
+  v.style.setProperty('min-height', '100vh', 'important');
+  v.style.setProperty('object-fit', 'cover', 'important');
+  v.style.setProperty('transform', 'none', 'important');
+  v.style.setProperty('margin', '0', 'important');
+  v.style.setProperty('z-index', '1', 'important');
 }
 
 // AR.js tự khởi động camera khi scene loaded — không cần gọi start() như MindAR.
@@ -378,9 +380,15 @@ function startARjs() {
         setTimeout(showMapModal, 400);
       }
 
-      // Force play video sau khi AR.js start (unlock autoplay)
+      // Force play hero video CHỈ ở explore mode (unlock autoplay). Game mode
+      // không cần video — phải pause để CSS asset video không leak content
+      // ra a-video texture ngay cả khi #ar-video hidden.
       const video = document.getElementById('bloomVideo');
-      video?.play().catch(e => console.warn('Video autoplay blocked:', e));
+      if (currentMode === 'explore') {
+        video?.play().catch(e => console.warn('Video autoplay blocked:', e));
+      } else {
+        video?.pause();
+      }
 
       // Resize trigger để wake A-Frame render loop trên một số mobile browsers
       window.dispatchEvent(new Event('resize'));

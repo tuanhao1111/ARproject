@@ -79,7 +79,19 @@ document.getElementById('error-retry')?.addEventListener('click', () => {
 //   6. User scan START lần nữa             → reward modal
 
 let currentMode = 'explore'; // 'explore' | 'game'
-const TOTAL_FLOWERS = 8;
+
+// ============================================================
+// SPECIES TABLE (game mode)
+// ============================================================
+// Mỗi marker ID = 1 loài hoa với GLB riêng. Thêm loài mới =
+// push vào array, KHÔNG đụng code khác. ID phải match barcode
+// đã in. ID 0 reserved cho START/hero (xem index.html).
+const SPECIES = [
+  { id: 1, name: '紫杜鵑 · Purple Azalea', glb: './purple-azalea.glb', scale: 3 },
+  { id: 2, name: '白杜鵑 · White Azalea',  glb: './white-azalea.glb',  scale: 3 },
+  { id: 3, name: '花期縮時 · Time-lapse',  glb: './default_timelapse.glb', scale: 3 },
+];
+const TOTAL_FLOWERS = SPECIES.length;
 const LS_BEST = 'azalea_game_best';
 const LS_RUNS = 'azalea_game_runs';
 
@@ -109,7 +121,8 @@ function initGameUI() {
 function refreshHUD() {
   dom.hudCurrent.textContent = gameState.collected.size;
   dom.hudTotal.textContent   = TOTAL_FLOWERS;
-  const best = getBest();
+  // Clamp old saved best in case TOTAL_FLOWERS shrank (e.g. 8 → 3 migration)
+  const best = Math.min(getBest(), TOTAL_FLOWERS);
   dom.hudBest.textContent = best > 0 ? `${best}/${TOTAL_FLOWERS}` : '—';
 }
 
@@ -135,7 +148,9 @@ function onFlowerScanned(flowerIdx) {
 
   gameState.collected.add(flowerIdx);
   refreshHUD();
-  showGameToast(`+1 · ${gameState.collected.size}/${TOTAL_FLOWERS}`, 1200);
+  const sp = SPECIES.find(s => s.id === flowerIdx);
+  const label = sp ? sp.name : `+1`;
+  showGameToast(`${label} · ${gameState.collected.size}/${TOTAL_FLOWERS}`, 1500);
 
   if (gameState.collected.size >= TOTAL_FLOWERS) {
     setMission('mission_return', true);
@@ -166,7 +181,9 @@ function completeRun() {
   if (score > getBest()) setBest(score);
 
   dom.rewardScore.textContent = score;
-  dom.rewardBest.textContent  = getBest();
+  const rewardTotal = document.getElementById('reward-score-total');
+  if (rewardTotal) rewardTotal.textContent = TOTAL_FLOWERS;
+  dom.rewardBest.textContent  = Math.min(getBest(), TOTAL_FLOWERS);
   dom.rewardRuns.textContent  = getRuns();
   dom.rewardMessage.textContent = i18n[currentLang].reward_message_perfect || '';
 
@@ -184,36 +201,44 @@ document.getElementById('reward-replay').addEventListener('click', () => {
 });
 
 // ============================================================
-// GENERATE FLOWER TARGETS (game mode, targetIndex 1-8)
+// GENERATE FLOWER MARKERS (game mode, 1 marker / species)
 // ============================================================
-// Generate bằng JS thay vì hardcode 8 entities trong HTML.
-// Scale=3 (thay vì 5) → mesh nhẹ hơn cho GPU khi 8 instance share asset.
-// NOTE: Chỉ hiển thị khi targets.mind được compile lại với 9 markers.
+// AR.js barcode marker: type="barcode" + value=<ID>.
+// Coordinate: marker plane = XZ, Y = out (up). Khác MindAR (XY, Z out).
+// Mỗi species load GLB riêng (src trực tiếp, browser cache sau lần đầu).
 function generateFlowerTargets() {
   const scene = dom.arScene;
-  for (let i = 1; i <= TOTAL_FLOWERS; i++) {
-    const target = document.createElement('a-entity');
-    target.setAttribute('mindar-image-target', `targetIndex: ${i}`);
-    target.classList.add('flower-target');
-    target.dataset.flower = String(i);
+  SPECIES.forEach(sp => {
+    const marker = document.createElement('a-marker');
+    marker.setAttribute('type', 'barcode');
+    marker.setAttribute('value', String(sp.id));
+    marker.setAttribute('smooth', 'true');
+    marker.setAttribute('smoothCount', '5');
+    marker.setAttribute('smoothTolerance', '0.01');
+    marker.setAttribute('smoothThreshold', '2');
+    marker.classList.add('flower-target');
+    marker.dataset.flower = String(sp.id);
+    marker.dataset.name = sp.name;
 
     const model = document.createElement('a-gltf-model');
-    model.setAttribute('src', '#azaleaModel');
-    model.setAttribute('position', '0 0 0.2');
-    model.setAttribute('scale', '3 3 3');
-    target.appendChild(model);
+    model.setAttribute('src', sp.glb);
+    // Y = up out of marker plane
+    model.setAttribute('position', '0 0.2 0');
+    model.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
+    marker.appendChild(model);
 
     const label = document.createElement('a-text');
-    label.setAttribute('value', String(i).padStart(2, '0'));
+    label.setAttribute('value', String(sp.id).padStart(2, '0'));
     label.setAttribute('color', '#6d1b3e');
     label.setAttribute('align', 'center');
     label.setAttribute('width', '2');
-    label.setAttribute('position', '0 0.6 0.05');
+    label.setAttribute('position', '0 0.6 0');
+    label.setAttribute('rotation', '-90 0 0');
     label.setAttribute('font', 'https://cdn.aframe.io/fonts/Roboto-msdf.json');
-    target.appendChild(label);
+    marker.appendChild(label);
 
-    scene.appendChild(target);
-  }
+    scene.appendChild(marker);
+  });
 }
 // Generate ngay trước khi a-scene 'loaded' fires (sync trong cùng tick)
 generateFlowerTargets();
@@ -253,61 +278,75 @@ async function enterAR(mode) {
 
   if (mode === 'game') initGameUI();
 
-  if (dom.arScene.hasLoaded) startMindAR();
-  else dom.arScene.addEventListener('loaded', startMindAR, { once: true });
+  if (dom.arScene.hasLoaded) startARjs();
+  else dom.arScene.addEventListener('loaded', startARjs, { once: true });
 }
 
 document.getElementById('start-btn').addEventListener('click', () => enterAR('explore'));
 document.getElementById('game-btn').addEventListener('click', () => enterAR('game'));
 
-async function startMindAR() {
+// AR.js tự khởi động camera khi scene loaded — không cần gọi start() như MindAR.
+// Ta chỉ cần chờ camera ready rồi unhide UI.
+function startARjs() {
   try {
-    const sys = dom.arScene.systems['mindar-image-system'];
-    if (!sys) throw new Error('mindar-image-system not found');
     dom.loadingText.textContent = 'Starting camera...';
-    await sys.start();
-    dom.loading.classList.remove('active');
-    dom.arUI.classList.add('active');
 
-    // Force play video sau khi MindAR start (unlock autoplay)
-    const video = document.getElementById('bloomVideo');
-    video?.play().catch(e => console.warn('Video autoplay blocked:', e));
+    // AR.js dispatches 'arjs-video-loaded' khi video stream sẵn sàng
+    const onVideoReady = () => {
+      dom.loading.classList.remove('active');
+      dom.arUI.classList.add('active');
 
-    // Resize trigger để wake A-Frame render loop trên một số mobile browsers
-    window.dispatchEvent(new Event('resize'));
+      // Force play video sau khi AR.js start (unlock autoplay)
+      const video = document.getElementById('bloomVideo');
+      video?.play().catch(e => console.warn('Video autoplay blocked:', e));
 
-    // needsUpdate cho materials (fix bug refresh không hiện)
-    setTimeout(() => {
-      const target = document.querySelector('[mindar-image-target]');
-      target?.object3D?.traverse(child => {
-        if (!child.material) return;
-        const mats = Array.isArray(child.material) ? child.material : [child.material];
-        mats.forEach(m => { if (m) m.needsUpdate = true; });
-      });
-    }, 200);
+      // Resize trigger để wake A-Frame render loop trên một số mobile browsers
+      window.dispatchEvent(new Event('resize'));
 
+      // needsUpdate cho materials (fix bug refresh không hiện)
+      setTimeout(() => {
+        document.querySelectorAll('a-marker').forEach(marker => {
+          marker.object3D?.traverse(child => {
+            if (!child.material) return;
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => { if (m) m.needsUpdate = true; });
+          });
+        });
+      }, 200);
+    };
+
+    // Nếu AR.js video đã load rồi (scene reload) → fire ngay; else đợi event
+    if (document.querySelector('video')?.readyState >= 2) {
+      onVideoReady();
+    } else {
+      window.addEventListener('arjs-video-loaded', onVideoReady, { once: true });
+      // Fallback timeout 3s phòng event không fire
+      setTimeout(() => {
+        if (dom.loading.classList.contains('active')) onVideoReady();
+      }, 3000);
+    }
   } catch (err) {
-    console.error('MindAR start error:', err);
-    showError('AR Start Failed', 'Could not start MindAR.',
+    console.error('AR.js start error:', err);
+    showError('AR Start Failed', 'Could not start AR.js.',
       err.message || String(err));
   }
 }
 
 // ============================================================
-// TARGET FOUND / LOST
+// MARKER FOUND / LOST (AR.js barcode events)
 // ============================================================
+// AR.js dispatches 'markerFound' / 'markerLost' trên <a-marker>.
+// Đọc barcode ID qua attribute 'value' thay vì targetIndex.
 dom.arScene.addEventListener('loaded', () => {
-  const targets = document.querySelectorAll('[mindar-image-target]');
-  if (!targets.length) return;
+  const markers = document.querySelectorAll('a-marker');
+  if (!markers.length) return;
 
-  targets.forEach((target) => {
-    const idxAttr = target.getAttribute('mindar-image-target') || '';
-    const idxMatch = idxAttr.match(/targetIndex:\s*(\d+)/);
-    const idx = idxMatch ? parseInt(idxMatch[1], 10) : 0;
+  markers.forEach((marker) => {
+    const idx = parseInt(marker.getAttribute('value') || '0', 10);
     const isStart = (idx === 0);
 
-    target.addEventListener('targetFound', () => {
-      console.log('[AR] targetFound idx=' + idx);
+    marker.addEventListener('markerFound', () => {
+      console.log('[AR] markerFound value=' + idx);
 
       if (isStart) {
         dom.scanHint.classList.add('hide');
@@ -332,8 +371,8 @@ dom.arScene.addEventListener('loaded', () => {
       }
     });
 
-    target.addEventListener('targetLost', () => {
-      console.log('[AR] targetLost idx=' + idx);
+    marker.addEventListener('markerLost', () => {
+      console.log('[AR] markerLost value=' + idx);
       if (isStart) {
         // Chỉ add active nếu chưa có để tránh re-trigger animation
         if (!dom.floatingMode.classList.contains('active')) {
@@ -348,10 +387,9 @@ dom.arScene.addEventListener('loaded', () => {
 // BACK
 // ============================================================
 document.getElementById('back-btn').addEventListener('click', async () => {
-  try {
-    const sys = dom.arScene.systems['mindar-image-system'];
-    if (sys?.stop) await sys.stop();
-  } catch (e) { console.warn(e); }
+  // AR.js không có sys.stop() như MindAR, và stop video tracks rồi thì
+  // không restart dễ dàng được. Giữ camera chạy nền, chỉ hide scene/UI.
+  // (Nếu cần tắt camera hẳn → user đóng tab.)
   closeAllModals();
   dom.arUI.classList.remove('active');
   dom.arScene.classList.remove('active');
@@ -653,7 +691,7 @@ const i18n = {
     back: '← 返回',
     specimen: '標本',
     specimen_en: '',
-    scan_hint: '將鏡頭對準名片 · POINT AT THE CARD',
+    scan_hint: '將鏡頭對準 QR 標記 · POINT AT THE QR MARKER',
     floating_status: '自由模式 · FREE MODE',
     explore_btn: '開始尋花 · EXPLORE',
     game_btn: '遊戲模式 · GAME MODE',
@@ -667,8 +705,8 @@ const i18n = {
     modal_audio_subtitle: 'Audio Guide',
     hud_collected: '收集 · COLLECTED',
     hud_best: '最佳 · BEST',
-    mission_start:  '掃描 START 名片開始 · SCAN START CARD',
-    mission_find:   '尋找 8 朵杜鵑 · FIND 8 AZALEAS',
+    mission_start:  '掃描 START QR 開始 · SCAN START QR',
+    mission_find:   '尋找 3 種杜鵑 · FIND 3 AZALEAS',
     mission_return: '返回 START 領取獎勵 · RETURN TO START',
     toast_started:  '遊戲開始 · GO!',
     reward_stamp:    '尋花已成 · QUEST COMPLETE',
@@ -684,7 +722,7 @@ const i18n = {
     back: '← BACK',
     specimen: 'SPECIMEN',
     specimen_en: '',
-    scan_hint: 'POINT AT THE CARD · 將鏡頭對準名片',
+    scan_hint: 'POINT AT THE QR MARKER · 將鏡頭對準 QR 標記',
     floating_status: 'FREE MODE · 自由模式',
     explore_btn: 'EXPLORE · 開始尋花',
     game_btn:    'GAME MODE · 遊戲模式',
@@ -698,8 +736,8 @@ const i18n = {
     modal_audio_subtitle: '聲音導覽',
     hud_collected: 'COLLECTED · 收集',
     hud_best:      'BEST · 最佳',
-    mission_start:  'SCAN START CARD · 掃描 START 名片開始',
-    mission_find:   'FIND 8 AZALEAS · 尋找 8 朵杜鵑',
+    mission_start:  'SCAN START QR · 掃描 START QR 開始',
+    mission_find:   'FIND 3 AZALEAS · 尋找 3 種杜鵑',
     mission_return: 'RETURN TO START · 返回 START 領取獎勵',
     toast_started:  'GO! · 遊戲開始',
     reward_stamp:    'QUEST COMPLETE · 尋花已成',

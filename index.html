@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="./css/style.css" />
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
 </head>
 <body>
 
@@ -35,7 +35,7 @@
     <p class="title-en">A bloom that lives by conditions</p>
     <p class="description">
       杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。
-      將鏡頭對準名片，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
+      將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
     </p>
   </div>
 
@@ -66,12 +66,16 @@
   <button id="error-retry">Try Again</button>
 </div>
 
-<!-- ============ A-FRAME / MINDAR SCENE ============ -->
+<!-- ============ A-FRAME / AR.js SCENE (barcode marker) ============ -->
+<!-- Đổi từ MindAR sang AR.js: scan barcode marker (3x3 matrix code, ID 0-63)
+     thay vì image target. Marker ID 0 = START/hero, ID 1-8 = game flowers.
+     In marker từ: https://au.gmented.com/app/marker/marker.php -->
 <a-scene
   id="ar-scene"
-  mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
+  embedded
+  arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false; trackingMethod: best;"
   color-space="sRGB"
-  renderer="colorManagement: true"
+  renderer="colorManagement: true; logarithmicDepthBuffer: true;"
   vr-mode-ui="enabled: false"
   device-orientation-permission-ui="enabled: false">
 
@@ -82,48 +86,45 @@
            preload="auto" webkit-playsinline></video>
   </a-assets>
 
-  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <!-- AR.js cần camera là <a-entity camera>, không phải <a-camera> -->
+  <a-entity camera></a-entity>
 
-  <!-- Lighting -->
+  <!-- Lighting (gắn vào scene, không gắn trong marker để luôn sáng) -->
   <a-entity light="type: ambient; color: #ffffff; intensity: 1.4"></a-entity>
   <a-entity light="type: directional; color: #ffffff; intensity: 0.8" position="1 1 1"></a-entity>
   <a-entity light="type: directional; color: #ffd9e6; intensity: 0.4" position="-1 0.5 -1"></a-entity>
 
-  <!-- ============ MINDAR TARGET (START / hero) ============ -->
-  <!-- COORDINATE SYSTEM REMINDER (MindAR image target):
-       - Marker plane = XY (X right, Y up).
-       - Z = OUT of marker (toward camera). Z > 0 floats above card.
-       - 1 unit ≈ marker WIDTH. -->
-  <a-entity mindar-image-target="targetIndex: 0">
-    <!-- All user-controlled transforms (pinch/drag/pan) apply HERE, not on the flower.
-         MindAR controls the target matrix; we control the wrapper. Two independent
-         layers → no jitter. -->
+  <!-- ============ AR.JS MARKER (ID 0 = START / hero) ============ -->
+  <!-- COORDINATE (AR.js barcode marker):
+       - Marker plane = XZ (X right, Z forward). Y = UP, OUT of marker.
+       - 1 unit = marker SIZE (default 1m). -->
+  <a-marker type="barcode" value="0" id="marker-hero" smooth="true" smoothCount="5" smoothTolerance="0.01" smoothThreshold="2">
+    <!-- pinch-wrapper: user gestures apply here -->
     <a-entity id="pinch-wrapper" position="0 0 0" scale="1 1 1">
 
-      <!-- AR VIDEO (background, on the card) -->
+      <!-- AR VIDEO (lying flat on the marker) -->
       <a-video id="ar-video"
         src="#bloomVideo"
         width="1" height="0.5625"
-        position="0 0 0.001"
-        rotation="0 0 0"
+        position="0 0.001 0"
+        rotation="-90 0 0"
         opacity="0"
-        animation__fade="property: opacity; from: 0; to: 1; dur: 600; easing: easeOutQuad; startEvents: targetFound"
-        animation__exit="property: opacity; to: 0; dur: 250; startEvents: targetLost">
+        animation__fade="property: opacity; from: 0; to: 1; dur: 600; easing: easeOutQuad; startEvents: markerFound"
+        animation__exit="property: opacity; to: 0; dur: 250; startEvents: markerLost">
       </a-video>
 
-      <!-- 3D Azalea flower (floats above card) -->
+      <!-- 3D Azalea flower (floats above marker, Y = up out of marker) -->
       <a-gltf-model
         id="azalea-flower"
         src="#azaleaModel"
-        position="0 0 0.3"
+        position="0 0.3 0"
         scale="8 8 8"
         rotation="0 0 0"></a-gltf-model>
 
     </a-entity>
-  </a-entity>
+  </a-marker>
 
-  <!-- FLOWER TARGETS (targetIndex 1-8) đã được generate bằng JS trong main.js
-       (xem generateFlowerTargets). Visible khi targets.mind compile lại với 9 markers. -->
+  <!-- FLOWER MARKERS (barcode value 1-8) generate bằng JS trong main.js -->
 </a-scene>
 
 <!-- ============ AR UI OVERLAY ============ -->
@@ -144,7 +145,7 @@
   <div class="scan-hint" id="scan-hint">
     <span class="corner c1"></span><span class="corner c2"></span>
     <span class="corner c3"></span><span class="corner c4"></span>
-    <span class="label" data-i18n="scan_hint">POINT AT THE CARD · 將鏡頭對準名片</span>
+    <span class="label" data-i18n="scan_hint">POINT AT THE QR MARKER · 將鏡頭對準 QR 標記</span>
   </div>
 
   <!-- FLOATING UI MODE (hiện khi camera lia khỏi marker) -->
@@ -185,7 +186,7 @@
   <div class="hud-label" data-i18n="hud_collected">收集 · COLLECTED</div>
   <div class="hud-score">
     <span id="hud-score-current">0</span>
-    <span class="total">/ <span id="hud-score-total">8</span></span>
+    <span class="total">/ <span id="hud-score-total">3</span></span>
   </div>
   <div class="hud-best">
     <span data-i18n="hud_best">最佳 · BEST</span>:
@@ -194,7 +195,7 @@
 </div>
 
 <div id="game-mission" class="glow">
-  <span id="mission-text" data-i18n="mission_start">掃描 START 名片開始 · SCAN START CARD</span>
+  <span id="mission-text" data-i18n="mission_start">掃描 START QR 開始 · SCAN START QR</span>
 </div>
 
 <div id="game-toast">
@@ -208,7 +209,7 @@
     <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
 
     <div class="reward-score-big">
-      <span id="reward-score">8</span><span class="of"> / 8</span>
+      <span id="reward-score">3</span><span class="of"> / <span id="reward-score-total">3</span></span>
     </div>
 
     <div class="reward-message" id="reward-message"></div>

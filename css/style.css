@@ -16,9 +16,9 @@ html, body {
 a-scene { display: none; }
 a-scene.active { display: block; }
 
-/* ============ CRITICAL: MindAR camera video display ============ */
-/* MindAR v1.2.5 inject một <video> element. Selector rộng để bắt mọi
-   trường hợp (body level, trong a-scene, hoặc trong wrapper). */
+/* ============ CRITICAL: AR.js camera video display ============ */
+/* AR.js inject <video id="arjs-video"> ở body level. Selector rộng
+   để bắt mọi trường hợp (body level, trong a-scene, hoặc wrapper). */
 video {
   position: fixed !important;
   top: 0 !important; left: 0 !important;

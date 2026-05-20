@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:/Users/user/OneDrive/Documents/Documents/purple-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/white-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/default_timelapse.glb\")",
+      "Bash(cp \"C:/Users/user/OneDrive/Documents/Documents/purple-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/white-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/default_timelapse.glb\" \"C:/Users/user/OneDrive/Documents/GitHub/ARproject/\" && ls -la *.glb)"
+    ]
+  }
+}

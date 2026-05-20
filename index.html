@@ -135,6 +135,9 @@
       <div><span data-i18n="specimen">標本</span> <span data-i18n="specimen_en">SPECIMEN</span></div>
       <div><span class="num">001</span> / 01</div>
     </div>
+    <button class="map-btn game-only" id="map-btn" title="Show campus map" aria-label="Show map">
+      <svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 2.2L15 8v11.8L9 18V6.2zm-2 .2v11.6l-2 .7V7l2-.6zm10 0l2-.6v11.6l-2 .7V6.4z"/></svg>
+    </button>
     <button class="lang-btn" id="lang-btn" title="Switch language">
       <span class="lang-active" id="lang-active">中</span>
       <span class="lang-divider">/</span>
@@ -205,6 +208,7 @@
 <div id="reward-modal">
   <div class="reward-card">
     <div class="reward-stamp" data-i18n="reward_stamp">尋花已成 · QUEST COMPLETE</div>
+    <img src="./reward-medal.png" alt="Dayeh University badge" class="reward-medal"/>
     <div class="reward-title" data-i18n="reward_title">恭喜！</div>
     <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
 
@@ -233,6 +237,26 @@
 </div>
 
 <!-- ============ MODALS ============ -->
+
+<!-- Modal: MAP (game mode only — auto-show on enter, reopen via top-bar button) -->
+<div class="modal" id="modal-map">
+  <div class="modal-content modal-map-content">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span data-i18n="map_title">校園尋花地圖</span>
+        <span class="latin" data-i18n="map_subtitle">Campus quest map</span>
+      </div>
+      <button class="modal-close" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <p data-i18n="map_intro">沿校園尋找 3 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。</p>
+      <div class="map-wrap">
+        <img src="./campus-map.png" alt="Campus quest map" class="map-img"/>
+      </div>
+      <p class="map-foot" data-i18n="map_foot">⚫ 黑色標記 = QR 位置 · Black pins = QR locations</p>
+    </div>
+  </div>
+</div>
 
 <!-- Modal: BIO -->
 <div class="modal" id="modal-bio">

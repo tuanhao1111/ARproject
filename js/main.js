@@ -116,6 +116,13 @@ function initGameUI() {
   dom.gameHud.classList.add('active');
   dom.gameMission.classList.add('active');
   refreshHUD();
+  // Map sẽ auto-show từ startARjs() onVideoReady, không phải tại đây (tránh
+  // overlap loading screen).
+}
+
+function showMapModal() {
+  const mapModal = document.getElementById('modal-map');
+  if (mapModal) mapModal.classList.add('show');
 }
 
 function refreshHUD() {
@@ -249,6 +256,17 @@ generateFlowerTargets();
 async function enterAR(mode) {
   currentMode = mode;
 
+  // Set body class để CSS .game-only / .explore-only biết hide/show
+  document.body.classList.toggle('game-mode',    mode === 'game');
+  document.body.classList.toggle('explore-mode', mode === 'explore');
+
+  // Hide flower markers (game-only) khi vào explore — game-flower entities
+  // vẫn còn trong DOM nhưng không render. Tránh user explore mode scan QR
+  // game lại thấy 3D model lạ xuất hiện.
+  document.querySelectorAll('.flower-target').forEach(m => {
+    m.setAttribute('visible', mode === 'game' ? 'true' : 'false');
+  });
+
   const isSecure = window.isSecureContext ||
                    ['localhost', '127.0.0.1'].includes(location.hostname);
   if (!isSecure) {
@@ -295,6 +313,12 @@ function startARjs() {
     const onVideoReady = () => {
       dom.loading.classList.remove('active');
       dom.arUI.classList.add('active');
+
+      // Game mode: auto-show map sau khi camera ready (delay nhỏ để
+      // user thấy AR scene 1 nhịp trước khi modal phủ lên).
+      if (currentMode === 'game') {
+        setTimeout(showMapModal, 400);
+      }
 
       // Force play video sau khi AR.js start (unlock autoplay)
       const video = document.getElementById('bloomVideo');
@@ -346,28 +370,37 @@ dom.arScene.addEventListener('loaded', () => {
     const isStart = (idx === 0);
 
     marker.addEventListener('markerFound', () => {
-      console.log('[AR] markerFound value=' + idx);
+      console.log('[AR] markerFound value=' + idx + ' mode=' + currentMode);
 
-      if (isStart) {
-        dom.scanHint.classList.add('hide');
-        dom.floatingMode.classList.remove('active');
+      // Flower marker (1-3): chỉ react trong game mode.
+      // Explore mode: model entity đã visible=false từ enterAR → user
+      // không thấy gì xuất hiện, không gọi gì.
+      if (!isStart) {
+        if (currentMode === 'game') onFlowerScanned(idx);
+        return;
+      }
 
-        // Reset user transform
-        userScale = 1;
-        userPosOffset = { x: 0, y: 0 };
-        userRotation = { x: 0, y: 0 };
-        applyUserTransform();
-        applyFlowerRotation();
+      // ID 0 = hero/start: share UI giữa 2 mode (reset transform, video play)
+      dom.scanHint.classList.add('hide');
+      dom.floatingMode.classList.remove('active');
 
-        const video = document.getElementById('bloomVideo');
-        if (video?.paused) {
-          video.play().catch(e => console.warn('Video play failed:', e));
-        }
+      userScale = 1;
+      userPosOffset = { x: 0, y: 0 };
+      userRotation = { x: 0, y: 0 };
+      applyUserTransform();
+      applyFlowerRotation();
 
+      const video = document.getElementById('bloomVideo');
+      if (video?.paused) {
+        video.play().catch(e => console.warn('Video play failed:', e));
+      }
+
+      if (currentMode === 'explore') {
+        // Explore: bật FABs để xem content (bio/video/lifecycle/audio)
         setTimeout(() => dom.fabs.classList.add('show'), 500);
-        onStartScanned();
       } else {
-        onFlowerScanned(idx);
+        // Game: không hiện FABs (game-focused). Chỉ check start/end.
+        onStartScanned();
       }
     });
 
@@ -400,9 +433,15 @@ document.getElementById('back-btn').addEventListener('click', async () => {
   dom.rewardModal.classList.remove('active');
   resetGameState();
 
+  // Clear mode classes để CSS .game-only/.explore-only ẩn lại
+  document.body.classList.remove('game-mode', 'explore-mode');
+
   dom.intro.style.display = 'flex';
   dom.intro.classList.remove('fade-out');
 });
+
+// Map button (top-bar, game mode) — re-open map sau khi user đã dismiss
+document.getElementById('map-btn')?.addEventListener('click', showMapModal);
 
 // ============================================================
 // PINCH / DRAG / ROTATE
@@ -717,6 +756,10 @@ const i18n = {
     reward_runs:    '完成次數 · RUNS',
     reward_close:   '關閉 · CLOSE',
     reward_replay:  '再玩一次 · PLAY AGAIN',
+    map_title:      '校園尋花地圖',
+    map_subtitle:   'Campus quest map',
+    map_intro:      '沿校園尋找 3 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。',
+    map_foot:       '⚫ 黑色標記 = QR 位置 · Black pins = QR locations',
   },
   en: {
     back: '← BACK',
@@ -748,6 +791,10 @@ const i18n = {
     reward_runs:    'RUNS · 完成次數',
     reward_close:   'CLOSE · 關閉',
     reward_replay:  'PLAY AGAIN · 再玩一次',
+    map_title:      'Campus Quest Map',
+    map_subtitle:   '校園尋花地圖',
+    map_intro:      'Find 3 QR pins around the campus, scan to collect azaleas. Return to START for your reward.',
+    map_foot:       '⚫ Black pins = QR locations · 黑色標記 = QR 位置',
   }
 };
 

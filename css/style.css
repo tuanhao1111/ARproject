@@ -728,3 +728,63 @@ a-scene:not(.active) { display: none !important; }
   .floating-mode { padding: 110px 24px 160px; }
   .floating-video { width: 85vw; max-width: 380px; }
 }
+
+/* ============ MODE VISIBILITY (game-only / explore-only) ============ */
+/* Body class .game-mode hoặc .explore-mode set bởi enterAR() trong main.js.
+   Mặc định cả 2 đều ẩn — chỉ hiện khi đúng mode. */
+.game-only, .explore-only { display: none !important; }
+body.game-mode .game-only { display: flex !important; }
+body.explore-mode .explore-only { display: flex !important; }
+
+/* ============ MAP BUTTON (top-bar, game mode only) ============ */
+.map-btn {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--ink);
+  width: 36px; height: 36px;
+  padding: 6px;
+  cursor: pointer;
+  align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.map-btn svg { width: 20px; height: 20px; fill: var(--azalea-deep); }
+.map-btn:hover { background: var(--azalea-deep); }
+.map-btn:hover svg { fill: var(--paper); }
+
+/* ============ MAP MODAL ============ */
+.modal-map-content { max-width: 720px; }
+.map-wrap {
+  background: #f4ede4;
+  border: 1px solid rgba(109,27,62,0.2);
+  padding: 8px;
+  margin: 12px 0;
+}
+.map-img {
+  width: 100%; height: auto; display: block;
+}
+.map-foot {
+  font-size: 11px !important;
+  color: var(--azalea-leaf) !important;
+  letter-spacing: 0.1em;
+  margin-top: 8px !important;
+  text-align: center;
+}
+
+/* ============ REWARD MEDAL IMAGE ============ */
+.reward-medal {
+  display: block;
+  margin: 0 auto 16px;
+  width: 160px; height: auto;
+  /* Pixel art — preserve sharp edges, no smoothing */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  animation: medalIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+@keyframes medalIn {
+  from { opacity: 0; transform: scale(0.3) rotate(-20deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+@media (max-width: 600px) {
+  .reward-medal { width: 130px; }
+}

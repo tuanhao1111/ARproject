@@ -107,6 +107,14 @@ function resetGameState() {
   gameState.collected = new Set();
 }
 
+// Toggle 3D visibility cho marker hoa game. Explore mode + game-chưa-start
+// đều cần hide để user không thấy flower 3D nhảy ra khi quét QR sai.
+function setFlowerMarkersVisible(visible) {
+  document.querySelectorAll('.flower-target').forEach(m => {
+    m.setAttribute('visible', visible ? 'true' : 'false');
+  });
+}
+
 const getBest  = () => parseInt(localStorage.getItem(LS_BEST) || '0', 10);
 const getRuns  = () => parseInt(localStorage.getItem(LS_RUNS) || '0', 10);
 const setBest  = (n) => localStorage.setItem(LS_BEST, String(n));
@@ -150,7 +158,13 @@ function showGameToast(text, durationMs) {
 
 function onFlowerScanned(flowerIdx) {
   if (currentMode !== 'game') return;
-  if (!gameState.started || gameState.finished) return;
+  if (gameState.finished) return;
+  // Gate: phải scan START trước. Hiện toast nhắc nếu user thử scan flower
+  // sớm — đỡ confusion "sao tôi scan rồi mà không cộng điểm".
+  if (!gameState.started) {
+    showGameToast(i18n[currentLang].toast_scan_start_first || 'Scan START first', 1500);
+    return;
+  }
   if (gameState.collected.has(flowerIdx)) return;
 
   gameState.collected.add(flowerIdx);
@@ -173,6 +187,8 @@ function onStartScanned() {
     gameState.started = true;
     setMission('mission_find', false);
     showGameToast(i18n[currentLang].toast_started || 'GO!', 1500);
+    // Unlock flower markers — chỉ render 3D model sau khi user đã scan START.
+    setFlowerMarkersVisible(true);
     return;
   }
 
@@ -205,6 +221,8 @@ document.getElementById('reward-replay').addEventListener('click', () => {
   resetGameState();
   refreshHUD();
   setMission('mission_start', true);
+  // Re-hide flowers cho lượt chơi mới — đợi user scan START lại.
+  setFlowerMarkersVisible(false);
 });
 
 // ============================================================
@@ -260,12 +278,10 @@ async function enterAR(mode) {
   document.body.classList.toggle('game-mode',    mode === 'game');
   document.body.classList.toggle('explore-mode', mode === 'explore');
 
-  // Hide flower markers (game-only) khi vào explore — game-flower entities
-  // vẫn còn trong DOM nhưng không render. Tránh user explore mode scan QR
-  // game lại thấy 3D model lạ xuất hiện.
-  document.querySelectorAll('.flower-target').forEach(m => {
-    m.setAttribute('visible', mode === 'game' ? 'true' : 'false');
-  });
+  // Flower markers ban đầu LUÔN ẩn (cả explore lẫn game-chưa-start).
+  // Game mode chỉ unhide sau khi user scan QR 0 (START) — onStartScanned().
+  // Explore mode hiện chưa support flower content, giữ ẩn vĩnh viễn.
+  setFlowerMarkersVisible(false);
 
   const isSecure = window.isSecureContext ||
                    ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -303,6 +319,27 @@ async function enterAR(mode) {
 document.getElementById('start-btn').addEventListener('click', () => enterAR('explore'));
 document.getElementById('game-btn').addEventListener('click', () => enterAR('game'));
 
+// Force camera video full-viewport. AR.js inline-styles có thể đè CSS, dùng
+// setProperty + 'important' để vào layer cao hơn. Cũng skip video trong
+// a-assets / modal / floating để không xài kẹp đè nhầm chỗ.
+function enforceCameraSize() {
+  document.querySelectorAll('video').forEach(v => {
+    if (v.closest('a-assets, .modal, .floating-video, .video-wrap')) return;
+    v.style.setProperty('position', 'fixed', 'important');
+    v.style.setProperty('top', '0', 'important');
+    v.style.setProperty('left', '0', 'important');
+    v.style.setProperty('width', '100vw', 'important');
+    v.style.setProperty('height', '100vh', 'important');
+    v.style.setProperty('min-width', '100vw', 'important');
+    v.style.setProperty('min-height', '100vh', 'important');
+    v.style.setProperty('max-width', 'none', 'important');
+    v.style.setProperty('max-height', 'none', 'important');
+    v.style.setProperty('object-fit', 'cover', 'important');
+    v.style.setProperty('transform', 'none', 'important');
+    v.style.setProperty('margin', '0', 'important');
+  });
+}
+
 // AR.js tự khởi động camera khi scene loaded — không cần gọi start() như MindAR.
 // Ta chỉ cần chờ camera ready rồi unhide UI.
 function startARjs() {
@@ -313,6 +350,12 @@ function startARjs() {
     const onVideoReady = () => {
       dom.loading.classList.remove('active');
       dom.arUI.classList.add('active');
+
+      // Enforce camera video size ngay khi ready, và lặp lại mỗi resize.
+      // AR.js có thể inject inline style="width:Xpx; height:Ypx; transform:..."
+      // sau load — ta dùng setProperty với 'important' để chắc chắn override.
+      enforceCameraSize();
+      window.addEventListener('resize', enforceCameraSize);
 
       // Game mode: auto-show map sau khi camera ready (delay nhỏ để
       // user thấy AR scene 1 nhịp trước khi modal phủ lên).
@@ -432,6 +475,10 @@ document.getElementById('back-btn').addEventListener('click', async () => {
   dom.gameMission.classList.remove('active');
   dom.rewardModal.classList.remove('active');
   resetGameState();
+  setFlowerMarkersVisible(false);
+
+  // Stop enforce camera resize loop khi rời AR view
+  window.removeEventListener('resize', enforceCameraSize);
 
   // Clear mode classes để CSS .game-only/.explore-only ẩn lại
   document.body.classList.remove('game-mode', 'explore-mode');
@@ -748,6 +795,7 @@ const i18n = {
     mission_find:   '尋找 3 種杜鵑 · FIND 3 AZALEAS',
     mission_return: '返回 START 領取獎勵 · RETURN TO START',
     toast_started:  '遊戲開始 · GO!',
+    toast_scan_start_first: '請先掃描 START QR · SCAN START FIRST',
     reward_stamp:    '尋花已成 · QUEST COMPLETE',
     reward_title:    '恭喜！',
     reward_subtitle: 'You found every azalea',
@@ -783,6 +831,7 @@ const i18n = {
     mission_find:   'FIND 3 AZALEAS · 尋找 3 種杜鵑',
     mission_return: 'RETURN TO START · 返回 START 領取獎勵',
     toast_started:  'GO! · 遊戲開始',
+    toast_scan_start_first: 'SCAN START FIRST · 請先掃描 START QR',
     reward_stamp:    'QUEST COMPLETE · 尋花已成',
     reward_title:    'Congratulations!',
     reward_subtitle: '你找齊全部杜鵑了',

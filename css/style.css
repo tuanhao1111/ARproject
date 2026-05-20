@@ -747,6 +747,10 @@ a-scene:not(.active) { display: none !important; }
 body.game-mode .game-only { display: flex !important; }
 body.explore-mode .explore-only { display: flex !important; }
 
+/* Floating-mode (panel azalea-bloom.mp4 khi marker lost) explore-only.
+   Game mode không cần — user tập trung scan QR khác. */
+body.game-mode #floating-mode { display: none !important; }
+
 /* ============ MAP BUTTON (top-bar, game mode only) ============ */
 .map-btn {
   background: rgba(255,255,255,0.85);

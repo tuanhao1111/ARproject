@@ -87,9 +87,9 @@ let currentMode = 'explore'; // 'explore' | 'game'
 // push vào array, KHÔNG đụng code khác. ID phải match barcode
 // đã in. ID 0 reserved cho START/hero (xem index.html).
 const SPECIES = [
-  { id: 1, name: '紫杜鵑 · Purple Azalea', glb: './purple-azalea.glb', scale: 3 },
-  { id: 2, name: '白杜鵑 · White Azalea',  glb: './white-azalea.glb',  scale: 3 },
-  { id: 3, name: '花期縮時 · Time-lapse',  glb: './default_timelapse.glb', scale: 3 },
+  { id: 1, name: '紫杜鵑 · Purple Azalea', glb: './gamemode/purple-azalea.glb', scale: 3 },
+  { id: 2, name: '白杜鵑 · White Azalea',  glb: './gamemode/white-azalea.glb',  scale: 3 },
+  { id: 3, name: '花期縮時 · Time-lapse',  glb: './gamemode/default_timelapse.glb', scale: 3 },
 ];
 const TOTAL_FLOWERS = SPECIES.length;
 const LS_BEST = 'azalea_game_best';
@@ -302,6 +302,15 @@ async function enterAR(mode) {
   setHeroContentVisible(mode === 'explore');
   setFlowerContentVisible(false);
 
+  // Game mode defensive: pause cả bloom video (asset) lẫn floating-video-el
+  // ngay từ enterAR, đề phòng autoplay attribute kick in trước khi mình
+  // ngắt qua onVideoReady.
+  if (mode === 'game') {
+    document.getElementById('bloomVideo')?.pause();
+    document.getElementById('floating-video-el')?.pause();
+    dom.floatingMode.classList.remove('active');
+  }
+
   const isSecure = window.isSecureContext ||
                    ['localhost', '127.0.0.1'].includes(location.hostname);
   if (!isSecure) {
@@ -471,8 +480,10 @@ dom.arScene.addEventListener('loaded', () => {
 
     marker.addEventListener('markerLost', () => {
       console.log('[AR] markerLost value=' + idx);
-      if (isStart) {
-        // Chỉ add active nếu chưa có để tránh re-trigger animation
+      // Floating-mode (panel azalea-bloom.mp4 hiện khi camera lia khỏi marker)
+      // CHỈ enable trong explore mode. Game mode: không có floating UI, user
+      // tập trung scan QR khác.
+      if (isStart && currentMode === 'explore') {
         if (!dom.floatingMode.classList.contains('active')) {
           dom.floatingMode.classList.add('active');
         }

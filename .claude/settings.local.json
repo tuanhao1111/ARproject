@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(ls -la \"C:/Users/user/OneDrive/Documents/Documents/purple-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/white-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/default_timelapse.glb\")",
-      "Bash(cp \"C:/Users/user/OneDrive/Documents/Documents/purple-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/white-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/default_timelapse.glb\" \"C:/Users/user/OneDrive/Documents/GitHub/ARproject/\" && ls -la *.glb)"
+      "Bash(cp \"C:/Users/user/OneDrive/Documents/Documents/purple-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/white-azalea.glb\" \"C:/Users/user/OneDrive/Documents/Documents/default_timelapse.glb\" \"C:/Users/user/OneDrive/Documents/GitHub/ARproject/\" && ls -la *.glb)",
+      "Bash(grep -iE \"\\\\.\\(glb|png\\)$\")",
+      "Bash(git ls-remote *)",
+      "Bash(python -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python gen_placeholders.py)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

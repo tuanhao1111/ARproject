@@ -16,30 +16,71 @@
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+  <!-- MindAR — Explore mode chỉ dùng MindAR. Game mode dùng AR.js.
+       Cả 2 lib cùng load vì user có thể switch mode. Scene mount động
+       trong JS để tránh xung đột camera. -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
 <body>
 
 <!-- ============ INTRO SCREEN ============ -->
 <div id="intro">
-  <div class="intro-header">
-    <div class="badge">校園生態 · AR 導覽</div>
+  <!-- Interactive custom spotlight overlay -->
+  <div id="intro-spotlight" class="intro-spotlight"></div>
+  
+  <!-- Drifting pollen particles for organic museum atmosphere -->
+  <div class="pollen p1"></div>
+  <div class="pollen p2"></div>
+  <div class="pollen p3"></div>
+  <div class="pollen p4"></div>
+  <div class="pollen p5"></div>
+
+  <div class="intro-header reveal-item reveal-delay-1">
+    <div class="intro-header-left">
+      <div class="badge" data-i18n="intro_badge">校園生態 · AR 導覽</div>
+      <div class="intro-live-hud" id="intro-live-hud">
+        <span class="live-pulse"></span>
+        <span class="live-text"><span id="live-botanist-count">12</span> ACTIVE BOTANISTS</span>
+      </div>
+    </div>
+    <div class="intro-header-right">
+      <button class="intro-ctrl-btn" id="intro-lang-toggle" title="切換語言 / Switch Language" aria-label="Switch Language">
+        <!-- Globe SVG -->
+        <svg class="lang-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/></svg>
+      </button>
+      <button class="intro-ctrl-btn" id="intro-sound-toggle" title="Toggle Sound" aria-label="Toggle Sound">
+        <!-- Speaker Unmute SVG -->
+        <svg class="sound-icon" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM4.5 9v6H8l4.5 4.5V4.5L8 9H4.5z"/></svg>
+      </button>
+      <button class="intro-ctrl-btn" id="intro-theme-toggle" title="Toggle Night Mode" aria-label="Toggle Night Mode">
+        <!-- Moon SVG -->
+        <svg class="theme-icon-moon" viewBox="0 0 24 24"><path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="intro-main">
-    <div class="meta-line">
-      <span>生物學專題報告</span>
+    <div class="meta-line reveal-item reveal-delay-2">
+      <span data-i18n="intro_meta_sub">生物學專題報告</span>
       <span class="dot"></span>
       <span>2026</span>
     </div>
-    <h1 class="title-zh">尋見<span class="accent">杜鵑</span></h1>
-    <p class="title-en">A bloom that lives by conditions</p>
-    <p class="description">
+    <h1 class="title-zh reveal-item reveal-delay-3" data-i18n="intro_title_zh">尋見<span class="accent">杜鵑</span></h1>
+    <p class="title-en reveal-item reveal-delay-4" data-i18n="intro_title_en">A bloom that lives by conditions</p>
+    <p class="description reveal-item reveal-delay-5" data-i18n="intro_desc">
       杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。
       將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
     </p>
+
+    <!-- Scientific researcher preview card -->
+    <div class="intro-exhibit-card reveal-item reveal-delay-6">
+      <div class="exhibit-badge" data-i18n="intro_card_badge"><span class="icon">🔍</span> Spatially Analyzed Specimen No. 001</div>
+      <h2 class="exhibit-header" data-i18n="intro_card_header">Rhododendron pulchrum</h2>
+      <p class="exhibit-meta" data-i18n="intro_card_meta">Division: Angiosperms • Family: Ericaceae</p>
+    </div>
   </div>
 
-  <div class="intro-footer">
+  <div class="intro-footer reveal-item reveal-delay-7">
     <div class="intro-cta-stack">
       <button class="game-btn" id="game-btn">
         <span><span class="game-icon">✦</span><span data-i18n="game_btn">遊戲模式 · GAME MODE</span></span>
@@ -48,7 +89,7 @@
         <span data-i18n="explore_btn">開始尋花 · EXPLORE</span>
       </button>
     </div>
-    <div class="credits">校園植物學社</div>
+    <div class="credits" data-i18n="intro_credits">校園植物學社</div>
   </div>
 </div>
 
@@ -66,74 +107,23 @@
   <button id="error-retry">Try Again</button>
 </div>
 
-<!-- ============ A-FRAME / AR.js SCENE (barcode marker) ============ -->
-<!-- Đổi từ MindAR sang AR.js: scan barcode marker (3x3 matrix code, ID 0-63)
-     thay vì image target. Marker ID 0 = START/hero, ID 1-8 = game flowers.
-     In marker từ: https://au.gmented.com/app/marker/marker.php -->
-<a-scene
-  id="ar-scene"
-  embedded
-  arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false; trackingMethod: best;"
-  color-space="sRGB"
-  renderer="colorManagement: true; logarithmicDepthBuffer: true;"
-  vr-mode-ui="enabled: false"
-  device-orientation-permission-ui="enabled: false">
-
-  <a-assets timeout="30000">
-    <a-asset-item id="azaleaModel" src="./Explore/azalea.glb"></a-asset-item>
-    <video id="bloomVideo" src="./Explore/azalea-bloom.mp4"
-           autoplay loop muted playsinline crossorigin="anonymous"
-           preload="auto" webkit-playsinline></video>
-  </a-assets>
-
-  <!-- AR.js cần camera là <a-entity camera>, không phải <a-camera> -->
-  <a-entity camera></a-entity>
-
-  <!-- Lighting (gắn vào scene, không gắn trong marker để luôn sáng) -->
-  <a-entity light="type: ambient; color: #ffffff; intensity: 1.4"></a-entity>
-  <a-entity light="type: directional; color: #ffffff; intensity: 0.8" position="1 1 1"></a-entity>
-  <a-entity light="type: directional; color: #ffd9e6; intensity: 0.4" position="-1 0.5 -1"></a-entity>
-
-  <!-- ============ AR.JS MARKER (ID 0 = START / hero) ============ -->
-  <!-- COORDINATE (AR.js barcode marker):
-       - Marker plane = XZ (X right, Z forward). Y = UP, OUT of marker.
-       - 1 unit = marker SIZE (default 1m). -->
-  <a-marker type="barcode" value="0" id="marker-hero" smooth="true" smoothCount="5" smoothTolerance="0.01" smoothThreshold="2">
-    <!-- pinch-wrapper: user gestures apply here -->
-    <a-entity id="pinch-wrapper" position="0 0 0" scale="1 1 1">
-
-      <!-- AR VIDEO (lying flat on the marker) -->
-      <a-video id="ar-video"
-        src="#bloomVideo"
-        width="1" height="0.5625"
-        position="0 0.001 0"
-        rotation="-90 0 0"
-        opacity="0"
-        animation__fade="property: opacity; from: 0; to: 1; dur: 600; easing: easeOutQuad; startEvents: markerFound"
-        animation__exit="property: opacity; to: 0; dur: 250; startEvents: markerLost">
-      </a-video>
-
-      <!-- 3D Azalea flower (floats above marker, Y = up out of marker) -->
-      <a-gltf-model
-        id="azalea-flower"
-        src="#azaleaModel"
-        position="0 0.3 0"
-        scale="8 8 8"
-        rotation="0 0 0"></a-gltf-model>
-
-    </a-entity>
-  </a-marker>
-
-  <!-- FLOWER MARKERS (barcode value 1-8) generate bằng JS trong main.js -->
-</a-scene>
+<!-- ============ SCENE HOST ============ -->
+<!-- AR scene được mount động vào đây bởi js/game.js (AR.js barcode) hoặc
+     js/explore.js (MindAR image target). Chỉ 1 scene active tại 1 thời điểm,
+     khi user bấm BACK → JS unmount để giải phóng camera. -->
+<div id="scene-host"></div>
 
 <!-- ============ AR UI OVERLAY ============ -->
 <div id="ar-ui">
   <div class="top-bar">
     <button class="back-btn" id="back-btn" data-i18n="back">← BACK</button>
     <div class="top-meta">
-      <div><span data-i18n="specimen">標本</span> <span data-i18n="specimen_en">SPECIMEN</span></div>
-      <div><span class="num">001</span> / 01</div>
+      <div class="live-dot-wrap">
+        <span class="live-dot"></span>
+        <span class="live-label">LIVE DATA</span>
+      </div>
+      <div class="specimen-label"><span data-i18n="specimen">標本</span> <span data-i18n="specimen_en">SPECIMEN</span></div>
+      <div class="specimen-num"><span class="num">001</span> / 01</div>
     </div>
     <button class="map-btn game-only" id="map-btn" title="Show campus map" aria-label="Show map">
       <svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 2.2L15 8v11.8L9 18V6.2zm-2 .2v11.6l-2 .7V7l2-.6zm10 0l2-.6v11.6l-2 .7V6.4z"/></svg>
@@ -146,6 +136,7 @@
   </div>
 
   <div class="scan-hint" id="scan-hint">
+    <div class="scan-laser"></div>
     <span class="corner c1"></span><span class="corner c2"></span>
     <span class="corner c3"></span><span class="corner c4"></span>
     <span class="label" data-i18n="scan_hint">POINT AT THE QR MARKER · 將鏡頭對準 QR 標記</span>
@@ -159,7 +150,66 @@
     </div>
   </div>
 
-  <!-- 4 FAB buttons -->
+  <!-- EXPLORE INFO CARD (chỉ hiện trong Explore mode khi target được detect) -->
+  <!-- Tap → mở modal BIO. JS sẽ điền nội dung từ SPECIES_EXPLORE. -->
+  <div id="explore-info" class="explore-only">
+    <div class="ei-row">
+      <div class="ei-name">—</div>
+      <div class="ei-latin">—</div>
+    </div>
+    <div class="ei-brief">—</div>
+    <div class="ei-hint">點擊查看詳細資訊 · Tap for details</div>
+  </div>
+
+  <!-- Interactive Gesture Help Panel -->
+  <div id="gesture-hint" class="gesture-hint">
+    <div class="gesture-hint-header">
+      <span class="icon">✨</span>
+      <span class="title-zh">互動手勢指引</span>
+      <span class="title-en">Interactive Gestures</span>
+    </div>
+    <div class="gesture-steps">
+      <div class="gesture-step">
+        <div class="gesture-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a1 1 0 0 1 1 1v6.3a2.5 2.5 0 0 1 2 2.4v.3a3.5 3.5 0 0 1 3.5 3.5v1.5a3 3 0 0 1-3 3h-4.5A7.5 7.5 0 0 1 4.5 13v-2.5a2.5 2.5 0 0 1 5 0v.5c0 .3.2.5.5.5s.5-.2.5-.5v-8a1 1 0 0 1 1-1z"/>
+          </svg>
+        </div>
+        <div class="gesture-desc">
+          <div class="desc-zh"><strong>Xoay (Rotate)</strong>: Vuốt 1 ngón để xoay hoa.</div>
+          <div class="desc-en">Swipe 1 finger to rotate flower.</div>
+        </div>
+      </div>
+      <div class="gesture-step">
+        <div class="gesture-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 15l3 3m0 0l-3 3m3-3H11M6 9L3 6m0 0l3-3M3 6h10"/>
+          </svg>
+        </div>
+        <div class="gesture-desc">
+          <div class="desc-zh"><strong>Thu Phóng (Zoom)</strong>: Bóp/mở 2 ngón để thu phóng.</div>
+          <div class="desc-en">Pinch 2 fingers to zoom model.</div>
+        </div>
+      </div>
+      <div class="gesture-step">
+        <div class="gesture-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5v14M12 5l3 3m-3-3L9 8m3 11l3-3m-3 3l-3-3"/>
+          </svg>
+        </div>
+        <div class="gesture-desc">
+          <div class="desc-zh"><strong>Di Chuyển (Pan)</strong>: Kéo 2 ngón để dịch chuyển hoa.</div>
+          <div class="desc-en">Drag 2 fingers to translate.</div>
+        </div>
+      </div>
+    </div>
+    <div class="gesture-hint-footer">
+      <span class="label-zh">Chạm màn hình để đóng</span>
+      <span class="label-en">Tap anywhere to dismiss</span>
+    </div>
+  </div>
+
+  <!-- 5 FAB buttons -->
   <div class="fabs" id="fabs">
     <button class="fab" data-action="bio">
       <svg viewBox="0 0 24 24"><path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z"/><circle cx="12" cy="14" r="2"/></svg>
@@ -180,6 +230,15 @@
       <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14"/></svg>
       <span class="lab-zh">聲音</span>
       <span class="lab-en">Audio</span>
+    </button>
+    <button class="fab" data-action="capture" id="capture-btn" title="Capture Specimen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <span class="lab-zh">拍照</span>
+      <span class="lab-en">Capture</span>
+      <div id="capture-tooltip" class="capture-tooltip" data-i18n="capture_tooltip">📸 拍照生成黃金標本</div>
     </button>
   </div>
 </div>
@@ -206,9 +265,19 @@
 </div>
 
 <div id="reward-modal">
+  <div id="confetti-container"></div>
   <div class="reward-card">
+    <div class="glow-sunburst"></div>
+    <div class="reward-sparkles">
+      <span class="sparkle s1">✦</span>
+      <span class="sparkle s2">✦</span>
+      <span class="sparkle s3">✦</span>
+      <span class="sparkle s4">✦</span>
+    </div>
     <div class="reward-stamp" data-i18n="reward_stamp">尋花已成 · QUEST COMPLETE</div>
-    <img src="./gamemode/reward-medal.png" alt="Dayeh University badge" class="reward-medal"/>
+    <div class="reward-medal-container">
+      <img src="./gamemode/reward-medal.png" alt="Dayeh University badge" class="reward-medal"/>
+    </div>
     <div class="reward-title" data-i18n="reward_title">恭喜！</div>
     <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
 
@@ -271,11 +340,42 @@
     <div class="modal-body">
       <h3>生長條件 · Growth Conditions</h3>
       <p>常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。</p>
-      <span class="tag">酸性土</span><span class="tag">半遮蔭</span><span class="tag">春季</span>
+      
+      <!-- Premium Growth Indicators -->
+      <div class="growth-indicators">
+        <div class="indicator-group">
+          <div class="indicator-label">土壤酸鹼度 · Soil pH</div>
+          <div class="ph-bar-wrap">
+            <div class="ph-bar"></div>
+            <div class="ph-range-indicator"></div>
+            <div class="ph-value-marker" style="left: 33%">pH 4.5 - 5.5</div>
+          </div>
+          <div class="ph-scale-labels">
+            <span>Acidic (pH 4)</span>
+            <span>Neutral (pH 7)</span>
+            <span>Alkaline (pH 10)</span>
+          </div>
+        </div>
+        <div class="indicator-group">
+          <div class="indicator-label">日照環境 · Light Requirement</div>
+          <div class="light-indicator-wrap">
+            <span class="light-pill active">半遮蔭 · Semi-shaded</span>
+            <span class="light-pill">避免強光 · Avoid Intense Light</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; margin-bottom: 20px;">
+        <span class="tag">酸性土</span><span class="tag">半遮蔭</span><span class="tag">春季</span>
+      </div>
+
       <h3>形態 · Form</h3>
       <p>株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。</p>
       <h3>注意 · Caution</h3>
-      <p>⚠️ 全株含 grayanotoxin 毒素，誤食可致中毒。賞花無虞，請勿採食。</p>
+      <p class="caution-box">
+        <span class="caution-icon">⚠️</span>
+        <span class="caution-text">全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。</span>
+      </p>
     </div>
   </div>
 </div>
@@ -390,6 +490,9 @@
           <div class="audio-title">中文導覽</div>
           <div class="audio-sub">~ 30 秒</div>
         </div>
+        <div class="voice-wave">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
 
       <div class="audio-player">
@@ -401,6 +504,9 @@
           <div class="audio-title">English Narration</div>
           <div class="audio-sub">~ 30 sec</div>
         </div>
+        <div class="voice-wave">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
 
       <p style="font-size:11px;color:var(--azalea-leaf);margin-top:16px;">
@@ -410,7 +516,12 @@
   </div>
 </div>
 
-<script src="./js/main.js"></script>
+<!-- Load order matters: common.js exports window.App, các mode đăng ký vào đó -->
+<script src="./js/common.js"></script>
+<script src="./js/game.js"></script>
+<script src="./js/explore.js"></script>
+
+<div id="screen-flash" class="screen-flash"></div>
 
 </body>
 </html>

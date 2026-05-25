@@ -41,8 +41,19 @@
       glb: './Explore/azalea.glb',
       scale: 0.5,
       position: '0 0 0.1',
-    },
-    // TODO: add more entries when .mind file has more targets
+      growth_zh: '常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。',
+      growth_en: 'An evergreen shrub thriving in acidic soil (pH 4.5–5.5) and well-drained, semi-shaded environments. A common species on Taiwan campuses, originating as a large hybrid from Hirado, Japan.',
+      ph_text: 'pH 4.5 - 5.5',
+      ph_left: '33%',
+      light_pills_zh: ['半遮蔭', '避免強光'],
+      light_pills_en: ['Semi-shaded', 'Avoid Intense Light'],
+      tags_zh: ['酸性土', '半遮蔭', '春季'],
+      tags_en: ['Acidic Soil', 'Semi-shaded', 'Spring'],
+      form_zh: '株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。',
+      form_en: 'Shrub height 1–3 meters, leaves elliptical and leathery. Flower color ranges from pure white to deep pink, with 5 symmetrical petals and 5–10 stamens.',
+      caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
+      caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
+    }
   ];
 
   const dom = App.dom;
@@ -61,6 +72,23 @@
     App.activeSpecimen.origin_en = sp.origin_en || 'Origin: East Asia';
     App.activeSpecimen.desc_zh = sp.desc_zh || sp.brief_zh || '';
     App.activeSpecimen.desc_en = sp.desc_en || sp.brief_en || '';
+    
+    // Detailed bio fields
+    App.activeSpecimen.growth_zh = sp.growth_zh;
+    App.activeSpecimen.growth_en = sp.growth_en;
+    App.activeSpecimen.ph_text = sp.ph_text;
+    App.activeSpecimen.ph_left = sp.ph_left;
+    App.activeSpecimen.light_pills_zh = sp.light_pills_zh;
+    App.activeSpecimen.light_pills_en = sp.light_pills_en;
+    App.activeSpecimen.tags_zh = sp.tags_zh;
+    App.activeSpecimen.tags_en = sp.tags_en;
+    App.activeSpecimen.form_zh = sp.form_zh;
+    App.activeSpecimen.form_en = sp.form_en;
+    App.activeSpecimen.caution_zh = sp.caution_zh;
+    App.activeSpecimen.caution_en = sp.caution_en;
+    
+    // Instantly update the bio modal content
+    App.updateBioModalContent();
   }
 
   function showGestureHint() {

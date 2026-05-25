@@ -63,6 +63,7 @@
     exploreInfo:  document.getElementById('explore-info'),
     // i18n
     langBtn:      document.getElementById('lang-btn'),
+    introLangToggle: document.getElementById('intro-lang-toggle'),
   };
 
   // ----------------------------------------------------------
@@ -103,6 +104,44 @@
       map_intro:    '沿校園尋找 4 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。',
       map_foot:     '⚫ 黑色標記 = QR 位置 · Black pins = QR locations',
       capture_tooltip: '📸 拍照生成黃金標本',
+      // New translations for intro screen
+      intro_badge: '校園生態 · AR 導覽',
+      intro_meta_sub: '生物學專題報告',
+      intro_title_zh: '尋見<span class="accent">杜鵑</span>',
+      intro_title_en: 'A bloom that lives by conditions',
+      intro_desc: '杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。',
+      intro_card_badge: '🔍 生態空間分析標本 No. 001',
+      intro_card_header: '平戶杜鵑 (Rhododendron pulchrum)',
+      intro_card_meta: '被子植物門 • 杜鵑花科',
+      intro_credits: '校園植物學社',
+      intro_active_botanists: 'ACTIVE BOTANISTS',
+      // New translations for modals
+      bio_growth_title: '生長條件 · Growth Conditions',
+      bio_soil_ph: '土壤酸鹼度 · Soil pH',
+      bio_ph_acidic: 'Acidic (pH 4)',
+      bio_ph_neutral: 'Neutral (pH 7)',
+      bio_ph_alkaline: 'Alkaline (pH 10)',
+      bio_sunlight: '日照環境 · Light Requirement',
+      bio_form_title: '形態 · Form',
+      bio_caution_title: '注意 · Caution',
+      video_title: '花開時序',
+      video_subtitle: 'Time-lapse footage',
+      video_desc: '陽明山國家公園杜鵑花盛開縮時影像（4K）。從花苞至盛開的瞬間，記錄春日清晨的綻放過程。',
+      video_note: '※ 替換 iframe 中的 YouTube ID 即可換成你的影片。',
+      life_title: '生命週期',
+      life_subtitle: 'Annual lifecycle',
+      life_intro: '點選各階段以查看詳細說明 · Tap a stage to see details',
+      life_stage_1: '芽',
+      life_stage_2: '蕾',
+      life_stage_3: '花',
+      life_stage_4: '果',
+      audio_title: '聲音導覽',
+      audio_subtitle: 'Audio Guide',
+      audio_chinese_nav: '中文導覽',
+      audio_english_nav: 'English Narration',
+      audio_sec_zh: '~ 30 秒',
+      audio_sec_en: '~ 30 sec',
+      audio_note: '※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。'
     },
     en: {
       back: '← BACK',
@@ -132,6 +171,44 @@
       map_intro:    'Find 4 QR pins around the campus, scan to collect azaleas. Return to START for your reward.',
       map_foot:     '⚫ Black pins = QR locations · 黑色標記 = QR 位置',
       capture_tooltip: '📸 Capture Golden Specimen',
+      // New translations for intro screen
+      intro_badge: 'Campus Ecology · AR Tour',
+      intro_meta_sub: 'Biology Special Report',
+      intro_title_zh: 'Finding <span class="accent">Azaleas</span>',
+      intro_title_en: 'A bloom that lives by conditions',
+      intro_desc: 'Azaleas bloom with gentle grace, yet they only thrive in <em>acidic soil and cool climates</em>. Point your camera at the QR marker to watch the azalea bloom and unlock four dimensions: ecology, video, lifecycle, and audio.',
+      intro_card_badge: '🔍 Spatially Analyzed Specimen No. 001',
+      intro_card_header: 'Rhododendron pulchrum',
+      intro_card_meta: 'Division: Angiosperms • Family: Ericaceae',
+      intro_credits: 'Campus Botany Club',
+      intro_active_botanists: 'ACTIVE BOTANISTS',
+      // New translations for modals
+      bio_growth_title: 'Growth Conditions · 生長條件',
+      bio_soil_ph: 'Soil pH · 土壤酸鹼度',
+      bio_ph_acidic: 'Acidic (pH 4)',
+      bio_ph_neutral: 'Neutral (pH 7)',
+      bio_ph_alkaline: 'Alkaline (pH 10)',
+      bio_sunlight: 'Light Requirement · 日照環境',
+      bio_form_title: 'Form · 形態',
+      bio_caution_title: 'Caution · 注意',
+      video_title: 'Time-lapse',
+      video_subtitle: '花開時序縮時',
+      video_desc: 'Time-lapse footage of blooming azaleas in Yangmingshan National Park (4K). Capture the precise moment from bud to full blossom during a fresh spring morning.',
+      video_note: '* Replace the YouTube ID in the iframe to use your own video.',
+      life_title: 'Life Cycle',
+      life_subtitle: '生命週期',
+      life_intro: 'Tap a stage to see details · 點選各階段以查看詳細說明',
+      life_stage_1: 'Bud',
+      life_stage_2: 'Pre-bloom',
+      life_stage_3: 'Bloom',
+      life_stage_4: 'Fruit',
+      audio_title: 'Audio Guide',
+      audio_subtitle: '聲音導覽口述',
+      audio_chinese_nav: 'Chinese Narration',
+      audio_english_nav: 'English Narration',
+      audio_sec_zh: '~ 30 sec',
+      audio_sec_en: '~ 30 秒',
+      audio_note: '* Generated in real-time using browser Web Speech API. For custom audio files, replace with &lt;audio src="azalea.mp3"&gt;.'
     }
   };
 
@@ -139,11 +216,21 @@
     currentLang = lang;
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.dataset.i18n;
-      if (i18n[lang]?.[key] !== undefined) el.textContent = i18n[lang][key];
+      if (i18n[lang]?.[key] !== undefined) {
+        const val = i18n[lang][key];
+        if (val.includes('<') && val.includes('>')) {
+          el.innerHTML = val;
+        } else {
+          el.textContent = val;
+        }
+      }
     });
     dom.langBtn?.classList.toggle('en', lang === 'en');
     document.body.classList.toggle('lang-zh', lang === 'zh');
     document.body.classList.toggle('lang-en', lang === 'en');
+
+    // Update dynamic BIO modal content on language change
+    updateBioModalContent();
   }
 
   // ----------------------------------------------------------
@@ -330,19 +417,27 @@
   // ----------------------------------------------------------
   // LIFECYCLE STAGES (modal-life)
   // ----------------------------------------------------------
-  const lifecycleData = [
-    { title: '芽期 · Bud Stage',  desc: '冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。' },
-    { title: '蕾期 · Pre-bloom', desc: '花苞膨大，外層鱗片裂開，露出粉紅色花瓣。此時需要充足光照與適度濕度，溫度回升加速綻放。' },
-    { title: '花期 · Bloom',     desc: '3–5 月盛放，五瓣對稱，雄蕊外露。花色由純白、淡粉至深桃紅，吸引蝴蝶與蜜蜂授粉。' },
-    { title: '果期 · Fruit',     desc: '花後結蒴果，6 月成熟裂開，散播微小種子。一個蒴果可含數百枚種子，藉風力傳播。' }
-  ];
+  const lifecycleData = {
+    zh: [
+      { title: '芽期 · Bud Stage',  desc: '冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。' },
+      { title: '蕾期 · Pre-bloom', desc: '花苞膨大，外層鱗片裂開，露出粉紅色花瓣。此時需要充足光照與適度濕度，溫度回升加速綻放。' },
+      { title: '花期 · Bloom',     desc: '3–5 月盛放，五瓣對稱，雄蕊外露。花色由純白、淡粉至深桃紅，吸引蝴蝶與蜜蜂授粉。' },
+      { title: '果期 · Fruit',     desc: '花後結蒴果，6 月成熟裂開，散播微小種子。一個蒴果可含數百枚種子，藉風力傳播。' }
+    ],
+    en: [
+      { title: 'Bud Stage · 芽期',  desc: 'In late winter and early spring, azaleas form flower buds at branch tips. The tightly closed scales protect the future blossoms. Accumulated cold is vital for bud differentiation.' },
+      { title: 'Pre-bloom · 蕾期', desc: 'The buds swell, and the outer scales split open to reveal pinkish petals. This phase requires ample light and moderate humidity, with rising temperatures accelerating bloom.' },
+      { title: 'Bloom · 花期',     desc: 'Blooming from March to May, with five symmetrical petals and prominent stamens. Colors range from pure white and light pink to deep rose, attracting butterflies and bees for pollination.' },
+      { title: 'Fruit · 果期',     desc: 'Capsules form after flowering and mature in June, splitting open to disperse tiny seeds. A single capsule can contain hundreds of seeds, which are spread by the wind.' }
+    ]
+  };
   const lcTitle = document.getElementById('lc-title');
   const lcDesc  = document.getElementById('lc-desc');
   document.querySelectorAll('.lc-stage').forEach(stage => {
     stage.addEventListener('click', () => {
       document.querySelectorAll('.lc-stage').forEach(s => s.classList.remove('active'));
       stage.classList.add('active');
-      const data = lifecycleData[parseInt(stage.dataset.stage, 10)];
+      const data = lifecycleData[currentLang][parseInt(stage.dataset.stage, 10)];
       if (data && lcTitle && lcDesc) { lcTitle.textContent = data.title; lcDesc.textContent = data.desc; }
     });
   });
@@ -375,11 +470,14 @@
   // ----------------------------------------------------------
   // LANGUAGE TOGGLE
   // ----------------------------------------------------------
-  dom.langBtn?.addEventListener('click', () => {
+  const toggleLanguage = () => {
     const newLang = currentLang === 'zh' ? 'en' : 'zh';
     applyLanguage(newLang);
     showLangToast(newLang === 'zh' ? '已切換為中文' : 'Switched to English');
-  });
+  };
+
+  dom.langBtn?.addEventListener('click', toggleLanguage);
+  dom.introLangToggle?.addEventListener('click', toggleLanguage);
 
   // ----------------------------------------------------------
   // CAMERA VIDEO SIZE — both libs inject <video> on body level
@@ -410,8 +508,71 @@
     origin_zh: '原產地: 東亞地區',
     origin_en: 'Origin: East Asia',
     desc_zh: '常綠灌木，喜酸性土壤與半遮蔭環境。3-5月盛放。',
-    desc_en: 'Evergreen shrub; thrives in acidic soil and semi-shade. Blooms March-May.'
+    desc_en: 'Evergreen shrub; thrives in acidic soil and semi-shade. Blooms March-May.',
+    // Detailed fields for BIO modal:
+    growth_zh: '常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。',
+    growth_en: 'An evergreen shrub thriving in acidic soil (pH 4.5–5.5) and well-drained, semi-shaded environments. A common species on Taiwan campuses, originating as a large hybrid from Hirado, Japan.',
+    ph_text: 'pH 4.5 - 5.5',
+    ph_left: '33%',
+    light_pills_zh: ['半遮蔭', '避免強光'],
+    light_pills_en: ['Semi-shaded', 'Avoid Intense Light'],
+    tags_zh: ['酸性土', '半遮蔭', '春季'],
+    tags_en: ['Acidic Soil', 'Semi-shaded', 'Spring'],
+    form_zh: '株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。',
+    form_en: 'Shrub height 1–3 meters, leaves elliptical and leathery. Flower color ranges from pure white to deep pink, with 5 symmetrical petals and 5–10 stamens.',
+    caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
+    caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
   };
+
+  function updateBioModalContent() {
+    const titleEl = document.getElementById('bio-modal-title');
+    const growthDescEl = document.getElementById('bio-growth-desc');
+    const phMarkerEl = document.getElementById('bio-ph-marker');
+    const lightPill1 = document.getElementById('bio-light-pill-1');
+    const lightPill2 = document.getElementById('bio-light-pill-2');
+    const tagsWrap = document.getElementById('bio-tags-wrap');
+    const formDescEl = document.getElementById('bio-form-desc');
+    const cautionDescEl = document.getElementById('bio-caution-desc');
+
+    const sp = activeSpecimen;
+    const lang = currentLang;
+
+    if (!sp) return;
+
+    if (titleEl) {
+      const name = lang === 'zh' ? (sp.name_zh || sp.name) : (sp.name_en || sp.name);
+      titleEl.innerHTML = `${name} <span class="latin">${sp.scientific || ''}</span>`;
+    }
+    if (growthDescEl) {
+      growthDescEl.textContent = lang === 'zh' ? (sp.growth_zh || sp.desc_zh) : (sp.growth_en || sp.desc_en);
+    }
+    if (phMarkerEl) {
+      phMarkerEl.textContent = sp.ph_text || 'pH 4.5 - 5.5';
+      phMarkerEl.style.left = sp.ph_left || '33%';
+    }
+    if (lightPill1 && sp.light_pills_zh && sp.light_pills_en) {
+      lightPill1.textContent = lang === 'zh' ? sp.light_pills_zh[0] : sp.light_pills_en[0];
+    }
+    if (lightPill2 && sp.light_pills_zh && sp.light_pills_en) {
+      lightPill2.textContent = lang === 'zh' ? sp.light_pills_zh[1] : sp.light_pills_en[1];
+    }
+    if (tagsWrap && sp.tags_zh && sp.tags_en) {
+      tagsWrap.innerHTML = '';
+      const tags = lang === 'zh' ? sp.tags_zh : sp.tags_en;
+      tags.forEach(tag => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = tag;
+        tagsWrap.appendChild(span);
+      });
+    }
+    if (formDescEl) {
+      formDescEl.textContent = lang === 'zh' ? sp.form_zh : sp.form_en;
+    }
+    if (cautionDescEl) {
+      cautionDescEl.innerHTML = lang === 'zh' ? sp.caution_zh : sp.caution_en;
+    }
+  }
 
   function drawImageCover(ctx, img, w, h) {
     const imgW = img.videoWidth || img.width || w;
@@ -984,6 +1145,7 @@
     enforceCameraSize,
     activeSpecimen,
     captureSpecimen,
+    updateBioModalContent,
     triggerCaptureTooltip,
     spawnConfetti,
     stopConfetti,

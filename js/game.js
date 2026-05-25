@@ -36,7 +36,19 @@
       origin_zh: '原產地: 中國南部 / 東亞',
       origin_en: 'Origin: Southern China / East Asia',
       glb: './gamemode/purple-azalea.glb',
-      scale: 3
+      scale: 3,
+      growth_zh: '常綠或半常綠灌木，適生於微酸性土壤與溫暖濕潤環境。花色呈紫紅色，極具觀賞價值，常見於東亞庭園。',
+      growth_en: 'An evergreen or semi-evergreen shrub, thriving in slightly acidic soil and warm, humid environments. Known for its vibrant purple-red flowers, widely cultivated in East Asian gardens.',
+      ph_text: 'pH 5.0 - 6.0',
+      ph_left: '45%',
+      light_pills_zh: ['喜半陰', '忌烈日'],
+      light_pills_en: ['Likes Partial Shade', 'Avoid Direct Sun'],
+      tags_zh: ['微酸性', '喜濕潤', '中型灌木'],
+      tags_en: ['Slightly Acidic', 'Likes Humidity', 'Medium Shrub'],
+      form_zh: '株高可達 2 公尺，葉披針形。花冠紫紅色，寬漏斗狀，雄蕊 10 枚。',
+      form_en: 'Height up to 2 meters, leaves lanceolate. Corolla is purple-red, broad funnel-shaped, with 10 stamens.',
+      caution_zh: '全株含有毒素，切勿採食。',
+      caution_en: 'The entire plant is toxic; do not ingest.'
     },
     {
       id: 2,
@@ -49,7 +61,19 @@
       origin_zh: '原產地: 日本 / 東亞',
       origin_en: 'Origin: Japan / East Asia',
       glb: './gamemode/white-azalea.glb',
-      scale: 3
+      scale: 3,
+      growth_zh: '常綠灌木，性喜涼爽濕潤、排水良好的酸性土壤。耐半陰，花純白優雅。',
+      growth_en: 'An evergreen shrub preferring cool, moist, and well-drained acidic soil. Tolerates partial shade and produces elegant pure white flowers.',
+      ph_text: 'pH 4.8 - 5.8',
+      ph_left: '38%',
+      light_pills_zh: ['耐半陰', '忌積水'],
+      light_pills_en: ['Shade Tolerant', 'Avoid Waterlogging'],
+      tags_zh: ['純白花', '耐半陰', '排水良好'],
+      tags_en: ['Pure White', 'Shade Tolerant', 'Well-drained'],
+      form_zh: '株高 1–2 公尺，多分枝，葉披針形。花冠白色，有香氣，雄蕊 10 枚。',
+      form_en: 'Height 1–2 meters, heavily branched, leaves lanceolate. Corolla white and fragrant, with 10 stamens.',
+      caution_zh: '含有毒素，請勿折枝或採食。',
+      caution_en: 'Contains toxins; do not break branches or ingest.'
     },
     {
       id: 3,
@@ -62,7 +86,19 @@
       origin_zh: '原產地: 東亞地區',
       origin_en: 'Origin: East Asia',
       glb: './gamemode/default_timelapse.glb',
-      scale: 3
+      scale: 3,
+      growth_zh: '落葉或半常綠灌木，適應性強，喜酸性土壤及半陰環境。花色豔麗多變，為園藝育種的重要親本。',
+      growth_en: 'A deciduous or semi-evergreen shrub with high adaptability, thriving in acidic soils and semi-shaded areas. Extremely colorful and a key parent species for horticultural breeding.',
+      ph_text: 'pH 5.2 - 6.2',
+      ph_left: '50%',
+      light_pills_zh: ['耐旱', '喜散射光'],
+      light_pills_en: ['Drought Tolerant', 'Likes Diffuse Light'],
+      tags_zh: ['耐適應', '多花色', '育種親本'],
+      tags_en: ['Adaptable', 'Multi-colored', 'Breeding Parent'],
+      form_zh: '株高 1–3 公尺，分枝多。花色以紅色為主，漏斗狀，雄蕊 5–10 枚。',
+      form_en: 'Height 1–3 meters, heavily branched. Flower color primarily red, funnel-shaped, with 5–10 stamens.',
+      caution_zh: '具強烈毒性，尤其是葉片和花蜜。',
+      caution_en: 'Highly toxic, particularly the leaves and nectar.'
     },
     {
       id: 4,
@@ -75,7 +111,19 @@
       origin_zh: '原產地: 日本',
       origin_en: 'Origin: Japan',
       glb: './gamemode/purple-azalea.glb',
-      scale: 3
+      scale: 3,
+      growth_zh: '常綠矮灌木，生長緩慢，喜好排水極佳的酸性砂質土壤。在日本盆景藝術中極受推崇。',
+      growth_en: 'An evergreen dwarf shrub, slow-growing and preferring extremely well-drained acidic sandy soil. Highly prized in Japanese bonsai art.',
+      ph_text: 'pH 4.5 - 5.5',
+      ph_left: '33%',
+      light_pills_zh: ['適盆景', '排水佳'],
+      light_pills_en: ['Great for Bonsai', 'Great Drainage'],
+      tags_zh: ['矮性灌木', '盆景珍品', '五月花期'],
+      tags_en: ['Dwarf Shrub', 'Bonsai Treasure', 'Blooms in May'],
+      form_zh: '株高通常低於 1 公尺。花多單生枝頂，色澤多樣，花瓣常有條紋。',
+      form_en: 'Height usually under 1 meter. Flowers mostly solitary at branch tips, in diverse colors, often with striped petals.',
+      caution_zh: '全株含毒性 grayanotoxin，觸摸後建議洗手。',
+      caution_en: 'Contains toxic grayanotoxin; washing hands after handling is recommended.'
     }
   ];
   const TOTAL_FLOWERS = SPECIES.length;
@@ -296,6 +344,21 @@
             App.activeSpecimen.family_en = sp.family_en;
             App.activeSpecimen.origin_zh = sp.origin_zh;
             App.activeSpecimen.origin_en = sp.origin_en;
+            App.activeSpecimen.growth_zh = sp.growth_zh;
+            App.activeSpecimen.growth_en = sp.growth_en;
+            App.activeSpecimen.ph_text = sp.ph_text;
+            App.activeSpecimen.ph_left = sp.ph_left;
+            App.activeSpecimen.light_pills_zh = sp.light_pills_zh;
+            App.activeSpecimen.light_pills_en = sp.light_pills_en;
+            App.activeSpecimen.tags_zh = sp.tags_zh;
+            App.activeSpecimen.tags_en = sp.tags_en;
+            App.activeSpecimen.form_zh = sp.form_zh;
+            App.activeSpecimen.form_en = sp.form_en;
+            App.activeSpecimen.caution_zh = sp.caution_zh;
+            App.activeSpecimen.caution_en = sp.caution_en;
+            
+            // Instantly update the bio modal content
+            App.updateBioModalContent();
           }
           onFlowerScanned(idx);
         }

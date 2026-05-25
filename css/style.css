@@ -75,6 +75,7 @@ a-scene:not(.active) { display: none !important; }
   overflow: hidden;
 }
 #intro.fade-out { opacity: 0; pointer-events: none; }
+#intro.fade-out .pollen { animation: none; }
 
 /* Drifting Pollen Particles */
 .pollen {

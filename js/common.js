@@ -308,6 +308,7 @@
     }
 
     dom.intro.classList.add('fade-out');
+    if (botanistInterval) { clearInterval(botanistInterval); botanistInterval = null; }
     setTimeout(() => dom.intro.style.display = 'none', 600);
     dom.loading.classList.add('active');
     dom.loadingText.textContent = 'Requesting camera...';
@@ -331,6 +332,12 @@
       showError('AR Start Failed', 'Could not start ' + name + ' mode.',
         err.message || String(err));
       activeMode = null;
+    }
+
+    // Lazy-load floating video for explore mode
+    if (name === 'explore') {
+      const fv = document.getElementById('floating-video-el');
+      if (fv && !fv.src) fv.src = './Explore/azalea-bloom.mp4';
     }
   }
 
@@ -356,6 +363,7 @@
     
     // Re-trigger the stunning cinematic entry sequence
     triggerCinematicIntro();
+    startBotanistHud();
 
     // Restore acoustic garden state if active before entering AR
     if (wasSoundOnBeforeAR) {
@@ -379,11 +387,21 @@
   // ----------------------------------------------------------
   // MODALS — generic open/close (BIO/VIDEO/LIFE/AUDIO/MAP)
   // ----------------------------------------------------------
+  let lastFocusBeforeModal = null;
+  function openModal(modal) {
+    if (!modal) return;
+    closeAllModals();
+    lastFocusBeforeModal = document.activeElement;
+    modal.classList.add('show');
+    const first = modal.querySelector('.modal-close, button, [tabindex]');
+    if (first) first.focus();
+  }
   function closeModal(modal) {
     modal.classList.remove('show');
     modal.querySelectorAll('iframe').forEach(i => { const s = i.src; i.src = ''; i.src = s; });
     if (window.speechSynthesis) speechSynthesis.cancel();
     document.querySelectorAll('.audio-btn.playing').forEach(b => b.classList.remove('playing'));
+    if (lastFocusBeforeModal) { lastFocusBeforeModal.focus(); lastFocusBeforeModal = null; }
   }
   function closeAllModals() {
     document.querySelectorAll('.modal').forEach(m => closeModal(m));
@@ -408,9 +426,8 @@
         }
         return;
       }
-      closeAllModals();
       const modal = document.getElementById('modal-' + action);
-      if (modal) modal.classList.add('show');
+      openModal(modal);
     });
   });
 
@@ -523,6 +540,34 @@
     caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
     caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
   };
+
+  function updateActiveSpecimen(sp) {
+    if (!activeSpecimen || !sp) return;
+    Object.assign(activeSpecimen, {
+      name_zh: sp.name_zh || activeSpecimen.name_zh,
+      name_en: sp.name_en || activeSpecimen.name_en,
+      scientific: sp.scientific || activeSpecimen.scientific,
+      family_zh: sp.family_zh || activeSpecimen.family_zh,
+      family_en: sp.family_en || activeSpecimen.family_en,
+      origin_zh: sp.origin_zh || activeSpecimen.origin_zh,
+      origin_en: sp.origin_en || activeSpecimen.origin_en,
+      desc_zh: sp.desc_zh || activeSpecimen.desc_zh,
+      desc_en: sp.desc_en || activeSpecimen.desc_en,
+      growth_zh: sp.growth_zh,
+      growth_en: sp.growth_en,
+      ph_text: sp.ph_text,
+      ph_left: sp.ph_left,
+      light_pills_zh: sp.light_pills_zh,
+      light_pills_en: sp.light_pills_en,
+      tags_zh: sp.tags_zh,
+      tags_en: sp.tags_en,
+      form_zh: sp.form_zh,
+      form_en: sp.form_en,
+      caution_zh: sp.caution_zh,
+      caution_en: sp.caution_en,
+    });
+    updateBioModalContent();
+  }
 
   function updateBioModalContent() {
     const titleEl = document.getElementById('bio-modal-title');
@@ -894,9 +939,13 @@
   }
 
   // 4. Live Museum HUD updates with simulated botanists activity
+  let botanistInterval = null;
   const botanistCountEl = document.getElementById('live-botanist-count');
-  if (botanistCountEl) {
-    setInterval(() => {
+
+  function startBotanistHud() {
+    if (botanistInterval) return;
+    if (!botanistCountEl) return;
+    botanistInterval = setInterval(() => {
       let count = parseInt(botanistCountEl.textContent, 10) || 12;
       // Slight elegant fluctuation
       const change = Math.random() > 0.65 ? (Math.random() > 0.5 ? 1 : -1) : 0;
@@ -904,6 +953,8 @@
       botanistCountEl.textContent = count;
     }, 4500);
   }
+
+  startBotanistHud();
 
   // 5. Acoustic Atmosphere: Synthesized Web Audio API Meditative Soundscape
   let ambientOscs = [];
@@ -1137,6 +1188,7 @@
     applyLanguage,
     showError,
     showLangToast,
+    openModal,
     closeModal,
     closeAllModals,
     registerMode,
@@ -1144,6 +1196,7 @@
     exitActiveMode,
     enforceCameraSize,
     activeSpecimen,
+    updateActiveSpecimen,
     captureSpecimen,
     updateBioModalContent,
     triggerCaptureTooltip,

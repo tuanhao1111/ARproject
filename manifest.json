@@ -1,0 +1,11 @@
+{
+  "name": "杜鵑花 AR · Azalea AR",
+  "short_name": "Azalea AR",
+  "description": "Campus AR experience for exploring azalea flowers",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf6f1",
+  "theme_color": "#6d1b3e",
+  "icons": []
+}

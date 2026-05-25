@@ -176,7 +176,7 @@
   }
 
   function showMapModal() {
-    document.getElementById('modal-map')?.classList.add('show');
+    App.openModal(document.getElementById('modal-map'));
   }
 
   // ----------------------------------------------------------
@@ -336,29 +336,8 @@
         } else {
           // Update active specimen metadata so capture shows the correct species card
           const sp = SPECIES.find(s => s.id === idx);
-          if (sp && App.activeSpecimen) {
-            App.activeSpecimen.name_zh = sp.name_zh;
-            App.activeSpecimen.name_en = sp.name_en;
-            App.activeSpecimen.scientific = sp.scientific;
-            App.activeSpecimen.family_zh = sp.family_zh;
-            App.activeSpecimen.family_en = sp.family_en;
-            App.activeSpecimen.origin_zh = sp.origin_zh;
-            App.activeSpecimen.origin_en = sp.origin_en;
-            App.activeSpecimen.growth_zh = sp.growth_zh;
-            App.activeSpecimen.growth_en = sp.growth_en;
-            App.activeSpecimen.ph_text = sp.ph_text;
-            App.activeSpecimen.ph_left = sp.ph_left;
-            App.activeSpecimen.light_pills_zh = sp.light_pills_zh;
-            App.activeSpecimen.light_pills_en = sp.light_pills_en;
-            App.activeSpecimen.tags_zh = sp.tags_zh;
-            App.activeSpecimen.tags_en = sp.tags_en;
-            App.activeSpecimen.form_zh = sp.form_zh;
-            App.activeSpecimen.form_en = sp.form_en;
-            App.activeSpecimen.caution_zh = sp.caution_zh;
-            App.activeSpecimen.caution_en = sp.caution_en;
-            
-            // Instantly update the bio modal content
-            App.updateBioModalContent();
+          if (sp) {
+            App.updateActiveSpecimen(sp);
           }
           onFlowerScanned(idx);
         }

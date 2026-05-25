@@ -62,33 +62,7 @@
   let gestureHintTimer = null;
 
   function updateActiveSpecimen(sp) {
-    if (!App.activeSpecimen) return;
-    App.activeSpecimen.name_zh = sp.name_zh || '杜鵑花';
-    App.activeSpecimen.name_en = sp.name_en || 'Azalea';
-    App.activeSpecimen.scientific = sp.scientific || 'Rhododendron';
-    App.activeSpecimen.family_zh = sp.family_zh || '杜鵑花科 Ericaceae';
-    App.activeSpecimen.family_en = sp.family_en || 'Ericaceae Family';
-    App.activeSpecimen.origin_zh = sp.origin_zh || '原產地: 東亞地區';
-    App.activeSpecimen.origin_en = sp.origin_en || 'Origin: East Asia';
-    App.activeSpecimen.desc_zh = sp.desc_zh || sp.brief_zh || '';
-    App.activeSpecimen.desc_en = sp.desc_en || sp.brief_en || '';
-    
-    // Detailed bio fields
-    App.activeSpecimen.growth_zh = sp.growth_zh;
-    App.activeSpecimen.growth_en = sp.growth_en;
-    App.activeSpecimen.ph_text = sp.ph_text;
-    App.activeSpecimen.ph_left = sp.ph_left;
-    App.activeSpecimen.light_pills_zh = sp.light_pills_zh;
-    App.activeSpecimen.light_pills_en = sp.light_pills_en;
-    App.activeSpecimen.tags_zh = sp.tags_zh;
-    App.activeSpecimen.tags_en = sp.tags_en;
-    App.activeSpecimen.form_zh = sp.form_zh;
-    App.activeSpecimen.form_en = sp.form_en;
-    App.activeSpecimen.caution_zh = sp.caution_zh;
-    App.activeSpecimen.caution_en = sp.caution_en;
-    
-    // Instantly update the bio modal content
-    App.updateBioModalContent();
+    App.updateActiveSpecimen(sp);
   }
 
   function showGestureHint() {
@@ -384,7 +358,7 @@
   // INFO CARD CLICK → open BIO modal for current species
   // ----------------------------------------------------------
   dom.exploreInfo?.addEventListener('click', () => {
-    document.getElementById('modal-bio')?.classList.add('show');
+    App.openModal(document.getElementById('modal-bio'));
   });
 
   // ----------------------------------------------------------

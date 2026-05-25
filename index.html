@@ -7,6 +7,8 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>杜鵑花 AR · Azalea</title>
+  <meta name="theme-color" content="#6d1b3e" />
+  <link rel="manifest" href="./manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -94,7 +96,7 @@
 </div>
 
 <!-- ============ LOADING ============ -->
-<div id="loading">
+<div id="loading" role="alert" aria-live="assertive">
   <div class="loader"></div>
   <div class="loading-text" id="loading-text">Initializing camera...</div>
 </div>
@@ -146,7 +148,7 @@
   <div class="floating-mode" id="floating-mode">
     <div class="floating-status" data-i18n="floating_status">FREE MODE · 自由模式</div>
     <div class="floating-video">
-      <video id="floating-video-el" src="./Explore/azalea-bloom.mp4" autoplay loop muted playsinline></video>
+      <video id="floating-video-el" autoplay loop muted playsinline></video>
     </div>
   </div>
 
@@ -165,8 +167,8 @@
   <div id="gesture-hint" class="gesture-hint">
     <div class="gesture-hint-header">
       <span class="icon">✨</span>
-      <span class="title-zh">互動手勢指引</span>
-      <span class="title-en">Interactive Gestures</span>
+      <span class="title-zh" data-i18n="gesture_title_zh">互動手勢指引</span>
+      <span class="title-en" data-i18n="gesture_title_en">Interactive Gestures</span>
     </div>
     <div class="gesture-steps">
       <div class="gesture-step">
@@ -176,7 +178,7 @@
           </svg>
         </div>
         <div class="gesture-desc">
-          <div class="desc-zh"><strong>Xoay (Rotate)</strong>: Vuốt 1 ngón để xoay hoa.</div>
+          <div class="desc-zh"><strong>旋轉</strong>：單指滑動旋轉花朵。</div>
           <div class="desc-en">Swipe 1 finger to rotate flower.</div>
         </div>
       </div>
@@ -187,7 +189,7 @@
           </svg>
         </div>
         <div class="gesture-desc">
-          <div class="desc-zh"><strong>Thu Phóng (Zoom)</strong>: Bóp/mở 2 ngón để thu phóng.</div>
+          <div class="desc-zh"><strong>縮放</strong>：雙指捏合來縮放模型。</div>
           <div class="desc-en">Pinch 2 fingers to zoom model.</div>
         </div>
       </div>
@@ -198,13 +200,13 @@
           </svg>
         </div>
         <div class="gesture-desc">
-          <div class="desc-zh"><strong>Di Chuyển (Pan)</strong>: Kéo 2 ngón để dịch chuyển hoa.</div>
+          <div class="desc-zh"><strong>移動</strong>：雙指拖曳來移動花朵。</div>
           <div class="desc-en">Drag 2 fingers to translate.</div>
         </div>
       </div>
     </div>
     <div class="gesture-hint-footer">
-      <span class="label-zh">Chạm màn hình để đóng</span>
+      <span class="label-zh">點擊任意處關閉</span>
       <span class="label-en">Tap anywhere to dismiss</span>
     </div>
   </div>
@@ -248,7 +250,7 @@
   <div class="hud-label" data-i18n="hud_collected">收集 · COLLECTED</div>
   <div class="hud-score">
     <span id="hud-score-current">0</span>
-    <span class="total">/ <span id="hud-score-total">3</span></span>
+    <span class="total">/ <span id="hud-score-total">4</span></span>
   </div>
   <div class="hud-best">
     <span data-i18n="hud_best">最佳 · BEST</span>:
@@ -260,7 +262,7 @@
   <span id="mission-text" data-i18n="mission_start">掃描 START QR 開始 · SCAN START QR</span>
 </div>
 
-<div id="game-toast">
+<div id="game-toast" role="status" aria-live="polite">
   <span id="toast-text">+1</span>
 </div>
 
@@ -282,7 +284,7 @@
     <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
 
     <div class="reward-score-big">
-      <span id="reward-score">3</span><span class="of"> / <span id="reward-score-total">3</span></span>
+      <span id="reward-score">4</span><span class="of"> / <span id="reward-score-total">4</span></span>
     </div>
 
     <div class="reward-message" id="reward-message"></div>
@@ -308,7 +310,7 @@
 <!-- ============ MODALS ============ -->
 
 <!-- Modal: MAP (game mode only — auto-show on enter, reopen via top-bar button) -->
-<div class="modal" id="modal-map">
+<div class="modal" id="modal-map" role="dialog" aria-modal="true">
   <div class="modal-content modal-map-content">
     <div class="modal-header">
       <div class="modal-title">
@@ -318,7 +320,7 @@
       <button class="modal-close" data-close>×</button>
     </div>
     <div class="modal-body">
-      <p data-i18n="map_intro">沿校園尋找 3 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。</p>
+      <p data-i18n="map_intro">沿校園尋找 4 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。</p>
       <div class="map-wrap">
         <img src="./gamemode/campus-map.png" alt="Campus quest map" class="map-img"/>
       </div>
@@ -328,7 +330,7 @@
 </div>
 
 <!-- Modal: BIO -->
-<div class="modal" id="modal-bio">
+<div class="modal" id="modal-bio" role="dialog" aria-modal="true">
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-title" id="bio-modal-title">
@@ -381,7 +383,7 @@
 </div>
 
 <!-- Modal: VIDEO -->
-<div class="modal" id="modal-video">
+<div class="modal" id="modal-video" role="dialog" aria-modal="true">
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-title">
@@ -406,7 +408,7 @@
 </div>
 
 <!-- Modal: LIFECYCLE -->
-<div class="modal" id="modal-life">
+<div class="modal" id="modal-life" role="dialog" aria-modal="true">
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-title">
@@ -471,7 +473,7 @@
 </div>
 
 <!-- Modal: AUDIO -->
-<div class="modal" id="modal-audio">
+<div class="modal" id="modal-audio" role="dialog" aria-modal="true">
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-title">

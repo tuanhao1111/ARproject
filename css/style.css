@@ -537,7 +537,7 @@ a-scene:not(.active) {
 /* ============ GAME HUD ============ */
 #game-hud {
   position: fixed;
-  top: 96px;
+  top: 87px;
   right: 16px;
   z-index: 90;
   background: transparent;
@@ -568,7 +568,7 @@ a-scene:not(.active) {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: var(--azalea-leaf);
+  color: white;
   margin-bottom: 4px;
   text-transform: uppercase;
 }
@@ -588,7 +588,7 @@ a-scene:not(.active) {
 
 #game-hud .hud-score .total {
   font-size: 14px;
-  color: var(--azalea-leaf);
+  color: white;
   font-weight: 400;
   font-style: normal;
   font-family: 'Noto Sans TC', system-ui, sans-serif;
@@ -598,7 +598,7 @@ a-scene:not(.active) {
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.05em;
-  color: var(--azalea-leaf);
+  color: white;
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px dashed rgba(109, 27, 62, 0.15);

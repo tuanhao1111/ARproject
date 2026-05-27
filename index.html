@@ -132,11 +132,9 @@
       <div class="top-meta">
         <div class="live-dot-wrap">
           <span class="live-dot"></span>
-          <span class="live-label">LIVE DATA</span>
         </div>
-        <div class="specimen-label"><span data-i18n="specimen">標本</span> <span data-i18n="specimen_en">SPECIMEN</span>
+        <div class="specimen-label"><span data-i18n="specimen_en">SPECIMEN</span>
         </div>
-        <div class="specimen-num"><span class="num">001</span> / 01</div>
       </div>
       <button class="map-btn game-only" id="map-btn" title="Show campus map" aria-label="Show map">
         <svg viewBox="0 0 24 24">
@@ -165,6 +163,21 @@
         <video id="floating-video-el" autoplay loop muted playsinline></video>
       </div>
     </div>
+
+    <!-- DETACH CONTROLS (hiện khi hoa bị decouple khỏi marker) -->
+    <div class="detach-controls" id="detach-controls">
+      <div class="detach-status">
+        <span class="detach-dot"></span>
+        <span data-i18n="detach_status">自由飛翔 · FREE FLIGHT</span>
+      </div>
+      <div class="detach-hint">
+        <span data-i18n="detach_hint">雙指移動，單指旋轉</span>
+      </div>
+      <button class="btn-reset-flower" id="btn-reset-flower">
+        <span data-i18n="btn_reset_flower">重設位置 · RE-DOCK</span>
+      </button>
+    </div>
+
 
     <!-- EXPLORE INFO CARD (hiện khi target được detect trong cả Explore và Game mode) -->
     <!-- Tap → mở modal BIO. JS sẽ điền nội dung tương ứng. -->

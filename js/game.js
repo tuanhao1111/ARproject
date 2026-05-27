@@ -36,7 +36,7 @@
       origin_zh: '原產地: 中國南部 / 東亞',
       origin_en: 'Origin: Southern China / East Asia',
       glb: './gamemode/purple-azalea.glb',
-      scale: 3,
+      scale: 15,
       growth_zh: '常綠或半常綠灌木，適生於微酸性土壤與溫暖濕潤環境。花色呈紫紅色，極具觀賞價值，常見於東亞庭園。',
       growth_en: 'An evergreen or semi-evergreen shrub, thriving in slightly acidic soil and warm, humid environments. Known for its vibrant purple-red flowers, widely cultivated in East Asian gardens.',
       ph_text: 'pH 5.0 - 6.0',
@@ -61,7 +61,7 @@
       origin_zh: '原產地: 日本 / 東亞',
       origin_en: 'Origin: Japan / East Asia',
       glb: './gamemode/white-azalea.glb',
-      scale: 3,
+      scale: 15,
       growth_zh: '常綠灌木，性喜涼爽濕潤、排水良好的酸性土壤。耐半陰，花純白優雅。',
       growth_en: 'An evergreen shrub preferring cool, moist, and well-drained acidic soil. Tolerates partial shade and produces elegant pure white flowers.',
       ph_text: 'pH 4.8 - 5.8',
@@ -86,8 +86,8 @@
       origin_zh: '原產地: 東亞地區',
       origin_en: 'Origin: East Asia',
       glb: './gamemode/default_timelapse.glb',
-      scale: 3,
-      growth_zh: '落葉或半常綠灌木，適應性強，喜酸性土壤及半陰環境。花色豔麗多變，為園藝育種的重要親本。',
+      scale: 15,
+      growth_zh: '落葉 or 半常綠灌木，適應性強，喜酸性土壤及半陰環境。花色豔麗多變，為園藝育種的重要親本。',
       growth_en: 'A deciduous or semi-evergreen shrub with high adaptability, thriving in acidic soils and semi-shaded areas. Extremely colorful and a key parent species for horticultural breeding.',
       ph_text: 'pH 5.2 - 6.2',
       ph_left: '50%',
@@ -111,7 +111,7 @@
       origin_zh: '原產地: 日本',
       origin_en: 'Origin: Japan',
       glb: './gamemode/purple-azalea.glb',
-      scale: 3,
+      scale: 15,
       growth_zh: '常綠矮灌木，生長緩慢，喜好排水極佳的酸性砂質土壤。在日本盆景藝術中極受推崇。',
       growth_en: 'An evergreen dwarf shrub, slow-growing and preferring extremely well-drained acidic sandy soil. Highly prized in Japanese bonsai art.',
       ph_text: 'pH 4.5 - 5.5',
@@ -135,10 +135,22 @@
     finished: false,
     collected: new Set(),
   };
+
+  let activeFlowerId = -1;
+  const USER_SCALE_MIN = 0.5;
+  const USER_SCALE_MAX = 5.0;
+  let userScale = 1, userRot = { x: 0, y: 0 };
+  let pinchStart = null, pinchStartScale = null;
+  let oneStart = null, oneStartRot = null;
+
   const resetGameState = () => {
     gameState.started = false;
     gameState.finished = false;
     gameState.collected = new Set();
+    activeFlowerId = -1;
+    userScale = 1;
+    userRot = { x: 0, y: 0 };
+    hideInfoCard();
   };
 
   const getBest = () => parseInt(localStorage.getItem(LS_BEST) || '0', 10);
@@ -177,6 +189,26 @@
 
   function showMapModal() {
     App.openModal(document.getElementById('modal-map'));
+  }
+
+  // ----------------------------------------------------------
+  // INFO CARD — show species info when target detected
+  // ----------------------------------------------------------
+  function showInfoCard(sp) {
+    if (!sp || !dom.exploreInfo) return;
+    const lang = App.currentLang;
+    const name = lang === 'zh' ? sp.name_zh : sp.name_en;
+    const brief = lang === 'zh' ? (sp.growth_zh || sp.form_zh) : (sp.growth_en || sp.form_en);
+    const origin = lang === 'zh' ? sp.origin_zh : sp.origin_en;
+    
+    dom.exploreInfo.querySelector('.ei-name').textContent = name;
+    dom.exploreInfo.querySelector('.ei-latin').textContent = sp.scientific;
+    dom.exploreInfo.querySelector('.ei-brief').textContent = `${origin} • ${brief}`;
+    dom.exploreInfo.classList.add('show');
+  }
+
+  function hideInfoCard() {
+    dom.exploreInfo?.classList.remove('show');
   }
 
   // ----------------------------------------------------------
@@ -298,12 +330,17 @@
       m.classList.add('flower-target');
       m.dataset.flower = String(sp.id);
 
+      const wrap = document.createElement('a-entity');
+      wrap.classList.add('game-wrap');
+
       const model = document.createElement('a-gltf-model');
       model.setAttribute('src', sp.glb);
       model.setAttribute('position', '0 0.2 0');
       model.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
       model.setAttribute('visible', 'false');
-      m.appendChild(model);
+      wrap.appendChild(model);
+
+      m.appendChild(wrap);
 
       const label = document.createElement('a-text');
       label.setAttribute('value', String(sp.id).padStart(2, '0'));
@@ -334,16 +371,22 @@
         if (isStart) {
           onStartScanned();
         } else {
+          activeFlowerId = idx;
           // Update active specimen metadata so capture shows the correct species card
           const sp = SPECIES.find(s => s.id === idx);
           if (sp) {
             App.updateActiveSpecimen(sp);
+            showInfoCard(sp);
           }
           onFlowerScanned(idx);
         }
       });
       marker.addEventListener('markerLost', () => {
         console.log('[game] markerLost value=' + idx);
+        if (activeFlowerId === idx) {
+          activeFlowerId = -1;
+          hideInfoCard();
+        }
       });
     });
   }
@@ -421,6 +464,95 @@
     });
     resetGameState();
   }
+
+  // ----------------------------------------------------------
+  // GESTURES — rotate flower on swipe, scale on pinch
+  // ----------------------------------------------------------
+  function currentWrap() {
+    if (activeFlowerId < 0 || !sceneEl) return null;
+    return sceneEl.querySelector(`[data-flower="${activeFlowerId}"] .game-wrap`);
+  }
+
+  function applyTransform() {
+    const w = currentWrap();
+    if (!w?.object3D) return;
+    w.object3D.scale.set(userScale, userScale, userScale);
+    w.object3D.rotation.x = userRot.x * Math.PI / 180;
+    w.object3D.rotation.y = userRot.y * Math.PI / 180;
+  }
+
+  const IGNORE = '.fab, .modal, .top-bar, button, .audio-player, .lc-stage, .lang-btn, #explore-info';
+  function touchDist(a, b) {
+    const dx = a.clientX - b.clientX, dy = a.clientY - b.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest(IGNORE)) return;
+    if (e.touches.length === 2) {
+      pinchStart = touchDist(e.touches[0], e.touches[1]);
+      pinchStartScale = userScale;
+      e.preventDefault();
+    } else if (e.touches.length === 1) {
+      oneStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      oneStartRot = { ...userRot };
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest(IGNORE)) return;
+    if (e.touches.length === 2 && pinchStart) {
+      const ratio = touchDist(e.touches[0], e.touches[1]) / pinchStart;
+      userScale = Math.max(USER_SCALE_MIN, Math.min(USER_SCALE_MAX, pinchStartScale * ratio));
+      applyTransform();
+      e.preventDefault();
+    } else if (e.touches.length === 1 && oneStart) {
+      const dx = (e.touches[0].clientX - oneStart.x) / window.innerWidth;
+      const dy = (e.touches[0].clientY - oneStart.y) / window.innerHeight;
+      userRot.y = oneStartRot.y + dx * 360;
+      userRot.x = Math.max(-80, Math.min(80, oneStartRot.x + dy * 360));
+      applyTransform();
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) { pinchStart = null; oneStart = null; }
+    else if (e.touches.length === 1) {
+      pinchStart = null;
+      oneStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      oneStartRot = { ...userRot };
+    }
+  });
+
+  // Desktop: mouse drag = rotate, wheel = scale
+  let mDragging = false, mStart = null, mStartRot = null;
+  document.addEventListener('mousedown', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest(IGNORE)) return;
+    mDragging = true;
+    mStart = { x: e.clientX, y: e.clientY };
+    mStartRot = { ...userRot };
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!mDragging) return;
+    const dx = (e.clientX - mStart.x) / window.innerWidth;
+    const dy = (e.clientY - mStart.y) / window.innerHeight;
+    userRot.y = mStartRot.y + dx * 360;
+    userRot.x = Math.max(-80, Math.min(80, mStartRot.x + dy * 360));
+    applyTransform();
+  });
+  document.addEventListener('mouseup', () => { mDragging = false; });
+  document.addEventListener('wheel', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest('.modal, .info-card, .audio-player, .lang-btn, #explore-info')) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.92 : 1.08;
+    userScale = Math.max(USER_SCALE_MIN, Math.min(USER_SCALE_MAX, userScale * delta));
+    applyTransform();
+  }, { passive: false });
 
   // ----------------------------------------------------------
   // REWARD MODAL HANDLERS

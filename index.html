@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -12,7 +13,9 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400;1,500&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400;1,500&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap"
+    rel="stylesheet" />
 
   <link rel="stylesheet" href="./css/style.css" />
 
@@ -23,507 +26,543 @@
        trong JS để tránh xung đột camera. -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
+
 <body>
 
-<!-- ============ INTRO SCREEN ============ -->
-<div id="intro">
-  <!-- Interactive custom spotlight overlay -->
-  <div id="intro-spotlight" class="intro-spotlight"></div>
-  
-  <!-- Drifting pollen particles for organic museum atmosphere -->
-  <div class="pollen p1"></div>
-  <div class="pollen p2"></div>
-  <div class="pollen p3"></div>
-  <div class="pollen p4"></div>
-  <div class="pollen p5"></div>
+  <!-- ============ INTRO SCREEN ============ -->
+  <div id="intro">
+    <!-- Interactive custom spotlight overlay -->
+    <div id="intro-spotlight" class="intro-spotlight"></div>
 
-  <div class="intro-header reveal-item reveal-delay-1">
-    <div class="intro-header-left">
-      <div class="badge" data-i18n="intro_badge">校園生態 · AR 導覽</div>
-      <div class="intro-live-hud" id="intro-live-hud">
-        <span class="live-pulse"></span>
-        <span class="live-text"><span id="live-botanist-count">12</span> <span data-i18n="intro_active_botanists">ACTIVE BOTANISTS</span></span>
+    <!-- Drifting pollen particles for organic museum atmosphere -->
+    <div class="pollen p1"></div>
+    <div class="pollen p2"></div>
+    <div class="pollen p3"></div>
+    <div class="pollen p4"></div>
+    <div class="pollen p5"></div>
+
+    <div class="intro-header reveal-item reveal-delay-1">
+      <div class="intro-header-left">
+        <div class="badge" data-i18n="intro_badge">校園生態 · AR 導覽</div>
+        <div class="intro-live-hud" id="intro-live-hud">
+          <span class="live-pulse"></span>
+          <span class="live-text"><span id="live-botanist-count">12</span> <span
+              data-i18n="intro_active_botanists">ACTIVE BOTANISTS</span></span>
+        </div>
+      </div>
+      <div class="intro-header-right">
+        <button class="intro-ctrl-btn" id="intro-lang-toggle" title="切換語言 / Switch Language"
+          aria-label="Switch Language">
+          <!-- Globe SVG -->
+          <svg class="lang-icon" viewBox="0 0 24 24">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z" />
+          </svg>
+        </button>
+        <button class="intro-ctrl-btn" id="intro-sound-toggle" title="Toggle Sound" aria-label="Toggle Sound">
+          <!-- Speaker Unmute SVG -->
+          <svg class="sound-icon" viewBox="0 0 24 24">
+            <path
+              d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM4.5 9v6H8l4.5 4.5V4.5L8 9H4.5z" />
+          </svg>
+        </button>
+        <button class="intro-ctrl-btn" id="intro-theme-toggle" title="Toggle Night Mode" aria-label="Toggle Night Mode">
+          <!-- Moon SVG -->
+          <svg class="theme-icon-moon" viewBox="0 0 24 24">
+            <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z" />
+          </svg>
+        </button>
       </div>
     </div>
-    <div class="intro-header-right">
-      <button class="intro-ctrl-btn" id="intro-lang-toggle" title="切換語言 / Switch Language" aria-label="Switch Language">
-        <!-- Globe SVG -->
-        <svg class="lang-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/></svg>
-      </button>
-      <button class="intro-ctrl-btn" id="intro-sound-toggle" title="Toggle Sound" aria-label="Toggle Sound">
-        <!-- Speaker Unmute SVG -->
-        <svg class="sound-icon" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM4.5 9v6H8l4.5 4.5V4.5L8 9H4.5z"/></svg>
-      </button>
-      <button class="intro-ctrl-btn" id="intro-theme-toggle" title="Toggle Night Mode" aria-label="Toggle Night Mode">
-        <!-- Moon SVG -->
-        <svg class="theme-icon-moon" viewBox="0 0 24 24"><path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z"/></svg>
-      </button>
+
+    <div class="intro-main">
+      <div class="meta-line reveal-item reveal-delay-2">
+        <span data-i18n="intro_meta_sub">生物學專題報告</span>
+        <span class="dot"></span>
+        <span>2026</span>
+      </div>
+      <h1 class="title-zh reveal-item reveal-delay-3" data-i18n="intro_title_zh">尋見<span class="accent">杜鵑</span></h1>
+      <p class="title-en reveal-item reveal-delay-4" data-i18n="intro_title_en">A bloom that lives by conditions</p>
+      <p class="description reveal-item reveal-delay-5" data-i18n="intro_desc">
+        杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。
+        將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
+      </p>
+
+      <!-- Scientific researcher preview card -->
+      <div class="intro-exhibit-card reveal-item reveal-delay-6">
+        <div class="exhibit-badge" data-i18n="intro_card_badge"><span class="icon">🔍</span> Spatially Analyzed Specimen
+          No. 001</div>
+        <h2 class="exhibit-header" data-i18n="intro_card_header">Rhododendron pulchrum</h2>
+        <p class="exhibit-meta" data-i18n="intro_card_meta">Division: Angiosperms • Family: Ericaceae</p>
+      </div>
+    </div>
+
+    <div class="intro-footer reveal-item reveal-delay-7">
+      <div class="intro-cta-stack">
+        <button class="game-btn" id="game-btn">
+          <span><span class="game-icon">✦</span><span data-i18n="game_btn">遊戲模式 · GAME MODE</span></span>
+        </button>
+        <button class="start-btn" id="start-btn">
+          <span data-i18n="explore_btn">開始尋花 · EXPLORE</span>
+        </button>
+      </div>
+      <div class="credits" data-i18n="intro_credits">校園植物學社</div>
     </div>
   </div>
 
-  <div class="intro-main">
-    <div class="meta-line reveal-item reveal-delay-2">
-      <span data-i18n="intro_meta_sub">生物學專題報告</span>
-      <span class="dot"></span>
-      <span>2026</span>
-    </div>
-    <h1 class="title-zh reveal-item reveal-delay-3" data-i18n="intro_title_zh">尋見<span class="accent">杜鵑</span></h1>
-    <p class="title-en reveal-item reveal-delay-4" data-i18n="intro_title_en">A bloom that lives by conditions</p>
-    <p class="description reveal-item reveal-delay-5" data-i18n="intro_desc">
-      杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。
-      將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
-    </p>
-
-    <!-- Scientific researcher preview card -->
-    <div class="intro-exhibit-card reveal-item reveal-delay-6">
-      <div class="exhibit-badge" data-i18n="intro_card_badge"><span class="icon">🔍</span> Spatially Analyzed Specimen No. 001</div>
-      <h2 class="exhibit-header" data-i18n="intro_card_header">Rhododendron pulchrum</h2>
-      <p class="exhibit-meta" data-i18n="intro_card_meta">Division: Angiosperms • Family: Ericaceae</p>
-    </div>
+  <!-- ============ LOADING ============ -->
+  <div id="loading" role="alert" aria-live="assertive">
+    <div class="loader"></div>
+    <div class="loading-text" id="loading-text">Initializing camera...</div>
   </div>
 
-  <div class="intro-footer reveal-item reveal-delay-7">
-    <div class="intro-cta-stack">
-      <button class="game-btn" id="game-btn">
-        <span><span class="game-icon">✦</span><span data-i18n="game_btn">遊戲模式 · GAME MODE</span></span>
-      </button>
-      <button class="start-btn" id="start-btn">
-        <span data-i18n="explore_btn">開始尋花 · EXPLORE</span>
-      </button>
-    </div>
-    <div class="credits" data-i18n="intro_credits">校園植物學社</div>
+  <!-- ============ ERROR ============ -->
+  <div id="error-screen">
+    <h2 id="error-title">Camera Access Required</h2>
+    <p id="error-msg">This experience needs your camera.</p>
+    <div class="err-detail" id="err-detail"></div>
+    <button id="error-retry">Try Again</button>
   </div>
-</div>
 
-<!-- ============ LOADING ============ -->
-<div id="loading" role="alert" aria-live="assertive">
-  <div class="loader"></div>
-  <div class="loading-text" id="loading-text">Initializing camera...</div>
-</div>
-
-<!-- ============ ERROR ============ -->
-<div id="error-screen">
-  <h2 id="error-title">Camera Access Required</h2>
-  <p id="error-msg">This experience needs your camera.</p>
-  <div class="err-detail" id="err-detail"></div>
-  <button id="error-retry">Try Again</button>
-</div>
-
-<!-- ============ SCENE HOST ============ -->
-<!-- AR scene được mount động vào đây bởi js/game.js (AR.js barcode) hoặc
+  <!-- ============ SCENE HOST ============ -->
+  <!-- AR scene được mount động vào đây bởi js/game.js (AR.js barcode) hoặc
      js/explore.js (MindAR image target). Chỉ 1 scene active tại 1 thời điểm,
      khi user bấm BACK → JS unmount để giải phóng camera. -->
-<div id="scene-host"></div>
+  <div id="scene-host"></div>
 
-<!-- ============ AR UI OVERLAY ============ -->
-<div id="ar-ui">
-  <div class="top-bar">
-    <button class="back-btn" id="back-btn" data-i18n="back">← BACK</button>
-    <div class="top-meta">
-      <div class="live-dot-wrap">
-        <span class="live-dot"></span>
-        <span class="live-label">LIVE DATA</span>
-      </div>
-      <div class="specimen-label"><span data-i18n="specimen">標本</span> <span data-i18n="specimen_en">SPECIMEN</span></div>
-      <div class="specimen-num"><span class="num">001</span> / 01</div>
-    </div>
-    <button class="map-btn game-only" id="map-btn" title="Show campus map" aria-label="Show map">
-      <svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 2.2L15 8v11.8L9 18V6.2zm-2 .2v11.6l-2 .7V7l2-.6zm10 0l2-.6v11.6l-2 .7V6.4z"/></svg>
-    </button>
-    <button class="lang-btn" id="lang-btn" title="Switch language">
-      <span class="lang-active" id="lang-active">中</span>
-      <span class="lang-divider">/</span>
-      <span class="lang-inactive" id="lang-inactive">EN</span>
-    </button>
-  </div>
-
-  <div class="scan-hint" id="scan-hint">
-    <div class="scan-laser"></div>
-    <span class="corner c1"></span><span class="corner c2"></span>
-    <span class="corner c3"></span><span class="corner c4"></span>
-    <span class="label" data-i18n="scan_hint">POINT AT THE QR MARKER · 將鏡頭對準 QR 標記</span>
-  </div>
-
-  <!-- FLOATING UI MODE (hiện khi camera lia khỏi marker) -->
-  <div class="floating-mode" id="floating-mode">
-    <div class="floating-status" data-i18n="floating_status">FREE MODE · 自由模式</div>
-    <div class="floating-video">
-      <video id="floating-video-el" autoplay loop muted playsinline></video>
-    </div>
-  </div>
-
-  <!-- EXPLORE INFO CARD (hiện khi target được detect trong cả Explore và Game mode) -->
-  <!-- Tap → mở modal BIO. JS sẽ điền nội dung tương ứng. -->
-  <div id="explore-info">
-    <div class="ei-row">
-      <div class="ei-name">—</div>
-      <div class="ei-latin">—</div>
-    </div>
-    <div class="ei-brief">—</div>
-    <div class="ei-hint">點擊查看詳細資訊 · Tap for details</div>
-  </div>
-
-  <!-- Interactive Gesture Help Panel -->
-  <div id="gesture-hint" class="gesture-hint">
-    <div class="gesture-hint-header">
-      <span class="icon">✨</span>
-      <span class="title-zh" data-i18n="gesture_title_zh">互動手勢指引</span>
-      <span class="title-en" data-i18n="gesture_title_en">Interactive Gestures</span>
-    </div>
-    <div class="gesture-steps">
-      <div class="gesture-step">
-        <div class="gesture-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a1 1 0 0 1 1 1v6.3a2.5 2.5 0 0 1 2 2.4v.3a3.5 3.5 0 0 1 3.5 3.5v1.5a3 3 0 0 1-3 3h-4.5A7.5 7.5 0 0 1 4.5 13v-2.5a2.5 2.5 0 0 1 5 0v.5c0 .3.2.5.5.5s.5-.2.5-.5v-8a1 1 0 0 1 1-1z"/>
-          </svg>
+  <!-- ============ AR UI OVERLAY ============ -->
+  <div id="ar-ui">
+    <div class="top-bar">
+      <button class="back-btn" id="back-btn" data-i18n="back">← BACK</button>
+      <div class="top-meta">
+        <div class="live-dot-wrap">
+          <span class="live-dot"></span>
+          <span class="live-label">LIVE DATA</span>
         </div>
-        <div class="gesture-desc">
-          <div class="desc-zh"><strong>旋轉</strong>：單指滑動旋轉花朵。</div>
-          <div class="desc-en">Swipe 1 finger to rotate flower.</div>
+        <div class="specimen-label"><span data-i18n="specimen">標本</span> <span data-i18n="specimen_en">SPECIMEN</span>
         </div>
+        <div class="specimen-num"><span class="num">001</span> / 01</div>
       </div>
-      <div class="gesture-step">
-        <div class="gesture-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 15l3 3m0 0l-3 3m3-3H11M6 9L3 6m0 0l3-3M3 6h10"/>
-          </svg>
-        </div>
-        <div class="gesture-desc">
-          <div class="desc-zh"><strong>縮放</strong>：雙指捏合來縮放模型。</div>
-          <div class="desc-en">Pinch 2 fingers to zoom model.</div>
-        </div>
-      </div>
-      <div class="gesture-step">
-        <div class="gesture-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5v14M12 5l3 3m-3-3L9 8m3 11l3-3m-3 3l-3-3"/>
-          </svg>
-        </div>
-        <div class="gesture-desc">
-          <div class="desc-zh"><strong>移動</strong>：雙指拖曳來移動花朵。</div>
-          <div class="desc-en">Drag 2 fingers to translate.</div>
-        </div>
-      </div>
-    </div>
-    <div class="gesture-hint-footer">
-      <span class="label-zh">點擊任意處關閉</span>
-      <span class="label-en">Tap anywhere to dismiss</span>
-    </div>
-  </div>
-
-  <!-- 5 FAB buttons -->
-  <div class="fabs" id="fabs">
-    <button class="fab" data-action="bio">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z"/><circle cx="12" cy="14" r="2"/></svg>
-      <span class="lab-zh">生態</span>
-      <span class="lab-en">Bio</span>
-    </button>
-    <button class="fab" data-action="video">
-      <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M10 10l4 2-4 2v-4z" fill="currentColor" stroke="none"/></svg>
-      <span class="lab-zh">影片</span>
-      <span class="lab-en">Video</span>
-    </button>
-    <button class="fab" data-action="life">
-      <svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/><circle cx="12" cy="12" r="3"/></svg>
-      <span class="lab-zh">生命</span>
-      <span class="lab-en">Life</span>
-    </button>
-    <button class="fab" data-action="audio">
-      <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14"/></svg>
-      <span class="lab-zh">聲音</span>
-      <span class="lab-en">Audio</span>
-    </button>
-    <button class="fab" data-action="capture" id="capture-btn" title="Capture Specimen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-        <circle cx="12" cy="13" r="4"/>
-      </svg>
-      <span class="lab-zh">拍照</span>
-      <span class="lab-en">Capture</span>
-      <div id="capture-tooltip" class="capture-tooltip" data-i18n="capture_tooltip">📸 拍照生成黃金標本</div>
-    </button>
-  </div>
-</div>
-
-<!-- ============ GAME MODE UI ============ -->
-<div id="game-hud">
-  <div class="hud-label" data-i18n="hud_collected">收集 · COLLECTED</div>
-  <div class="hud-score">
-    <span id="hud-score-current">0</span>
-    <span class="total">/ <span id="hud-score-total">4</span></span>
-  </div>
-  <div class="hud-best">
-    <span data-i18n="hud_best">最佳 · BEST</span>:
-    <span id="hud-best-value">—</span>
-  </div>
-</div>
-
-<div id="game-mission" class="glow">
-  <span id="mission-text" data-i18n="mission_start">掃描 START QR 開始 · SCAN START QR</span>
-</div>
-
-<div id="game-toast" role="status" aria-live="polite">
-  <span id="toast-text">+1</span>
-</div>
-
-<div id="reward-modal">
-  <div id="confetti-container"></div>
-  <div class="reward-card">
-    <div class="glow-sunburst"></div>
-    <div class="reward-sparkles">
-      <span class="sparkle s1">✦</span>
-      <span class="sparkle s2">✦</span>
-      <span class="sparkle s3">✦</span>
-      <span class="sparkle s4">✦</span>
-    </div>
-    <div class="reward-stamp" data-i18n="reward_stamp">尋花已成 · QUEST COMPLETE</div>
-    <div class="reward-medal-container">
-      <img src="./gamemode/reward-medal.png" alt="Dayeh University badge" class="reward-medal"/>
-    </div>
-    <div class="reward-title" data-i18n="reward_title">恭喜！</div>
-    <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
-
-    <div class="reward-score-big">
-      <span id="reward-score">4</span><span class="of"> / <span id="reward-score-total">4</span></span>
+      <button class="map-btn game-only" id="map-btn" title="Show campus map" aria-label="Show map">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 2.2L15 8v11.8L9 18V6.2zm-2 .2v11.6l-2 .7V7l2-.6zm10 0l2-.6v11.6l-2 .7V6.4z" />
+        </svg>
+      </button>
+      <button class="lang-btn" id="lang-btn" title="Switch language">
+        <span class="lang-active" id="lang-active">中</span>
+        <span class="lang-divider">/</span>
+        <span class="lang-inactive" id="lang-inactive">EN</span>
+      </button>
     </div>
 
-    <div class="reward-message" id="reward-message"></div>
+    <div class="scan-hint" id="scan-hint">
+      <div class="scan-laser"></div>
+      <span class="corner c1"></span><span class="corner c2"></span>
+      <span class="corner c3"></span><span class="corner c4"></span>
+      <span class="label" data-i18n="scan_hint">POINT AT THE QR MARKER · 將鏡頭對準 QR 標記</span>
+    </div>
 
-    <div class="reward-stats">
-      <div class="reward-stat">
-        <span class="num" id="reward-best">0</span>
-        <span class="lbl" data-i18n="reward_best">最佳 · BEST</span>
-      </div>
-      <div class="reward-stat">
-        <span class="num" id="reward-runs">1</span>
-        <span class="lbl" data-i18n="reward_runs">完成次數 · RUNS</span>
+    <!-- FLOATING UI MODE (hiện khi camera lia khỏi marker) -->
+    <div class="floating-mode" id="floating-mode">
+      <div class="floating-status" data-i18n="floating_status">FREE MODE · 自由模式</div>
+      <div class="floating-video">
+        <video id="floating-video-el" autoplay loop muted playsinline></video>
       </div>
     </div>
 
-    <div class="reward-actions">
-      <button class="reward-btn reward-btn-secondary" id="reward-close" data-i18n="reward_close">關閉 · CLOSE</button>
-      <button class="reward-btn reward-btn-primary" id="reward-replay" data-i18n="reward_replay">再玩一次 · PLAY AGAIN</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ MODALS ============ -->
-
-<!-- Modal: MAP (game mode only — auto-show on enter, reopen via top-bar button) -->
-<div class="modal" id="modal-map" role="dialog" aria-modal="true">
-  <div class="modal-content modal-map-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-i18n="map_title">校園尋花地圖</span>
-        <span class="latin" data-i18n="map_subtitle">Campus quest map</span>
+    <!-- EXPLORE INFO CARD (hiện khi target được detect trong cả Explore và Game mode) -->
+    <!-- Tap → mở modal BIO. JS sẽ điền nội dung tương ứng. -->
+    <div id="explore-info">
+      <div class="ei-row">
+        <div class="ei-name">—</div>
+        <div class="ei-latin">—</div>
       </div>
-      <button class="modal-close" data-close>×</button>
+      <div class="ei-brief">—</div>
+      <div class="ei-hint">點擊查看詳細資訊 · Tap for details</div>
     </div>
-    <div class="modal-body">
-      <p data-i18n="map_intro">沿校園尋找 4 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。</p>
-      <div class="map-wrap">
-        <img src="./gamemode/campus-map.png" alt="Campus quest map" class="map-img"/>
-      </div>
-      <p class="map-foot" data-i18n="map_foot">⚫ 黑色標記 = QR 位置 · Black pins = QR locations</p>
-    </div>
-  </div>
-</div>
 
-<!-- Modal: BIO -->
-<div class="modal" id="modal-bio" role="dialog" aria-modal="true">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title" id="bio-modal-title">
-        平戶杜鵑
-        <span class="latin">Rhododendron × pulchrum</span>
+    <!-- Interactive Gesture Help Panel -->
+    <div id="gesture-hint" class="gesture-hint">
+      <div class="gesture-hint-header">
+        <span class="icon">✨</span>
+        <span class="title-zh" data-i18n="gesture_title_zh">互動手勢指引</span>
+        <span class="title-en" data-i18n="gesture_title_en">Interactive Gestures</span>
       </div>
-      <button class="modal-close" data-close>×</button>
-    </div>
-    <div class="modal-body">
-      <h3 data-i18n="bio_growth_title">生長條件 · Growth Conditions</h3>
-      <p id="bio-growth-desc">常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。</p>
-      
-      <!-- Premium Growth Indicators -->
-      <div class="growth-indicators">
-        <div class="indicator-group">
-          <div class="indicator-label" data-i18n="bio_soil_ph">土壤酸鹼度 · Soil pH</div>
-          <div class="ph-bar-wrap">
-            <div class="ph-bar"></div>
-            <div class="ph-range-indicator"></div>
-            <div class="ph-value-marker" id="bio-ph-marker" style="left: 33%">pH 4.5 - 5.5</div>
+      <div class="gesture-steps">
+        <div class="gesture-step">
+          <div class="gesture-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path
+                d="M12 2a1 1 0 0 1 1 1v6.3a2.5 2.5 0 0 1 2 2.4v.3a3.5 3.5 0 0 1 3.5 3.5v1.5a3 3 0 0 1-3 3h-4.5A7.5 7.5 0 0 1 4.5 13v-2.5a2.5 2.5 0 0 1 5 0v.5c0 .3.2.5.5.5s.5-.2.5-.5v-8a1 1 0 0 1 1-1z" />
+            </svg>
           </div>
-          <div class="ph-scale-labels">
-            <span data-i18n="bio_ph_acidic">Acidic (pH 4)</span>
-            <span data-i18n="bio_ph_neutral">Neutral (pH 7)</span>
-            <span data-i18n="bio_ph_alkaline">Alkaline (pH 10)</span>
+          <div class="gesture-desc">
+            <div class="desc-zh"><strong>旋轉</strong>：單指滑動旋轉花朵。</div>
+            <div class="desc-en">Swipe 1 finger to rotate flower.</div>
           </div>
         </div>
-        <div class="indicator-group">
-          <div class="indicator-label" data-i18n="bio_sunlight">日照環境 · Light Requirement</div>
-          <div class="light-indicator-wrap" id="bio-light-wrap">
-            <span class="light-pill active" id="bio-light-pill-1">半遮蔭 · Semi-shaded</span>
-            <span class="light-pill" id="bio-light-pill-2">避免強光 · Avoid Intense Light</span>
+        <div class="gesture-step">
+          <div class="gesture-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M18 15l3 3m0 0l-3 3m3-3H11M6 9L3 6m0 0l3-3M3 6h10" />
+            </svg>
+          </div>
+          <div class="gesture-desc">
+            <div class="desc-zh"><strong>縮放</strong>：雙指捏合來縮放模型。</div>
+            <div class="desc-en">Pinch 2 fingers to zoom model.</div>
+          </div>
+        </div>
+        <div class="gesture-step">
+          <div class="gesture-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M5 12h14M12 5v14M12 5l3 3m-3-3L9 8m3 11l3-3m-3 3l-3-3" />
+            </svg>
+          </div>
+          <div class="gesture-desc">
+            <div class="desc-zh"><strong>移動</strong>：雙指拖曳來移動花朵。</div>
+            <div class="desc-en">Drag 2 fingers to translate.</div>
           </div>
         </div>
       </div>
-
-      <div style="margin-top: 16px; margin-bottom: 20px;" id="bio-tags-wrap">
-        <span class="tag">酸性土</span><span class="tag">半遮蔭</span><span class="tag">春季</span>
+      <div class="gesture-hint-footer">
+        <span class="label-zh">點擊任意處關閉</span>
+        <span class="label-en">Tap anywhere to dismiss</span>
       </div>
+    </div>
 
-      <h3 data-i18n="bio_form_title">形態 · Form</h3>
-      <p id="bio-form-desc">株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。</p>
-      <h3 data-i18n="bio_caution_title">注意 · Caution</h3>
-      <p class="caution-box">
-        <span class="caution-icon">⚠️</span>
-        <span class="caution-text" id="bio-caution-desc">全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。</span>
-      </p>
+    <!-- 5 FAB buttons -->
+    <div class="fabs" id="fabs">
+      <button class="fab" data-action="bio">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z" />
+          <circle cx="12" cy="14" r="2" />
+        </svg>
+        <span class="lab-zh">生態</span>
+        <span class="lab-en">Bio</span>
+      </button>
+      <button class="fab" data-action="video">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="6" width="18" height="12" rx="1" />
+          <path d="M10 10l4 2-4 2v-4z" fill="currentColor" stroke="none" />
+        </svg>
+        <span class="lab-zh">影片</span>
+        <span class="lab-en">Video</span>
+      </button>
+      <button class="fab" data-action="life">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span class="lab-zh">生命</span>
+        <span class="lab-en">Life</span>
+      </button>
+      <button class="fab" data-action="audio">
+        <svg viewBox="0 0 24 24">
+          <path d="M11 5L6 9H2v6h4l5 4V5z" />
+          <path d="M15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14" />
+        </svg>
+        <span class="lab-zh">聲音</span>
+        <span class="lab-en">Audio</span>
+      </button>
+      <button class="fab" data-action="capture" id="capture-btn" title="Capture Specimen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+        <span class="lab-zh">拍照</span>
+        <span class="lab-en">Capture</span>
+        <div id="capture-tooltip" class="capture-tooltip" data-i18n="capture_tooltip">📸 拍照生成黃金標本</div>
+      </button>
     </div>
   </div>
-</div>
 
-<!-- Modal: VIDEO -->
-<div class="modal" id="modal-video" role="dialog" aria-modal="true">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-i18n="video_title">花開時序</span>
-        <span class="latin" data-i18n="video_subtitle">Time-lapse footage</span>
-      </div>
-      <button class="modal-close" data-close>×</button>
+  <!-- ============ GAME MODE UI ============ -->
+  <div id="game-hud">
+    <div class="hud-label" data-i18n="hud_collected">收集 · COLLECTED</div>
+    <div class="hud-score">
+      <span id="hud-score-current">0</span>
+      <span class="total">/ <span id="hud-score-total">4</span></span>
     </div>
-    <div class="modal-body">
-      <div class="video-wrap">
-        <iframe src="https://www.youtube.com/embed/yJrn5iY4uFE?rel=0"
-                title="Azalea bloom time-lapse - Yangmingshan"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen></iframe>
-      </div>
-      <p data-i18n="video_desc">陽明山國家公園杜鵑花盛開縮時影像（4K）。從花苞至盛開的瞬間，記錄春日清晨的綻放過程。</p>
-      <p style="font-size:11px;color:var(--azalea-leaf);margin-top:8px;" data-i18n="video_note">
-        ※ 替換 iframe 中的 YouTube ID 即可換成你的影片。
-      </p>
+    <div class="hud-best">
+      <span data-i18n="hud_best">最佳 · BEST</span>:
+      <span id="hud-best-value">—</span>
     </div>
   </div>
-</div>
+  <div id="game-toast" role="status" aria-live="polite">
+    <span id="toast-text">+1</span>
+  </div>
 
-<!-- Modal: LIFECYCLE -->
-<div class="modal" id="modal-life" role="dialog" aria-modal="true">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-i18n="life_title">生命週期</span>
-        <span class="latin" data-i18n="life_subtitle">Annual lifecycle</span>
+  <div id="reward-modal">
+    <div id="confetti-container"></div>
+    <div class="reward-card">
+      <div class="glow-sunburst"></div>
+      <div class="reward-sparkles">
+        <span class="sparkle s1">✦</span>
+        <span class="sparkle s2">✦</span>
+        <span class="sparkle s3">✦</span>
+        <span class="sparkle s4">✦</span>
       </div>
-      <button class="modal-close" data-close>×</button>
-    </div>
-    <div class="modal-body">
-      <p style="margin-bottom:16px;" data-i18n="life_intro">點選各階段以查看詳細說明 · Tap a stage to see details</p>
+      <div class="reward-stamp" data-i18n="reward_stamp">尋花已成 · QUEST COMPLETE</div>
+      <div class="reward-medal-container">
+        <img src="./gamemode/reward-medal.png" alt="Dayeh University badge" class="reward-medal" />
+      </div>
+      <div class="reward-title" data-i18n="reward_title">恭喜！</div>
+      <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
 
-      <div class="lifecycle">
-        <div class="lc-stage active" data-stage="0">
-          <svg viewBox="0 0 40 50">
-            <line x1="20" y1="50" x2="20" y2="32" stroke="#4a6741" stroke-width="2"/>
-            <ellipse cx="20" cy="28" rx="5" ry="8" fill="#4a6741"/>
-          </svg>
-          <div class="lc-num">01</div>
-          <div class="lc-name" data-i18n="life_stage_1">芽</div>
-          <div class="lc-month">JAN</div>
+      <div class="reward-score-big">
+        <span id="reward-score">4</span><span class="of"> / <span id="reward-score-total">4</span></span>
+      </div>
+
+      <div class="reward-message" id="reward-message"></div>
+
+      <div class="reward-stats">
+        <div class="reward-stat">
+          <span class="num" id="reward-best">0</span>
+          <span class="lbl" data-i18n="reward_best">最佳 · BEST</span>
         </div>
-        <div class="lc-stage" data-stage="1">
-          <svg viewBox="0 0 40 50">
-            <line x1="20" y1="50" x2="20" y2="28" stroke="#4a6741" stroke-width="2"/>
-            <path d="M14 28 Q20 18 26 28 Q26 22 20 18 Q14 22 14 28 Z" fill="#e8a5c0"/>
-            <ellipse cx="20" cy="22" rx="5" ry="7" fill="#6d1b3e"/>
-          </svg>
-          <div class="lc-num">02</div>
-          <div class="lc-name" data-i18n="life_stage_2">蕾</div>
-          <div class="lc-month">FEB</div>
-        </div>
-        <div class="lc-stage" data-stage="2">
-          <svg viewBox="0 0 40 50">
-            <line x1="20" y1="50" x2="20" y2="35" stroke="#4a6741" stroke-width="2"/>
-            <path d="M20 12 L24 22 L34 22 L26 28 L29 38 L20 32 L11 38 L14 28 L6 22 L16 22 Z" fill="#e8a5c0"/>
-            <circle cx="20" cy="25" r="3" fill="#c9a961"/>
-          </svg>
-          <div class="lc-num">03</div>
-          <div class="lc-name" data-i18n="life_stage_3">花</div>
-          <div class="lc-month">MAR</div>
-        </div>
-        <div class="lc-stage" data-stage="3">
-          <svg viewBox="0 0 40 50">
-            <line x1="20" y1="50" x2="20" y2="38" stroke="#4a6741" stroke-width="2"/>
-            <path d="M20 38 Q14 30 12 38" stroke="#c9a961" stroke-width="2" fill="none"/>
-            <path d="M20 38 Q26 30 28 38" stroke="#c9a961" stroke-width="2" fill="none"/>
-            <ellipse cx="14" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6"/>
-            <ellipse cx="26" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6"/>
-          </svg>
-          <div class="lc-num">04</div>
-          <div class="lc-name" data-i18n="life_stage_4">果</div>
-          <div class="lc-month">JUN</div>
+        <div class="reward-stat">
+          <span class="num" id="reward-runs">1</span>
+          <span class="lbl" data-i18n="reward_runs">完成次數 · RUNS</span>
         </div>
       </div>
 
-      <div class="lc-detail" id="lc-detail">
-        <h3 style="margin-top:0;font-size:14px;" id="lc-title">芽期 · Bud Stage</h3>
-        <p id="lc-desc" style="margin-bottom:0;">冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。</p>
+      <div class="reward-actions">
+        <button class="reward-btn reward-btn-secondary" id="reward-close" data-i18n="reward_close">關閉 · CLOSE</button>
+        <button class="reward-btn reward-btn-primary" id="reward-replay" data-i18n="reward_replay">再玩一次 · PLAY
+          AGAIN</button>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modal: AUDIO -->
-<div class="modal" id="modal-audio" role="dialog" aria-modal="true">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div class="modal-title">
-        <span data-i18n="audio_title">聲音導覽</span>
-        <span class="latin" data-i18n="audio_subtitle">Audio narration</span>
-      </div>
-      <button class="modal-close" data-close>×</button>
-    </div>
-    <div class="modal-body">
-      <div class="audio-player">
-        <button class="audio-btn" id="audio-btn-zh" data-lang="zh-TW">
-          <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
-        </button>
-        <div class="audio-info">
-          <div class="audio-title" data-i18n="audio_chinese_nav">中文導覽</div>
-          <div class="audio-sub" data-i18n="audio_sec_zh">~ 30 秒</div>
-        </div>
-        <div class="voice-wave">
-          <span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
-      </div>
+  <!-- ============ MODALS ============ -->
 
-      <div class="audio-player">
-        <button class="audio-btn" id="audio-btn-en" data-lang="en-US">
-          <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
-        </button>
-        <div class="audio-info">
-          <div class="audio-title" data-i18n="audio_english_nav">English Narration</div>
-          <div class="audio-sub" data-i18n="audio_sec_en">~ 30 sec</div>
+  <!-- Modal: MAP (game mode only — auto-show on enter, reopen via top-bar button) -->
+  <div class="modal" id="modal-map" role="dialog" aria-modal="true">
+    <div class="modal-content modal-map-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span data-i18n="map_title">校園尋花地圖</span>
+          <span class="latin" data-i18n="map_subtitle">Campus quest map</span>
         </div>
-        <div class="voice-wave">
-          <span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
+        <button class="modal-close" data-close>×</button>
       </div>
-
-      <p style="font-size:11px;color:var(--azalea-leaf);margin-top:16px;" data-i18n="audio_note">
-        ※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。
-      </p>
+      <div class="modal-body">
+        <p data-i18n="map_intro">沿校園尋找 4 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。</p>
+        <div class="map-wrap">
+          <img src="./gamemode/campus-map.png" alt="Campus quest map" class="map-img" />
+        </div>
+        <p class="map-foot" data-i18n="map_foot">⚫ 黑色標記 = QR 位置 · Black pins = QR locations</p>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Load order matters: common.js exports window.App, các mode đăng ký vào đó -->
-<script src="./js/common.js"></script>
-<script src="./js/game.js"></script>
-<script src="./js/explore.js"></script>
+  <!-- Modal: BIO -->
+  <div class="modal" id="modal-bio" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="bio-modal-title">
+          平戶杜鵑
+          <span class="latin">Rhododendron × pulchrum</span>
+        </div>
+        <button class="modal-close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <h3 data-i18n="bio_growth_title">生長條件 · Growth Conditions</h3>
+        <p id="bio-growth-desc">常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。</p>
 
-<div id="screen-flash" class="screen-flash"></div>
+        <!-- Premium Growth Indicators -->
+        <div class="growth-indicators">
+          <div class="indicator-group">
+            <div class="indicator-label" data-i18n="bio_soil_ph">土壤酸鹼度 · Soil pH</div>
+            <div class="ph-bar-wrap">
+              <div class="ph-bar"></div>
+              <div class="ph-range-indicator"></div>
+              <div class="ph-value-marker" id="bio-ph-marker" style="left: 33%">pH 4.5 - 5.5</div>
+            </div>
+            <div class="ph-scale-labels">
+              <span data-i18n="bio_ph_acidic">Acidic (pH 4)</span>
+              <span data-i18n="bio_ph_neutral">Neutral (pH 7)</span>
+              <span data-i18n="bio_ph_alkaline">Alkaline (pH 10)</span>
+            </div>
+          </div>
+          <div class="indicator-group">
+            <div class="indicator-label" data-i18n="bio_sunlight">日照環境 · Light Requirement</div>
+            <div class="light-indicator-wrap" id="bio-light-wrap">
+              <span class="light-pill active" id="bio-light-pill-1">半遮蔭 · Semi-shaded</span>
+              <span class="light-pill" id="bio-light-pill-2">避免強光 · Avoid Intense Light</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; margin-bottom: 20px;" id="bio-tags-wrap">
+          <span class="tag">酸性土</span><span class="tag">半遮蔭</span><span class="tag">春季</span>
+        </div>
+
+        <h3 data-i18n="bio_form_title">形態 · Form</h3>
+        <p id="bio-form-desc">株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。</p>
+        <h3 data-i18n="bio_caution_title">注意 · Caution</h3>
+        <p class="caution-box">
+          <span class="caution-icon">⚠️</span>
+          <span class="caution-text" id="bio-caution-desc">全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: VIDEO -->
+  <div class="modal" id="modal-video" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span data-i18n="video_title">花開時序</span>
+          <span class="latin" data-i18n="video_subtitle">Time-lapse footage</span>
+        </div>
+        <button class="modal-close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <div class="video-wrap">
+          <iframe src="https://www.youtube.com/embed/yJrn5iY4uFE?rel=0" title="Azalea bloom time-lapse - Yangmingshan"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+        </div>
+        <p data-i18n="video_desc">陽明山國家公園杜鵑花盛開縮時影像（4K）。從花苞至盛開的瞬間，記錄春日清晨的綻放過程。</p>
+        <p style="font-size:11px;color:var(--azalea-leaf);margin-top:8px;" data-i18n="video_note">
+          ※ 替換 iframe 中的 YouTube ID 即可換成你的影片。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: LIFECYCLE -->
+  <div class="modal" id="modal-life" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span data-i18n="life_title">生命週期</span>
+          <span class="latin" data-i18n="life_subtitle">Annual lifecycle</span>
+        </div>
+        <button class="modal-close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:16px;" data-i18n="life_intro">點選各階段以查看詳細說明 · Tap a stage to see details</p>
+
+        <div class="lifecycle">
+          <div class="lc-stage active" data-stage="0">
+            <svg viewBox="0 0 40 50">
+              <line x1="20" y1="50" x2="20" y2="32" stroke="#4a6741" stroke-width="2" />
+              <ellipse cx="20" cy="28" rx="5" ry="8" fill="#4a6741" />
+            </svg>
+            <div class="lc-num">01</div>
+            <div class="lc-name" data-i18n="life_stage_1">芽</div>
+            <div class="lc-month">JAN</div>
+          </div>
+          <div class="lc-stage" data-stage="1">
+            <svg viewBox="0 0 40 50">
+              <line x1="20" y1="50" x2="20" y2="28" stroke="#4a6741" stroke-width="2" />
+              <path d="M14 28 Q20 18 26 28 Q26 22 20 18 Q14 22 14 28 Z" fill="#e8a5c0" />
+              <ellipse cx="20" cy="22" rx="5" ry="7" fill="#6d1b3e" />
+            </svg>
+            <div class="lc-num">02</div>
+            <div class="lc-name" data-i18n="life_stage_2">蕾</div>
+            <div class="lc-month">FEB</div>
+          </div>
+          <div class="lc-stage" data-stage="2">
+            <svg viewBox="0 0 40 50">
+              <line x1="20" y1="50" x2="20" y2="35" stroke="#4a6741" stroke-width="2" />
+              <path d="M20 12 L24 22 L34 22 L26 28 L29 38 L20 32 L11 38 L14 28 L6 22 L16 22 Z" fill="#e8a5c0" />
+              <circle cx="20" cy="25" r="3" fill="#c9a961" />
+            </svg>
+            <div class="lc-num">03</div>
+            <div class="lc-name" data-i18n="life_stage_3">花</div>
+            <div class="lc-month">MAR</div>
+          </div>
+          <div class="lc-stage" data-stage="3">
+            <svg viewBox="0 0 40 50">
+              <line x1="20" y1="50" x2="20" y2="38" stroke="#4a6741" stroke-width="2" />
+              <path d="M20 38 Q14 30 12 38" stroke="#c9a961" stroke-width="2" fill="none" />
+              <path d="M20 38 Q26 30 28 38" stroke="#c9a961" stroke-width="2" fill="none" />
+              <ellipse cx="14" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6" />
+              <ellipse cx="26" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6" />
+            </svg>
+            <div class="lc-num">04</div>
+            <div class="lc-name" data-i18n="life_stage_4">果</div>
+            <div class="lc-month">JUN</div>
+          </div>
+        </div>
+
+        <div class="lc-detail" id="lc-detail">
+          <h3 style="margin-top:0;font-size:14px;" id="lc-title">芽期 · Bud Stage</h3>
+          <p id="lc-desc" style="margin-bottom:0;">冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: AUDIO -->
+  <div class="modal" id="modal-audio" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span data-i18n="audio_title">聲音導覽</span>
+          <span class="latin" data-i18n="audio_subtitle">Audio narration</span>
+        </div>
+        <button class="modal-close" data-close>×</button>
+      </div>
+      <div class="modal-body">
+        <div class="audio-player">
+          <button class="audio-btn" id="audio-btn-zh" data-lang="zh-TW">
+            <svg class="icon-play" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <svg class="icon-pause" viewBox="0 0 24 24">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          </button>
+          <div class="audio-info">
+            <div class="audio-title" data-i18n="audio_chinese_nav">中文導覽</div>
+            <div class="audio-sub" data-i18n="audio_sec_zh">~ 30 秒</div>
+          </div>
+          <div class="voice-wave">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="audio-player">
+          <button class="audio-btn" id="audio-btn-en" data-lang="en-US">
+            <svg class="icon-play" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <svg class="icon-pause" viewBox="0 0 24 24">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          </button>
+          <div class="audio-info">
+            <div class="audio-title" data-i18n="audio_english_nav">English Narration</div>
+            <div class="audio-sub" data-i18n="audio_sec_en">~ 30 sec</div>
+          </div>
+          <div class="voice-wave">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <p style="font-size:11px;color:var(--azalea-leaf);margin-top:16px;" data-i18n="audio_note">
+          ※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load order matters: common.js exports window.App, các mode đăng ký vào đó -->
+  <script src="./js/common.js"></script>
+  <script src="./js/game.js"></script>
+  <script src="./js/explore.js"></script>
+
+  <div id="screen-flash" class="screen-flash"></div>
 
 </body>
+
 </html>

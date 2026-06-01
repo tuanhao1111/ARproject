@@ -132,6 +132,8 @@
     scene.setAttribute('mindar-image', 'imageTargetSrc: ./Explore/targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no;');
     scene.setAttribute('color-space', 'sRGB');
     scene.setAttribute('renderer', 'colorManagement: true; logarithmicDepthBuffer: true; preserveDrawingBuffer: true;');
+    // flower-twigs.glb nén Draco (31MB→1MB) → cần Draco decoder, nếu thiếu model-error.
+    scene.setAttribute('gltf-model', 'dracoDecoderPath: https://www.gstatic.com/draco/v1/decoders/');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
 

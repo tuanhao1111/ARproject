@@ -17,7 +17,8 @@
       "Bash(cp \"C:/Users/user/OneDrive/Documents/flower-twigs/flower-twigs.glb\" \"Explore/flower-twigs.glb\")",
       "Bash(python -c ' *)",
       "Bash(node --check js/explore.js)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx --yes @gltf-transform/cli@latest optimize Explore/flower-twigs.original.glb Explore/flower-twigs.glb --texture-compress webp --texture-size 1024 --compress draco)"
     ]
   }
 }

@@ -233,19 +233,23 @@
         // NGAY SAU khi emit targetFound, nên phải đợi 1 frame mới đọc đúng).
         requestAnimationFrame(() => requestAnimationFrame(() => {
           const m = tgt.querySelector('a-gltf-model');
-          const vidEl = tgt.querySelector('a-video');
           const camEl = sceneEl.querySelector('a-camera') || sceneEl.querySelector('[camera]');
+          const cam = camEl && camEl.getObject3D('camera');
           const wp = new THREE.Vector3(), ws = new THREE.Vector3();
-          const camP = new THREE.Vector3(), vidP = new THREE.Vector3();
           if (m && m.object3D) { m.object3D.getWorldPosition(wp); m.object3D.getWorldScale(ws); }
-          if (vidEl && vidEl.object3D) vidEl.object3D.getWorldPosition(vidP);
-          if (camEl && camEl.object3D) camEl.object3D.getWorldPosition(camP);
-          console.log('[explore][diag] targetVisible=' + tgt.object3D.visible +
-            ' | model visible=' + (m && m.object3D.visible) +
-            ' worldPos=' + wp.x.toFixed(2) + ',' + wp.y.toFixed(2) + ',' + wp.z.toFixed(2) +
-            ' worldScale=' + ws.x.toFixed(3) +
-            ' | videoPlanePos=' + vidP.x.toFixed(2) + ',' + vidP.y.toFixed(2) + ',' + vidP.z.toFixed(2) +
-            ' | camPos=' + camP.x.toFixed(2) + ',' + camP.y.toFixed(2) + ',' + camP.z.toFixed(2));
+          // Đếm Mesh thực sự trong GLB đã load
+          let meshCount = 0;
+          if (m && m.object3D) m.object3D.traverse(o => { if (o.isMesh) meshCount++; });
+          // Chiếu vào NDC: nếu ndc.z > 1 → vượt far plane (bị clip xa); < -1 → trước near
+          let ndcStr = 'n/a';
+          if (cam) {
+            const ndc = wp.clone().project(cam);
+            ndcStr = ndc.x.toFixed(2) + ',' + ndc.y.toFixed(2) + ',' + ndc.z.toFixed(3);
+          }
+          console.log('[explore][diag] modelWorldPos=' + wp.x.toFixed(1) + ',' + wp.y.toFixed(1) + ',' + wp.z.toFixed(1) +
+            ' worldScale=' + ws.x.toFixed(2) + ' meshes=' + meshCount +
+            ' | cam far=' + (cam && cam.far) + ' near=' + (cam && cam.near) + ' fov=' + (cam && cam.fov) +
+            ' | NDC=' + ndcStr + ' (|z|>1 => clipped)');
         }));
         
         // If there was a previously decoupled flower, re-dock it first!

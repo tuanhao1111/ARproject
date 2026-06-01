@@ -57,9 +57,12 @@ video#arjs-video {
   padding: 0 !important;
 }
 
-/* Asset videos moved ra body bởi A-Frame phải bị ẩn — texture vẫn update
-   bình thường (three.js sample từ video element bất kể display). */
-body>video:not(#arjs-video) {
+/* Asset videos (trong <a-assets>) phải bị ẩn — nếu không iOS/Android render
+   thẻ <video> gốc ĐÈ lên canvas, dán cố định màn hình thay vì bám marker.
+   three.js VideoTexture vẫn sample từ video element bất kể display:none →
+   <a-video> 3D vẫn hiển thị bình thường trên thẻ. */
+body>video:not(#arjs-video),
+a-assets video {
   display: none !important;
   position: absolute !important;
   width: 1px !important;

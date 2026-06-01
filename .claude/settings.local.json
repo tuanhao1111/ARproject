@@ -16,7 +16,8 @@
       "Bash(cp \"C:/Users/user/Downloads/targets.mind\" \"Explore/targets.mind\")",
       "Bash(cp \"C:/Users/user/OneDrive/Documents/flower-twigs/flower-twigs.glb\" \"Explore/flower-twigs.glb\")",
       "Bash(python -c ' *)",
-      "Bash(node --check js/explore.js)"
+      "Bash(node --check js/explore.js)",
+      "Bash(node -e ' *)"
     ]
   }
 }

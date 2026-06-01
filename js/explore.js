@@ -197,6 +197,9 @@
       model.setAttribute('position', sp.position || '0 0 0');
       model.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
       model.setAttribute('rotation', sp.rotation || '0 0 0');
+      // Diagnostics: 31MB GLB có thể load chậm/fail trên mobile. Log để xác nhận.
+      model.addEventListener('model-loaded', () => console.log('[explore] model-loaded idx=' + i));
+      model.addEventListener('model-error', (e) => console.error('[explore] model-error idx=' + i, e.detail));
       wrap.appendChild(model);
 
       tgt.appendChild(wrap);
@@ -209,9 +212,14 @@
   // Play/stop the marker's timelapse video on found/lost.
   function setVideoPlaying(idx, on) {
     const v = document.getElementById(`explore-vid-${idx}`);
-    if (!v) return;
-    if (on) { try { v.currentTime = 0; } catch (e) {} v.play().catch(() => {}); }
-    else { v.pause(); }
+    if (!v) { console.warn('[explore] video el missing idx=' + idx); return; }
+    if (on) {
+      console.log('[explore] play video idx=' + idx + ' readyState=' + v.readyState);
+      // Không reset currentTime=0: trên mobile, seek mỗi lần found gây giật/chập chờn.
+      v.play()
+        .then(() => console.log('[explore] video playing idx=' + idx))
+        .catch(e => console.warn('[explore] video play failed idx=' + idx, e));
+    } else { v.pause(); }
   }
 
   function wireTargetEvents() {

@@ -57,16 +57,28 @@ video#arjs-video {
   padding: 0 !important;
 }
 
-/* Asset videos (trong <a-assets>) phải bị ẩn — nếu không iOS/Android render
-   thẻ <video> gốc ĐÈ lên canvas, dán cố định màn hình thay vì bám marker.
-   three.js VideoTexture vẫn sample từ video element bất kể display:none →
-   <a-video> 3D vẫn hiển thị bình thường trên thẻ. */
-body>video:not(#arjs-video),
-a-assets video {
+/* Body-moved videos (legacy AR.js path): ẩn hẳn. */
+body>video:not(#arjs-video) {
   display: none !important;
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;
+  z-index: -1 !important;
+}
+
+/* Asset video timelapse (explore-vid-*) dùng làm texture cho <a-video>:
+   PHẢI ẩn nhưng KHÔNG dùng display:none — display:none khiến trình duyệt
+   ngừng decode frame → texture <a-video> rỗng/đen. Đẩy 1px off-screen +
+   opacity 0 để vẫn decode mà không lọt ra màn hình. Nhắm theo id để không
+   đụng video camera của MindAR/AR.js. */
+video[id^="explore-vid-"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
   z-index: -1 !important;
 }
 

@@ -229,20 +229,24 @@
       const idx = parseInt(tgt.dataset.targetIndex, 10);
       tgt.addEventListener('targetFound', () => {
         console.log('[explore] targetFound idx=' + idx);
-        // DIAGNOSTIC: bao nhiêu scene/canvas trong DOM? model có visible & ở đâu?
-        const scenes = document.querySelectorAll('a-scene');
-        const canvases = document.querySelectorAll('canvas');
-        console.log('[explore][diag] a-scene count=' + scenes.length +
-          ' canvas count=' + canvases.length +
-          ' ids=' + Array.from(scenes).map(s => s.id).join(','));
-        const m = tgt.querySelector('a-gltf-model');
-        if (m && m.object3D) {
-          const wp = new THREE.Vector3();
-          m.object3D.getWorldPosition(wp);
-          console.log('[explore][diag] model visible=' + m.object3D.visible +
+        // DIAGNOSTIC: đọc SAU khi MindAR áp ma trận pose (nó set visible/matrix
+        // NGAY SAU khi emit targetFound, nên phải đợi 1 frame mới đọc đúng).
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const m = tgt.querySelector('a-gltf-model');
+          const vidEl = tgt.querySelector('a-video');
+          const camEl = sceneEl.querySelector('a-camera') || sceneEl.querySelector('[camera]');
+          const wp = new THREE.Vector3(), ws = new THREE.Vector3();
+          const camP = new THREE.Vector3(), vidP = new THREE.Vector3();
+          if (m && m.object3D) { m.object3D.getWorldPosition(wp); m.object3D.getWorldScale(ws); }
+          if (vidEl && vidEl.object3D) vidEl.object3D.getWorldPosition(vidP);
+          if (camEl && camEl.object3D) camEl.object3D.getWorldPosition(camP);
+          console.log('[explore][diag] targetVisible=' + tgt.object3D.visible +
+            ' | model visible=' + (m && m.object3D.visible) +
             ' worldPos=' + wp.x.toFixed(2) + ',' + wp.y.toFixed(2) + ',' + wp.z.toFixed(2) +
-            ' targetVisible=' + tgt.object3D.visible);
-        }
+            ' worldScale=' + ws.x.toFixed(3) +
+            ' | videoPlanePos=' + vidP.x.toFixed(2) + ',' + vidP.y.toFixed(2) + ',' + vidP.z.toFixed(2) +
+            ' | camPos=' + camP.x.toFixed(2) + ',' + camP.y.toFixed(2) + ',' + camP.z.toFixed(2));
+        }));
         
         // If there was a previously decoupled flower, re-dock it first!
         if (currentSpeciesIdx >= 0 && currentSpeciesIdx !== idx) {

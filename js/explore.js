@@ -224,6 +224,30 @@
     } else { v.pause(); }
   }
 
+  // MindAR set ma trận chiếu TRỰC TIẾP (fov=0) với far plane thật ≈ vài nghìn,
+  // trong khi hệ tọa độ anchor scale ~1063× → content nằm ở z≈-3500 > far → bị
+  // clip → vô hình (dù targetFound + model load OK). Nới far plane mỗi frame mà
+  // KHÔNG đụng phần x/y của ma trận (giữ canh marker chuẩn). Chỉ sửa e[10],e[14].
+  let farPatchRAF = null;
+  function patchCameraFar() {
+    const camEl = sceneEl && (sceneEl.querySelector('a-camera') || sceneEl.querySelector('[camera]'));
+    const cam = camEl && camEl.getObject3D('camera');
+    if (cam && cam.projectionMatrix) {
+      const e = cam.projectionMatrix.elements;
+      const near = e[14] / (e[10] - 1);   // trích near từ ma trận perspective hiện tại
+      if (isFinite(near) && near > 0) {
+        const far = 1e6;
+        const m10 = -(far + near) / (far - near);
+        const m14 = -(2 * far * near) / (far - near);
+        if (Math.abs(e[10] - m10) > 1e-9) {
+          e[10] = m10; e[14] = m14;
+          cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+        }
+      }
+    }
+    farPatchRAF = requestAnimationFrame(patchCameraFar);
+  }
+
   function wireTargetEvents() {
     sceneEl.querySelectorAll('[mindar-image-target]').forEach(tgt => {
       const idx = parseInt(tgt.dataset.targetIndex, 10);
@@ -326,6 +350,7 @@
     arReadyListener = () => {
       dom.loading.classList.remove('active');
       dom.arUI.classList.add('active');
+      patchCameraFar();
       App.enforceCameraSize();
       resizeListener = () => App.enforceCameraSize();
       window.addEventListener('resize', resizeListener);
@@ -355,6 +380,10 @@
     if (resizeListener) {
       window.removeEventListener('resize', resizeListener);
       resizeListener = null;
+    }
+    if (farPatchRAF) {
+      cancelAnimationFrame(farPatchRAF);
+      farPatchRAF = null;
     }
     hideInfoCard();
     if (sceneEl) {

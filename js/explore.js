@@ -229,6 +229,20 @@
       const idx = parseInt(tgt.dataset.targetIndex, 10);
       tgt.addEventListener('targetFound', () => {
         console.log('[explore] targetFound idx=' + idx);
+        // DIAGNOSTIC: bao nhiêu scene/canvas trong DOM? model có visible & ở đâu?
+        const scenes = document.querySelectorAll('a-scene');
+        const canvases = document.querySelectorAll('canvas');
+        console.log('[explore][diag] a-scene count=' + scenes.length +
+          ' canvas count=' + canvases.length +
+          ' ids=' + Array.from(scenes).map(s => s.id).join(','));
+        const m = tgt.querySelector('a-gltf-model');
+        if (m && m.object3D) {
+          const wp = new THREE.Vector3();
+          m.object3D.getWorldPosition(wp);
+          console.log('[explore][diag] model visible=' + m.object3D.visible +
+            ' worldPos=' + wp.x.toFixed(2) + ',' + wp.y.toFixed(2) + ',' + wp.z.toFixed(2) +
+            ' targetVisible=' + tgt.object3D.visible);
+        }
         
         // If there was a previously decoupled flower, re-dock it first!
         if (currentSpeciesIdx >= 0 && currentSpeciesIdx !== idx) {

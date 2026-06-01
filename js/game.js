@@ -36,7 +36,7 @@
       origin_zh: '原產地: 中國南部 / 東亞',
       origin_en: 'Origin: Southern China / East Asia',
       glb: './gamemode/purple-azalea.glb',
-      scale: 3,
+      scale: 15,
       growth_zh: '常綠或半常綠灌木，適生於微酸性土壤與溫暖濕潤環境。花色呈紫紅色，極具觀賞價值，常見於東亞庭園。',
       growth_en: 'An evergreen or semi-evergreen shrub, thriving in slightly acidic soil and warm, humid environments. Known for its vibrant purple-red flowers, widely cultivated in East Asian gardens.',
       ph_text: 'pH 5.0 - 6.0',
@@ -61,7 +61,7 @@
       origin_zh: '原產地: 日本 / 東亞',
       origin_en: 'Origin: Japan / East Asia',
       glb: './gamemode/white-azalea.glb',
-      scale: 3,
+      scale: 15,
       growth_zh: '常綠灌木，性喜涼爽濕潤、排水良好的酸性土壤。耐半陰，花純白優雅。',
       growth_en: 'An evergreen shrub preferring cool, moist, and well-drained acidic soil. Tolerates partial shade and produces elegant pure white flowers.',
       ph_text: 'pH 4.8 - 5.8',
@@ -86,8 +86,8 @@
       origin_zh: '原產地: 東亞地區',
       origin_en: 'Origin: East Asia',
       glb: './gamemode/default_timelapse.glb',
-      scale: 3,
-      growth_zh: '落葉或半常綠灌木，適應性強，喜酸性土壤及半陰環境。花色豔麗多變，為園藝育種的重要親本。',
+      scale: 15,
+      growth_zh: '落葉 or 半常綠灌木，適應性強，喜酸性土壤及半陰環境。花色豔麗多變，為園藝育種的重要親本。',
       growth_en: 'A deciduous or semi-evergreen shrub with high adaptability, thriving in acidic soils and semi-shaded areas. Extremely colorful and a key parent species for horticultural breeding.',
       ph_text: 'pH 5.2 - 6.2',
       ph_left: '50%',
@@ -111,7 +111,7 @@
       origin_zh: '原產地: 日本',
       origin_en: 'Origin: Japan',
       glb: './gamemode/purple-azalea.glb',
-      scale: 3,
+      scale: 15,
       growth_zh: '常綠矮灌木，生長緩慢，喜好排水極佳的酸性砂質土壤。在日本盆景藝術中極受推崇。',
       growth_en: 'An evergreen dwarf shrub, slow-growing and preferring extremely well-drained acidic sandy soil. Highly prized in Japanese bonsai art.',
       ph_text: 'pH 4.5 - 5.5',
@@ -135,10 +135,23 @@
     finished: false,
     collected: new Set(),
   };
+
+  let activeFlowerId = -1;
+  const USER_SCALE_MIN = 0.5;
+  const USER_SCALE_MAX = 5.0;
+  let userScale = 1, userRot = { x: 0, y: 0 }, userPos = { x: 0, y: 0, z: 0 };
+  let pinchStart = null, pinchStartScale = null, pinchMidStart = null, pinchStartPos = null;
+  let oneStart = null, oneStartRot = null;
+
   const resetGameState = () => {
     gameState.started = false;
     gameState.finished = false;
     gameState.collected = new Set();
+    activeFlowerId = -1;
+    userScale = 1;
+    userRot = { x: 0, y: 0 };
+    userPos = { x: 0, y: 0, z: 0 };
+    hideInfoCard();
   };
 
   const getBest = () => parseInt(localStorage.getItem(LS_BEST) || '0', 10);
@@ -177,6 +190,26 @@
 
   function showMapModal() {
     App.openModal(document.getElementById('modal-map'));
+  }
+
+  // ----------------------------------------------------------
+  // INFO CARD — show species info when target detected
+  // ----------------------------------------------------------
+  function showInfoCard(sp) {
+    if (!sp || !dom.exploreInfo) return;
+    const lang = App.currentLang;
+    const name = lang === 'zh' ? sp.name_zh : sp.name_en;
+    const brief = lang === 'zh' ? (sp.growth_zh || sp.form_zh) : (sp.growth_en || sp.form_en);
+    const origin = lang === 'zh' ? sp.origin_zh : sp.origin_en;
+    
+    dom.exploreInfo.querySelector('.ei-name').textContent = name;
+    dom.exploreInfo.querySelector('.ei-latin').textContent = sp.scientific;
+    dom.exploreInfo.querySelector('.ei-brief').textContent = `${origin} • ${brief}`;
+    dom.exploreInfo.classList.add('show');
+  }
+
+  function hideInfoCard() {
+    dom.exploreInfo?.classList.remove('show');
   }
 
   // ----------------------------------------------------------
@@ -298,12 +331,17 @@
       m.classList.add('flower-target');
       m.dataset.flower = String(sp.id);
 
+      const wrap = document.createElement('a-entity');
+      wrap.classList.add('game-wrap');
+
       const model = document.createElement('a-gltf-model');
       model.setAttribute('src', sp.glb);
       model.setAttribute('position', '0 0.2 0');
       model.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
       model.setAttribute('visible', 'false');
-      m.appendChild(model);
+      wrap.appendChild(model);
+
+      m.appendChild(wrap);
 
       const label = document.createElement('a-text');
       label.setAttribute('value', String(sp.id).padStart(2, '0'));
@@ -331,19 +369,37 @@
       marker.addEventListener('markerFound', () => {
         console.log('[game] markerFound value=' + idx);
         dom.scanHint?.classList.add('hide');
+        dom.floatingMode?.classList.remove('active'); // Hide free mode overlay
         if (isStart) {
           onStartScanned();
         } else {
+          // If there was a previously decoupled flower, re-dock it first!
+          if (activeFlowerId >= 0 && activeFlowerId !== idx) {
+            reDockFlower();
+          }
+
+          activeFlowerId = idx;
           // Update active specimen metadata so capture shows the correct species card
           const sp = SPECIES.find(s => s.id === idx);
           if (sp) {
             App.updateActiveSpecimen(sp);
+            showInfoCard(sp);
           }
           onFlowerScanned(idx);
         }
       });
       marker.addEventListener('markerLost', () => {
         console.log('[game] markerLost value=' + idx);
+        if (activeFlowerId === idx) {
+          const w = marker.querySelector('.game-wrap');
+          if (w && w.dataset.decoupled === 'true') {
+            // Keep the activeFlowerId active so gestures still target it!
+            dom.floatingMode?.classList.add('active');
+            return;
+          }
+          activeFlowerId = -1;
+          hideInfoCard();
+        }
       });
     });
   }
@@ -358,6 +414,8 @@
     dom.gameHud?.classList.add('active');
     dom.gameMission?.classList.add('active');
     dom.scanHint?.classList.remove('hide');
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
 
     // Defensive: silence any leftover video from previous mode
     document.getElementById('bloomVideo')?.pause();
@@ -409,7 +467,20 @@
       window.removeEventListener('arjs-video-loaded', videoReadyListener);
       videoReadyListener = null;
     }
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
     if (sceneEl) {
+      // Restore any decoupled wrappers to their original markers before removing the scene
+      sceneEl.querySelectorAll('.game-wrap').forEach(w => {
+        if (w.dataset.decoupled === 'true') {
+          const markerEl = w.closest('.flower-target');
+          if (markerEl && markerEl.object3D && w.object3D) {
+            markerEl.object3D.attach(w.object3D);
+          }
+          delete w.dataset.decoupled;
+        }
+      });
+
       // Stop AR.js video stream by removing scene from DOM
       sceneEl.parentNode?.removeChild(sceneEl);
       sceneEl = null;
@@ -423,7 +494,215 @@
   }
 
   // ----------------------------------------------------------
-  // REWARD MODAL HANDLERS
+  // GESTURES — 1-finger: rotate | 2-finger pinch: scale | 2-finger pan: translate
+  // Desktop: left-drag: rotate | right-drag: translate | wheel: scale
+  // ----------------------------------------------------------
+  function currentWrap() {
+    if (activeFlowerId < 0 || !sceneEl) return null;
+    return sceneEl.querySelector(`[data-flower="${activeFlowerId}"] .game-wrap`);
+  }
+
+  function applyTransform() {
+    const w = currentWrap();
+    if (!w) return;
+    w.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
+    w.setAttribute('rotation', `${userRot.x} ${userRot.y} 0`);
+    w.setAttribute('position', `${userPos.x} ${userPos.y} ${userPos.z}`);
+  }
+
+  function decoupleFlower(w) {
+    if (!w || !w.object3D) return;
+    const cameraEl = sceneEl.querySelector('[camera]') || sceneEl.querySelector('a-camera');
+    if (!cameraEl || !cameraEl.object3D) return;
+
+    // Decouple by attaching in Three.js to the camera
+    cameraEl.object3D.attach(w.object3D);
+
+    // Update user coordinates in camera space
+    userPos.x = w.object3D.position.x;
+    userPos.y = w.object3D.position.y;
+    userPos.z = w.object3D.position.z;
+
+    // Extract euler rotation
+    const euler = new THREE.Euler().setFromQuaternion(w.object3D.quaternion, 'YXZ');
+    userRot.x = THREE.MathUtils.radToDeg(euler.x);
+    userRot.y = THREE.MathUtils.radToDeg(euler.y);
+
+    // Update user scale
+    userScale = w.object3D.scale.x;
+
+    w.dataset.decoupled = 'true';
+
+    // Update touch/mouse starting states so the transition is perfectly smooth!
+    if (pinchStart !== null) {
+      pinchStartScale = userScale;
+      pinchStartPos = { ...userPos };
+    }
+    if (oneStart) {
+      oneStartRot = { ...userRot };
+    }
+    if (mDragging) {
+      mStartPos = { ...userPos };
+      mStartRot = { ...userRot };
+    }
+
+    // Show detach UI
+    document.getElementById('detach-controls')?.classList.add('show');
+    
+    console.log('[decouple] Game flower decoupled to camera space!', userPos, userRot, userScale);
+  }
+
+  function reDockFlower() {
+    if (activeFlowerId < 0) return;
+    const w = currentWrap();
+    if (!w || w.dataset.decoupled !== 'true') return;
+    
+    const markerEl = w.closest('.flower-target');
+    if (markerEl && markerEl.object3D && w.object3D) {
+      markerEl.object3D.attach(w.object3D);
+    }
+    
+    // Reset to defaults
+    const sp = SPECIES.find(s => s.id === activeFlowerId);
+    userScale = 1;
+    userRot = { x: 0, y: 0 };
+    userPos = { x: 0, y: 0.2, z: 0 };
+    
+    w.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
+    w.setAttribute('rotation', '0 0 0');
+    w.setAttribute('position', '0 0.2 0');
+    
+    delete w.dataset.decoupled;
+    
+    // Hide UI
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
+    
+    console.log('[decouple] Game flower re-docked!');
+  }
+
+  const IGNORE = '.fab, .modal, .top-bar, button, .audio-player, .lc-stage, .lang-btn, #explore-info';
+  function touchDist(a, b) {
+    const dx = a.clientX - b.clientX, dy = a.clientY - b.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function touchMid(a, b) {
+    return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest(IGNORE)) return;
+    if (e.touches.length === 2) {
+      pinchStart = touchDist(e.touches[0], e.touches[1]);
+      pinchStartScale = userScale;
+      pinchMidStart = touchMid(e.touches[0], e.touches[1]);
+      pinchStartPos = { ...userPos };
+      oneStart = null;
+      e.preventDefault();
+    } else if (e.touches.length === 1) {
+      oneStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      oneStartRot = { ...userRot };
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest(IGNORE)) return;
+
+    if (e.touches.length === 2 && pinchStart !== null) {
+      const w = currentWrap();
+      if (w && !w.dataset.decoupled) {
+        decoupleFlower(w);
+      }
+
+      const currentDist = touchDist(e.touches[0], e.touches[1]);
+      const currentMid = touchMid(e.touches[0], e.touches[1]);
+
+      // 1. Zoom (pinch)
+      const ratio = currentDist / pinchStart;
+      userScale = Math.max(USER_SCALE_MIN, Math.min(USER_SCALE_MAX, pinchStartScale * ratio));
+
+      // 2. Translate (pan) - Dragging two fingers translates the flower
+      const panDx = currentMid.x - pinchMidStart.x;
+      const panDy = currentMid.y - pinchMidStart.y;
+      
+      const sensitivity = 0.008;
+      userPos.x = pinchStartPos.x + panDx * sensitivity;
+      userPos.y = pinchStartPos.y - panDy * sensitivity; // drag up = move up
+
+      applyTransform();
+      e.preventDefault();
+    } else if (e.touches.length === 1 && oneStart) {
+      const dx = (e.touches[0].clientX - oneStart.x) / window.innerWidth;
+      const dy = (e.touches[0].clientY - oneStart.y) / window.innerHeight;
+      userRot.y = oneStartRot.y + dx * 360;
+      userRot.x = Math.max(-80, Math.min(80, oneStartRot.x + dy * 360));
+      applyTransform();
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+      pinchStart = null; pinchMidStart = null; pinchStartPos = null;
+      oneStart = null;
+    } else if (e.touches.length === 1) {
+      pinchStart = null; pinchMidStart = null; pinchStartPos = null;
+      oneStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      oneStartRot = { ...userRot };
+    }
+  });
+
+  // Desktop: left-drag = rotate, right-drag = translate, wheel = scale
+  let mDragging = false, mButton = 0, mStart = null, mStartRot = null, mStartPos = null;
+  document.addEventListener('mousedown', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest(IGNORE)) return;
+    mDragging = true;
+    mButton = e.button;
+    mStart = { x: e.clientX, y: e.clientY };
+    mStartRot = { ...userRot };
+    mStartPos = { ...userPos };
+    if (e.button === 2) e.preventDefault(); // suppress context menu
+  });
+  document.addEventListener('contextmenu', (e) => {
+    if (sceneEl && document.body.classList.contains('game-mode')) e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!mDragging || !mStart) return;
+    const rawDx = e.clientX - mStart.x;
+    const rawDy = e.clientY - mStart.y;
+    if (mButton === 2) {
+      // Right-drag: translate
+      const w = currentWrap();
+      if (w && !w.dataset.decoupled) {
+        decoupleFlower(w);
+      }
+      const sensitivity = 0.015 * userScale;
+      userPos.x = mStartPos.x + rawDx * sensitivity;
+      userPos.y = mStartPos.y - rawDy * sensitivity;
+    } else {
+      // Left-drag: rotate
+      const dx = rawDx / window.innerWidth;
+      const dy = rawDy / window.innerHeight;
+      userRot.y = mStartRot.y + dx * 360;
+      userRot.x = Math.max(-80, Math.min(80, mStartRot.x + dy * 360));
+    }
+    applyTransform();
+  });
+  document.addEventListener('mouseup', () => { mDragging = false; });
+  document.addEventListener('wheel', (e) => {
+    if (!sceneEl || !document.body.classList.contains('game-mode')) return;
+    if (e.target.closest('.modal, .info-card, .audio-player, .lang-btn, #explore-info')) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.92 : 1.08;
+    userScale = Math.max(USER_SCALE_MIN, Math.min(USER_SCALE_MAX, userScale * delta));
+    applyTransform();
+  }, { passive: false });
+
+  // ----------------------------------------------------------
+  // REWARD MODAL HANDLERS AND RE-DOCK BUTTON
   // ----------------------------------------------------------
   document.getElementById('reward-close')?.addEventListener('click', () => {
     dom.rewardModal.classList.remove('active');
@@ -432,12 +711,30 @@
   document.getElementById('reward-replay')?.addEventListener('click', () => {
     dom.rewardModal.classList.remove('active');
     App.stopConfetti();
+    if (sceneEl) {
+      sceneEl.querySelectorAll('.game-wrap').forEach(w => {
+        if (w.dataset.decoupled === 'true') {
+          const markerEl = w.closest('.flower-target');
+          if (markerEl && markerEl.object3D && w.object3D) {
+            markerEl.object3D.attach(w.object3D);
+          }
+          delete w.dataset.decoupled;
+        }
+      });
+    }
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
     resetGameState();
     refreshHUD();
     setMission('mission_start', true);
     setFlowerContentVisible(false);
   });
   document.getElementById('map-btn')?.addEventListener('click', showMapModal);
+  document.getElementById('btn-reset-flower')?.addEventListener('click', () => {
+    if (document.body.classList.contains('game-mode')) {
+      reDockFlower();
+    }
+  });
 
   // ----------------------------------------------------------
   // WIRE INTRO BUTTON + REGISTER WITH App

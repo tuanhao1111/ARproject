@@ -89,6 +89,12 @@
   let gestureHintShown = false;
   let gestureHintTimer = null;
 
+  const USER_SCALE_MIN = 0.3;
+  const USER_SCALE_MAX = 3.0;
+  let userScale = 1, userRot = { x: 0, y: 0 }, userPos = { x: 0, y: 0, z: 0 };
+  let pinchStart = null, pinchStartScale = null, pinchMidStart = null, pinchStartPos = null;
+  let oneStart = null, oneStartRot = null;
+
   function updateActiveSpecimen(sp) {
     App.updateActiveSpecimen(sp);
   }
@@ -198,7 +204,14 @@
       const idx = parseInt(tgt.dataset.targetIndex, 10);
       tgt.addEventListener('targetFound', () => {
         console.log('[explore] targetFound idx=' + idx);
+        
+        // If there was a previously decoupled flower, re-dock it first!
+        if (currentSpeciesIdx >= 0 && currentSpeciesIdx !== idx) {
+          reDockFlower();
+        }
+
         dom.scanHint?.classList.add('hide');
+        dom.floatingMode?.classList.remove('active'); // Hide free mode overlay
         showInfoCard(idx);
         // Show FABs after a small delay so user notices the flower first
         setTimeout(() => dom.fabs?.classList.add('show'), 400);
@@ -207,6 +220,12 @@
       });
       tgt.addEventListener('targetLost', () => {
         console.log('[explore] targetLost idx=' + idx);
+        const w = tgt.querySelector('.mind-wrap');
+        if (w && w.dataset.decoupled === 'true') {
+          // If decoupled, show free mode overlay and keep card/FABs active!
+          dom.floatingMode?.classList.add('active');
+          return;
+        }
         hideInfoCard();
         dom.fabs?.classList.remove('show');
         dismissGestureHint();
@@ -231,7 +250,17 @@
       console.warn('[explore] mind-ar-js component missing — has the lib loaded?');
     }
 
+<<<<<<< HEAD
     setScanHintExplore(true);
+=======
+    // Reset gesture states
+    userScale = 1;
+    userRot = { x: 0, y: 0 };
+    userPos = { x: 0, y: 0, z: 0 };
+
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
+>>>>>>> c220c40b5d016f163c7155c84d3b2c81867898a9
     dom.scanHint?.classList.remove('hide');
     hideInfoCard();
 
@@ -274,12 +303,25 @@
     setScanHintExplore(false);
     dismissGestureHint();
     gestureHintShown = false;
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
     if (resizeListener) {
       window.removeEventListener('resize', resizeListener);
       resizeListener = null;
     }
     hideInfoCard();
     if (sceneEl) {
+      // Restore any decoupled wrappers to their original markers before removing the scene
+      sceneEl.querySelectorAll('.mind-wrap').forEach(w => {
+        if (w.dataset.decoupled === 'true') {
+          const markerEl = w.closest('[mindar-image-target]');
+          if (markerEl && markerEl.object3D && w.object3D) {
+            markerEl.object3D.attach(w.object3D);
+          }
+          delete w.dataset.decoupled;
+        }
+      });
+
       // MindAR system has stop() — call before DOM removal to release camera
       try {
         const sys = sceneEl.systems?.['mindar-image-system'];
@@ -298,15 +340,11 @@
   }
 
   // ----------------------------------------------------------
-  // GESTURES — rotate flower on swipe, scale on pinch
+  // GESTURES — 1-finger: rotate | 2-finger pinch: scale | 2-finger pan: translate
+  // Desktop: left-drag: rotate | right-drag: translate | wheel: scale
   // ----------------------------------------------------------
   // Only active while explore scene is mounted. Targets the .mind-wrap
   // of the currently-found species.
-  const USER_SCALE_MIN = 0.3;
-  const USER_SCALE_MAX = 3.0;
-  let userScale = 1, userRot = { x: 0, y: 0 };
-  let pinchStart = null, pinchStartScale = null;
-  let oneStart = null, oneStartRot = null;
 
   function currentWrap() {
     if (currentSpeciesIdx < 0 || !sceneEl) return null;
@@ -314,16 +352,89 @@
   }
   function applyTransform() {
     const w = currentWrap();
-    if (!w?.object3D) return;
-    w.object3D.scale.set(userScale, userScale, userScale);
-    w.object3D.rotation.x = userRot.x * Math.PI / 180;
-    w.object3D.rotation.y = userRot.y * Math.PI / 180;
+    if (!w) return;
+    w.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
+    w.setAttribute('rotation', `${userRot.x} ${userRot.y} 0`);
+    w.setAttribute('position', `${userPos.x} ${userPos.y} ${userPos.z}`);
+  }
+
+  function decoupleFlower(w) {
+    if (!w || !w.object3D) return;
+    const cameraEl = sceneEl.querySelector('[camera]') || sceneEl.querySelector('a-camera');
+    if (!cameraEl || !cameraEl.object3D) return;
+
+    // Decouple by attaching in Three.js to the camera
+    cameraEl.object3D.attach(w.object3D);
+
+    // Update user coordinates in camera space
+    userPos.x = w.object3D.position.x;
+    userPos.y = w.object3D.position.y;
+    userPos.z = w.object3D.position.z;
+
+    // Extract euler rotation
+    const euler = new THREE.Euler().setFromQuaternion(w.object3D.quaternion, 'YXZ');
+    userRot.x = THREE.MathUtils.radToDeg(euler.x);
+    userRot.y = THREE.MathUtils.radToDeg(euler.y);
+
+    // Update user scale
+    userScale = w.object3D.scale.x;
+
+    w.dataset.decoupled = 'true';
+
+    // Update touch/mouse starting states so the transition is perfectly smooth!
+    if (pinchStart !== null) {
+      pinchStartScale = userScale;
+      pinchStartPos = { ...userPos };
+    }
+    if (oneStart) {
+      oneStartRot = { ...userRot };
+    }
+    if (mDragging) {
+      mStartPos = { ...userPos };
+      mStartRot = { ...userRot };
+    }
+
+    // Show detach UI
+    document.getElementById('detach-controls')?.classList.add('show');
+    
+    console.log('[decouple] Explore flower decoupled to camera space!', userPos, userRot, userScale);
+  }
+
+  function reDockFlower() {
+    const w = currentWrap();
+    if (!w || w.dataset.decoupled !== 'true') return;
+    
+    const markerEl = w.closest('[mindar-image-target]');
+    if (markerEl && markerEl.object3D && w.object3D) {
+      markerEl.object3D.attach(w.object3D);
+    }
+    
+    // Reset to defaults
+    const sp = SPECIES_EXPLORE[currentSpeciesIdx];
+    userScale = 1;
+    userRot = { x: 0, y: 0 };
+    userPos = { x: 0, y: 0, z: 0.1 };
+    
+    w.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
+    w.setAttribute('rotation', sp.rotation || '0 0 0');
+    w.setAttribute('position', sp.position || '0 0 0.1');
+    
+    delete w.dataset.decoupled;
+    
+    // Hide UI
+    document.getElementById('detach-controls')?.classList.remove('show');
+    dom.floatingMode?.classList.remove('active');
+    
+    console.log('[decouple] Explore flower re-docked!');
   }
 
   const IGNORE = '.fab, .modal, .top-bar, button, .audio-player, .lc-stage, .lang-btn, #explore-info';
   function touchDist(a, b) {
     const dx = a.clientX - b.clientX, dy = a.clientY - b.clientY;
     return Math.sqrt(dx * dx + dy * dy);
+  }
+  function touchMid(a, b) {
+    return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
   }
 
   document.addEventListener('touchstart', (e) => {
@@ -332,6 +443,9 @@
     if (e.touches.length === 2) {
       pinchStart = touchDist(e.touches[0], e.touches[1]);
       pinchStartScale = userScale;
+      pinchMidStart = touchMid(e.touches[0], e.touches[1]);
+      pinchStartPos = { ...userPos };
+      oneStart = null;
       e.preventDefault();
     } else if (e.touches.length === 1) {
       oneStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -342,9 +456,28 @@
   document.addEventListener('touchmove', (e) => {
     if (!sceneEl || !document.body.classList.contains('explore-mode')) return;
     if (e.target.closest(IGNORE)) return;
-    if (e.touches.length === 2 && pinchStart) {
-      const ratio = touchDist(e.touches[0], e.touches[1]) / pinchStart;
+
+    if (e.touches.length === 2 && pinchStart !== null) {
+      const w = currentWrap();
+      if (w && !w.dataset.decoupled) {
+        decoupleFlower(w);
+      }
+
+      const currentDist = touchDist(e.touches[0], e.touches[1]);
+      const currentMid = touchMid(e.touches[0], e.touches[1]);
+
+      // 1. Zoom (pinch)
+      const ratio = currentDist / pinchStart;
       userScale = Math.max(USER_SCALE_MIN, Math.min(USER_SCALE_MAX, pinchStartScale * ratio));
+
+      // 2. Translate (pan) - Dragging two fingers translates the flower
+      const panDx = currentMid.x - pinchMidStart.x;
+      const panDy = currentMid.y - pinchMidStart.y;
+      
+      const sensitivity = 0.008;
+      userPos.x = pinchStartPos.x + panDx * sensitivity;
+      userPos.y = pinchStartPos.y - panDy * sensitivity; // drag up = move up
+
       applyTransform();
       e.preventDefault();
     } else if (e.touches.length === 1 && oneStart) {
@@ -358,29 +491,51 @@
   }, { passive: false });
 
   document.addEventListener('touchend', (e) => {
-    if (e.touches.length === 0) { pinchStart = null; oneStart = null; }
-    else if (e.touches.length === 1) {
-      pinchStart = null;
+    if (e.touches.length === 0) {
+      pinchStart = null; pinchMidStart = null; pinchStartPos = null;
+      oneStart = null;
+    } else if (e.touches.length === 1) {
+      pinchStart = null; pinchMidStart = null; pinchStartPos = null;
       oneStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       oneStartRot = { ...userRot };
     }
   });
 
-  // Desktop: mouse drag = rotate, wheel = scale
-  let mDragging = false, mStart = null, mStartRot = null;
+  // Desktop: left-drag = rotate, right-drag = translate, wheel = scale
+  let mDragging = false, mButton = 0, mStart = null, mStartRot = null, mStartPos = null;
   document.addEventListener('mousedown', (e) => {
     if (!sceneEl || !document.body.classList.contains('explore-mode')) return;
     if (e.target.closest(IGNORE)) return;
     mDragging = true;
+    mButton = e.button;
     mStart = { x: e.clientX, y: e.clientY };
     mStartRot = { ...userRot };
+    mStartPos = { ...userPos };
+    if (e.button === 2) e.preventDefault(); // suppress context menu
+  });
+  document.addEventListener('contextmenu', (e) => {
+    if (sceneEl && document.body.classList.contains('explore-mode')) e.preventDefault();
   });
   document.addEventListener('mousemove', (e) => {
-    if (!mDragging) return;
-    const dx = (e.clientX - mStart.x) / window.innerWidth;
-    const dy = (e.clientY - mStart.y) / window.innerHeight;
-    userRot.y = mStartRot.y + dx * 360;
-    userRot.x = Math.max(-80, Math.min(80, mStartRot.x + dy * 360));
+    if (!mDragging || !mStart) return;
+    const rawDx = e.clientX - mStart.x;
+    const rawDy = e.clientY - mStart.y;
+    if (mButton === 2) {
+      // Right-drag: translate
+      const w = currentWrap();
+      if (w && !w.dataset.decoupled) {
+        decoupleFlower(w);
+      }
+      const sensitivity = 0.015 * userScale;
+      userPos.x = mStartPos.x + rawDx * sensitivity;
+      userPos.y = mStartPos.y - rawDy * sensitivity;
+    } else {
+      // Left-drag: rotate
+      const dx = rawDx / window.innerWidth;
+      const dy = rawDy / window.innerHeight;
+      userRot.y = mStartRot.y + dx * 360;
+      userRot.x = Math.max(-80, Math.min(80, mStartRot.x + dy * 360));
+    }
     applyTransform();
   });
   document.addEventListener('mouseup', () => { mDragging = false; });
@@ -393,6 +548,7 @@
     applyTransform();
   }, { passive: false });
 
+
   // ----------------------------------------------------------
   // INFO CARD CLICK → open BIO modal for current species
   // ----------------------------------------------------------
@@ -401,9 +557,14 @@
   });
 
   // ----------------------------------------------------------
-  // REGISTER + WIRE INTRO BUTTON
+  // REGISTER + WIRE INTRO BUTTON AND RE-DOCK BUTTON
   // ----------------------------------------------------------
   App.registerMode({ name: 'explore', enter, exit });
   document.getElementById('start-btn')?.addEventListener('click', () => App.enterMode('explore'));
+  document.getElementById('btn-reset-flower')?.addEventListener('click', () => {
+    if (document.body.classList.contains('explore-mode')) {
+      reDockFlower();
+    }
+  });
 
 })();

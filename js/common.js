@@ -141,7 +141,10 @@
       audio_english_nav: 'English Narration',
       audio_sec_zh: '~ 30 秒',
       audio_sec_en: '~ 30 sec',
-      audio_note: '※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。'
+      audio_note: '※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。',
+      detach_status: '自由飛翔 · FREE FLIGHT',
+      detach_hint: '雙指移動，單指旋轉',
+      btn_reset_flower: '重設位置 · RE-DOCK'
     },
     en: {
       back: '← BACK',
@@ -208,7 +211,10 @@
       audio_english_nav: 'English Narration',
       audio_sec_zh: '~ 30 sec',
       audio_sec_en: '~ 30 秒',
-      audio_note: '* Generated in real-time using browser Web Speech API. For custom audio files, replace with &lt;audio src="azalea.mp3"&gt;.'
+      audio_note: '* Generated in real-time using browser Web Speech API. For custom audio files, replace with &lt;audio src="azalea.mp3"&gt;.',
+      detach_status: 'FREE FLIGHT · 自由飛翔',
+      detach_hint: 'Drag 2 fingers to move, 1 to rotate',
+      btn_reset_flower: 'RE-DOCK · 重設位置'
     }
   };
 

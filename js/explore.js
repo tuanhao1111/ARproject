@@ -53,6 +53,34 @@
       form_en: 'Shrub height 1–3 meters, leaves elliptical and leathery. Flower color ranges from pure white to deep pink, with 5 symmetrical petals and 5–10 stamens.',
       caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
       caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
+    },
+    {
+      // ⚠️ TODO: targetIndex 1 — sửa name/scientific/desc cho khớp ẢNH target thứ 2
+      //    đã compile trong Explore/targets.mind. Thay glb bằng model riêng khi có.
+      name_zh: '久留米杜鵑',
+      name_en: 'Kurume Azalea',
+      scientific: 'Rhododendron × obtusum',
+      family_zh: '杜鵑花科 Ericaceae',
+      family_en: 'Ericaceae Family',
+      origin_zh: '原產地: 日本九州久留米',
+      origin_en: 'Origin: Kurume, Kyushu, Japan',
+      desc_zh: '小葉常綠杜鵑，株型緊密，花朵密集成簇。耐修剪，校園綠籬常見。',
+      desc_en: 'Small-leaved evergreen azalea with a compact habit and densely clustered blooms. Tolerates pruning; common as campus hedging.',
+      glb: './Explore/kurume-azalea.glb', // ⚠️ PLACEHOLDER — đặt file GLB riêng vào Explore/
+      scale: 0.5,
+      position: '0 0 0.1',
+      growth_zh: '小型常綠灌木，喜酸性土壤（pH 4.5–5.5）與半遮蔭。生長緩慢、分枝細密，適合作為矮籬與盆植。',
+      growth_en: 'A small evergreen shrub favouring acidic soil (pH 4.5–5.5) and semi-shade. Slow-growing with fine, dense branching — well suited to low hedging and container planting.',
+      ph_text: 'pH 4.5 - 5.5',
+      ph_left: '33%',
+      light_pills_zh: ['半遮蔭', '避免強光'],
+      light_pills_en: ['Semi-shaded', 'Avoid Intense Light'],
+      tags_zh: ['酸性土', '半遮蔭', '春季'],
+      tags_en: ['Acidic Soil', 'Semi-shaded', 'Spring'],
+      form_zh: '株高 0.5–1.5 公尺，葉小而密。花朵漏斗狀，色彩鮮明，盛花期幾乎覆滿全株。',
+      form_en: 'Shrub height 0.5–1.5 meters, with small dense leaves. Funnel-shaped, vividly coloured flowers that almost cover the whole plant at peak bloom.',
+      caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
+      caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
     }
   ];
 
@@ -189,11 +217,21 @@
   // ----------------------------------------------------------
   // LIFECYCLE
   // ----------------------------------------------------------
+  // Swap scan-hint text to the explore-specific i18n key ("point at plant
+  // image" instead of "point at QR marker"). Re-applies on language change.
+  function setScanHintExplore(on) {
+    const label = dom.scanHint?.querySelector('.label');
+    if (!label) return;
+    label.dataset.i18n = on ? 'scan_hint_explore' : 'scan_hint';
+    App.applyLanguage(App.currentLang);
+  }
+
   async function enter() {
     if (!window.AFRAME?.components['mindar-image']) {
       console.warn('[explore] mind-ar-js component missing — has the lib loaded?');
     }
 
+    setScanHintExplore(true);
     dom.scanHint?.classList.remove('hide');
     hideInfoCard();
 
@@ -233,6 +271,7 @@
   }
 
   async function exit() {
+    setScanHintExplore(false);
     dismissGestureHint();
     gestureHintShown = false;
     if (resizeListener) {

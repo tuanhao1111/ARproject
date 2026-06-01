@@ -280,6 +280,26 @@
   let videoReadyListener = null;
   let resizeListener = null;
 
+  // AR.js (aframe-ar.js) is NOT loaded globally (it would attach its 'arjs'
+  // system to the MindAR Explore scene and wipe its canvas every frame). Load
+  // it on-demand the first time the user enters game mode, and wait until the
+  // 'arjs' system is registered before building the AR.js scene.
+  let arjsLoadPromise = null;
+  function loadARjs() {
+    if (window.AFRAME?.systems?.arjs || window.AFRAME?.components?.['arjs-anchor']) {
+      return Promise.resolve();
+    }
+    if (arjsLoadPromise) return arjsLoadPromise;
+    arjsLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js';
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load aframe-ar.js'));
+      document.head.appendChild(s);
+    });
+    return arjsLoadPromise;
+  }
+
   function buildScene() {
     const scene = document.createElement('a-scene');
     scene.id = 'ar-scene-game';
@@ -421,6 +441,16 @@
     document.getElementById('bloomVideo')?.pause();
     document.getElementById('floating-video-el')?.pause();
     dom.floatingMode?.classList.remove('active');
+
+    // AR.js is loaded on-demand (not globally) — must be ready before building
+    // the AR.js scene so the 'arjs' system/components exist.
+    try {
+      await loadARjs();
+    } catch (e) {
+      console.error('[game] AR.js load failed', e);
+      App.showError('AR.js Failed', 'Could not load the AR library for game mode.', e.message || '');
+      return;
+    }
 
     sceneEl = buildScene();
     dom.sceneHost.appendChild(sceneEl);

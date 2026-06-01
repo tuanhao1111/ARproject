@@ -20,10 +20,11 @@
   <link rel="stylesheet" href="./css/style.css" />
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
   <!-- MindAR — Explore mode chỉ dùng MindAR. Game mode dùng AR.js.
-       Cả 2 lib cùng load vì user có thể switch mode. Scene mount động
-       trong JS để tránh xung đột camera. -->
+       AR.js (aframe-ar.js) KHÔNG nạp toàn cục nữa: hệ 'arjs' của nó tự bám vào
+       MỌI a-scene (kể cả scene MindAR của Explore) và chèn một lượt render
+       camera-feed với autoClear → xóa sạch nội dung MindAR mỗi frame. Vì vậy
+       AR.js chỉ được nạp ĐỘNG khi vào game mode (xem loadARjs() trong game.js). -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 </head>
 

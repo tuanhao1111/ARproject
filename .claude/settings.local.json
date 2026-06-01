@@ -12,7 +12,11 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(git mv *)",
-      "Bash(ls \"/c/Users/user/.claude/projects/C--Users-user-OneDrive-Documents-GitHub-ARproject/memory/\" 2>/dev/null && echo \"---LIST DONE---\" || echo \"no memory dir yet\")"
+      "Bash(ls \"/c/Users/user/.claude/projects/C--Users-user-OneDrive-Documents-GitHub-ARproject/memory/\" 2>/dev/null && echo \"---LIST DONE---\" || echo \"no memory dir yet\")",
+      "Bash(cp \"C:/Users/user/Downloads/targets.mind\" \"Explore/targets.mind\")",
+      "Bash(cp \"C:/Users/user/OneDrive/Documents/flower-twigs/flower-twigs.glb\" \"Explore/flower-twigs.glb\")",
+      "Bash(python -c ' *)",
+      "Bash(node --check js/explore.js)"
     ]
   }
 }

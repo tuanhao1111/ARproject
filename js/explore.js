@@ -38,9 +38,13 @@
       origin_en: 'Origin: East Asia / Hirado, Japan',
       desc_zh: '常綠灌木，喜酸性土壤與半遮蔭環境。3-5月盛放，五瓣對稱，花色極具觀賞價值。',
       desc_en: 'Evergreen shrub; thrives in acidic soil and semi-shade. Blooms March-May.',
-      glb: './Explore/azalea.glb',
+      glb: './Explore/flower-twigs.glb',
       scale: 0.5,
-      position: '0 0 0.1',
+      position: '0.75 0 0',          // model đứng CẠNH PHẢI tấm thẻ (marker width=1, span x:-0.5..0.5)
+      // Video timelapse nằm ĐÚNG vị trí tấm thẻ (marker plane). Tỉ lệ marker 1063×650 → h≈0.61.
+      video: './Explore/azalea-bloom.mp4',
+      videoWidth: 1,
+      videoHeight: 0.61,
       growth_zh: '常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。',
       growth_en: 'An evergreen shrub thriving in acidic soil (pH 4.5–5.5) and well-drained, semi-shaded environments. A common species on Taiwan campuses, originating as a large hybrid from Hirado, Japan.',
       ph_text: 'pH 4.5 - 5.5',
@@ -51,34 +55,6 @@
       tags_en: ['Acidic Soil', 'Semi-shaded', 'Spring'],
       form_zh: '株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。',
       form_en: 'Shrub height 1–3 meters, leaves elliptical and leathery. Flower color ranges from pure white to deep pink, with 5 symmetrical petals and 5–10 stamens.',
-      caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
-      caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
-    },
-    {
-      // ⚠️ TODO: targetIndex 1 — sửa name/scientific/desc cho khớp ẢNH target thứ 2
-      //    đã compile trong Explore/targets.mind. Thay glb bằng model riêng khi có.
-      name_zh: '久留米杜鵑',
-      name_en: 'Kurume Azalea',
-      scientific: 'Rhododendron × obtusum',
-      family_zh: '杜鵑花科 Ericaceae',
-      family_en: 'Ericaceae Family',
-      origin_zh: '原產地: 日本九州久留米',
-      origin_en: 'Origin: Kurume, Kyushu, Japan',
-      desc_zh: '小葉常綠杜鵑，株型緊密，花朵密集成簇。耐修剪，校園綠籬常見。',
-      desc_en: 'Small-leaved evergreen azalea with a compact habit and densely clustered blooms. Tolerates pruning; common as campus hedging.',
-      glb: './Explore/kurume-azalea.glb', // ⚠️ PLACEHOLDER — đặt file GLB riêng vào Explore/
-      scale: 0.5,
-      position: '0 0 0.1',
-      growth_zh: '小型常綠灌木，喜酸性土壤（pH 4.5–5.5）與半遮蔭。生長緩慢、分枝細密，適合作為矮籬與盆植。',
-      growth_en: 'A small evergreen shrub favouring acidic soil (pH 4.5–5.5) and semi-shade. Slow-growing with fine, dense branching — well suited to low hedging and container planting.',
-      ph_text: 'pH 4.5 - 5.5',
-      ph_left: '33%',
-      light_pills_zh: ['半遮蔭', '避免強光'],
-      light_pills_en: ['Semi-shaded', 'Avoid Intense Light'],
-      tags_zh: ['酸性土', '半遮蔭', '春季'],
-      tags_en: ['Acidic Soil', 'Semi-shaded', 'Spring'],
-      form_zh: '株高 0.5–1.5 公尺，葉小而密。花朵漏斗狀，色彩鮮明，盛花期幾乎覆滿全株。',
-      form_en: 'Shrub height 0.5–1.5 meters, with small dense leaves. Funnel-shaped, vividly coloured flowers that almost cover the whole plant at peak bloom.',
       caution_zh: '全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。',
       caution_en: 'The entire plant contains <strong>grayanotoxin</strong>, which is toxic if ingested. Admire the flowers, but do not consume them.'
     }
@@ -174,12 +150,43 @@
     lDir.setAttribute('position', '0 1 1');
     scene.appendChild(lDir);
 
+    // Asset pool — video textures must be registered here for reliable playback
+    const assets = document.createElement('a-assets');
+    SPECIES_EXPLORE.forEach((sp, i) => {
+      if (!sp.video) return;
+      const v = document.createElement('video');
+      v.id = `explore-vid-${i}`;
+      v.setAttribute('src', sp.video);
+      v.setAttribute('loop', '');
+      v.muted = true; v.setAttribute('muted', '');     // muted → autoplay allowed on mobile
+      v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
+      v.setAttribute('crossorigin', 'anonymous');
+      v.setAttribute('preload', 'auto');
+      assets.appendChild(v);
+    });
+    scene.appendChild(assets);
+
     // One <a-entity mindar-image-target> per species
     SPECIES_EXPLORE.forEach((sp, i) => {
       const tgt = document.createElement('a-entity');
       tgt.setAttribute('mindar-image-target', `targetIndex: ${i}`);
       tgt.dataset.targetIndex = String(i);
       tgt.classList.add('mind-target');
+
+      // Timelapse video — flat on the marker plane (the "card"). Direct child of
+      // the target (NOT inside .mind-wrap) so it stays anchored while the user
+      // rotates/scales the 3D model beside it.
+      if (sp.video) {
+        const vid = document.createElement('a-video');
+        vid.classList.add('mind-video');
+        vid.setAttribute('src', `#explore-vid-${i}`);
+        vid.setAttribute('position', '0 0 0.01');   // tiny z so it sits just above the printed card
+        vid.setAttribute('rotation', '0 0 0');
+        vid.setAttribute('width', String(sp.videoWidth || 1));
+        vid.setAttribute('height', String(sp.videoHeight || 0.61));
+        tgt.appendChild(vid);
+      }
 
       // Wrapper so user gestures (rotate/scale) don't fight the target anchor
       const wrap = document.createElement('a-entity');
@@ -199,6 +206,14 @@
     return scene;
   }
 
+  // Play/stop the marker's timelapse video on found/lost.
+  function setVideoPlaying(idx, on) {
+    const v = document.getElementById(`explore-vid-${idx}`);
+    if (!v) return;
+    if (on) { try { v.currentTime = 0; } catch (e) {} v.play().catch(() => {}); }
+    else { v.pause(); }
+  }
+
   function wireTargetEvents() {
     sceneEl.querySelectorAll('[mindar-image-target]').forEach(tgt => {
       const idx = parseInt(tgt.dataset.targetIndex, 10);
@@ -212,6 +227,7 @@
 
         dom.scanHint?.classList.add('hide');
         dom.floatingMode?.classList.remove('active'); // Hide free mode overlay
+        setVideoPlaying(idx, true);
         showInfoCard(idx);
         // Show FABs after a small delay so user notices the flower first
         setTimeout(() => dom.fabs?.classList.add('show'), 400);
@@ -220,6 +236,7 @@
       });
       tgt.addEventListener('targetLost', () => {
         console.log('[explore] targetLost idx=' + idx);
+        setVideoPlaying(idx, false);
         const w = tgt.querySelector('.mind-wrap');
         if (w && w.dataset.decoupled === 'true') {
           // If decoupled, show free mode overlay and keep card/FABs active!
@@ -250,9 +267,8 @@
       console.warn('[explore] mind-ar-js component missing — has the lib loaded?');
     }
 
-<<<<<<< HEAD
     setScanHintExplore(true);
-=======
+
     // Reset gesture states
     userScale = 1;
     userRot = { x: 0, y: 0 };
@@ -260,7 +276,6 @@
 
     document.getElementById('detach-controls')?.classList.remove('show');
     dom.floatingMode?.classList.remove('active');
->>>>>>> c220c40b5d016f163c7155c84d3b2c81867898a9
     dom.scanHint?.classList.remove('hide');
     hideInfoCard();
 

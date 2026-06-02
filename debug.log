@@ -1,0 +1,238 @@
+[error] Failed to recalculate device parameters.
+[warn] No DPDB device match.
+[warn] Using fallback iOS device measurements.
+[log] WebVR Polyfill Version: ^0.10.12
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[warn] Using fallback iOS device measurements.
+[warn] No DPDB device match.
+[error] Failed to recalculate device parameters.
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] WebVR Polyfill Version: ^0.10.12
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] WebVR Polyfill Version: ^0.10.12
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] WebVR Polyfill Version: ^0.10.12
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[log] %ccore:a-assets:warn %cAsset loading timed out in %c  color: orange color: inherit color: orange 3000 ms
+[log] [explore] model-loaded idx=0
+[warn] No DPDB device match.
+[warn] Using fallback iOS device measurements.
+[error] Failed to recalculate device parameters.
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] WebVR Polyfill Version: ^0.10.12
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[log] [explore] targetFound idx=0
+[log] [explore] play video idx=0 readyState=0
+[warn] [explore] video play failed idx=0 {"line":246,"column":13,"sourceURL":"https://angler-muscular-expulsion.ngrok-free.dev/js/explore.js"}
+[log] [explore][diag] modelWorldPos=-144.9,-1064.9,-1794.3 worldScale=85.06 meshes=0 | cam far=99999.99999997189 near=10 fov=0 | NDC=NaN,NaN,0.989 (|z|>1 => clipped)
+[log] [explore] targetLost idx=0
+[unhandled-rejection] {}
+[warn] No DPDB device match.
+[error] Failed to recalculate device parameters.
+[log] WebVR Polyfill Version: ^0.10.12
+[warn] Using fallback iOS device measurements.
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[error] [explore] model-error idx=0 {"format":"gltf","src":"./Explore/azalea.glb"}
+[log] %ccomponents:gltf-model:warn %cLoad failed%c  color: orange color: inherit color: orange
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] WebVR Polyfill Version: ^0.10.12
+[warn] Using fallback iOS device measurements.
+[warn] No DPDB device match.
+[error] Failed to recalculate device parameters.
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[warn] [explore] video play failed idx=0 {"line":246,"column":13,"sourceURL":"https://angler-muscular-expulsion.ngrok-free.dev/js/explore.js"}
+[log] [explore] targetFound idx=0
+[log] [explore] play video idx=0 readyState=0
+[log] [explore][diag] modelWorldPos=139.7,-1183.0,-2561.5 worldScale=85.49 meshes=0 | cam far=99999.99999997189 near=10 fov=0 | NDC=NaN,NaN,0.992 (|z|>1 => clipped)
+[log] [explore] targetLost idx=0
+[log] [explore] targetFound idx=0
+[log] [explore] play video idx=0 readyState=0
+[warn] [explore] video play failed idx=0 {"line":246,"column":13,"sourceURL":"https://angler-muscular-expulsion.ngrok-free.dev/js/explore.js"}
+[log] [explore][diag] modelWorldPos=-15.9,-1350.1,-2012.7 worldScale=85.38 meshes=0 | cam far=99999.99999997189 near=10 fov=0 | NDC=NaN,NaN,0.990 (|z|>1 => clipped)
+[log] [explore] model-loaded idx=0
+[log] [explore] targetLost idx=0
+[warn] No DPDB device match.
+[error] Failed to recalculate device parameters.
+[warn] Using fallback iOS device measurements.
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] WebVR Polyfill Version: ^0.10.12
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[log] [explore] targetFound idx=0
+[warn] [explore] video play failed idx=0 {"line":277,"column":13,"sourceURL":"https://angler-muscular-expulsion.ngrok-free.dev/js/explore.js"}
+[log] [explore] play video idx=0 readyState=0
+[log] [explore][diag] modelWorldPos=992.7,-323.0,-2358.2 worldScale=1064.28 meshes=0 | cam far=99999.99999997189 near=10 fov=0 | NDC=NaN,NaN,0.992 (|z|>1 => clipped)
+[log] [explore] model-loaded idx=0
+[log] [explore] Auto bounds idx=0 center=1059.85,-705.77,-1595.87 size=104.21,118.61,113.43
+[log] [explore] Auto scaled idx=0 factor=0.0101
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] WebVR Polyfill Version: ^0.10.12
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[log] [explore] model-loaded idx=0
+[log] [explore] Auto bounds idx=0 center=NaN,NaN,NaN size=NaN,NaN,NaN
+[log] [explore] play video idx=0 readyState=0
+[log] [explore] targetFound idx=0
+[warn] [explore] video play failed idx=0 {"line":295,"column":13,"sourceURL":"https://angler-muscular-expulsion.ngrok-free.dev/js/explore.js"}
+[log] [explore][diag] modelWorldPos=NaN,NaN,NaN worldScale=1063.89 meshes=1 | cam far=99999.99999997189 near=10 fov=0 | NDC=NaN,NaN,NaN (|z|>1 => clipped)
+[log] [explore] targetLost idx=0
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[log] AR.js 3.4.5 - trackingBackend: artoolkit
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[window-error] Script error. at  0:0 null
+[log] [ARController] Camera params loaded with ID 0
+[warn] [info] Labeling mode set to 1
+[log] source orientation portrait
+[warn] [info] Allocated videoFrameSize 1228800
+[warn] [info] Pattern detection mode set to 4.
+[log] [game] markerLost value=0
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerFound value=0
+[log] actual source dimensions 820 1123
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerFound value=1
+[window-error] Script error. at  0:0 null
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[window-error] Script error. at  0:0 null
+[log] [ARController] ARToolkit initialized
+[window-error] Script error. at  0:0 null
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[window-error] Script error. at  0:0 null
+[log] [ARController] Got ID from setup 0
+[log] actual source dimensions 820 1123
+[warn] [info] Pattern ratio size set to 0.500000.
+[log] source orientation portrait
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [decouple] Game flower decoupled to camera space! {"x":-0.16907154499068194,"y":0.7901606368085344,"z":-12.348784850527654} {"x":19.68214715734179,"y":-16.04220622843501} 0.9995835892623878
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerLost value=1
+[log] [game] markerFound value=1
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerLost value=1
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [decouple] Game flower re-docked!
+[log] [game] markerFound value=2
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [decouple] Game flower decoupled to camera space! {"x":0.038799176246345615,"y":1.2891539806067425,"z":-11.97578673239036} {"x":72.55676964577479,"y":179.9473364272072} 0.9994053285203263
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerLost value=2
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerFound value=3
+[log] [decouple] Game flower re-docked!
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [decouple] Game flower decoupled to camera space! {"x":0.10161844316852471,"y":1.1687006952838337,"z":-9.82639683276315} {"x":72.56505677581517,"y":176.08609709178845} 0.9996199706627106
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [game] markerLost value=3
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[window-error] Script error. at  0:0 null
+[log] [explore] targetLost idx=0
+[error] Failed to recalculate device parameters.
+[warn] Using fallback iOS device measurements.
+[warn] No DPDB device match.
+[log] WebVR Polyfill Version: ^0.10.12
+[log] THREE Version (https://github.com/supermedium/three.js): 0.158.0
+[log] A-Frame Version: 1.5.0 (Date 2023-11-14, Commit #59290b36)
+[log] %ccore:schema:warn %cUnknown property `preserveDrawingBuffer` for component/system `undefined`.%c  color: orange color: inherit color: orange
+[warn] THREE.WebGLRenderer: The property .useLegacyLights has been deprecated. Migrate your lighting according to the following guide: https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733.
+[log] AR.js 3.4.5 - trackingBackend: artoolkit
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[log] [game] markerFound value=1
+[log] [game] markerFound value=0
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[log] [ARController] ARToolkit initialized
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[warn] ArMarkerControls: 'markersAreaEnabled' is not a property of this material.
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[log] ARjs.Anchor - changeMatrixMode: modelViewMatrix / markersAreaEnabled: false
+[log] [ARController] Got ID from setup 0
+[warn] [info] Allocated videoFrameSize 307200
+[warn] [info] Pattern ratio size set to 0.500000.
+[warn] [warning] *** Camera Parameter resized from 640, 480. ***
+[log] actual source dimensions 393 735
+[warn] [info] Pattern detection mode set to 4.
+[warn] [info] Labeling mode set to 1
+[log] [ARController] Camera params loaded with ID 0
+[log] source orientation portrait
+[log] [game] markerLost value=0
+[log] [game] markerLost value=1

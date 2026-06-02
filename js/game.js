@@ -304,7 +304,7 @@
     const scene = document.createElement('a-scene');
     scene.id = 'ar-scene-game';
     scene.setAttribute('embedded', '');
-    scene.setAttribute('arjs', 'sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false; trackingMethod: best;');
+    scene.setAttribute('arjs', 'sourceType: webcam; sourceWidth: 1280; sourceHeight: 720; destWidth: 1280; destHeight: 720; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false; trackingMethod: best;');
     scene.setAttribute('color-space', 'sRGB');
     scene.setAttribute('renderer', 'colorManagement: true; logarithmicDepthBuffer: true; preserveDrawingBuffer: true;');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
@@ -312,7 +312,7 @@
 
     // Camera entity
     const cam = document.createElement('a-entity');
-    cam.setAttribute('camera', '');
+    cam.setAttribute('camera', 'near: 0.1; far: 10000;');
     scene.appendChild(cam);
 
     // Lighting (attached to scene so it stays lit regardless of marker)
@@ -359,6 +359,15 @@
       model.setAttribute('position', '0 0.2 0');
       model.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
       model.setAttribute('visible', 'false');
+      
+      // Dynamic visibility guard when GLB finishes loading
+      model.addEventListener('model-loaded', () => {
+        const isVisible = gameState.started;
+        model.setAttribute('visible', isVisible ? 'true' : 'false');
+        if (model.object3D) model.object3D.visible = isVisible;
+        console.log(`[game] model-loaded idx=${sp.id} visible=${isVisible}`);
+      });
+      
       wrap.appendChild(model);
 
       m.appendChild(wrap);
@@ -405,6 +414,20 @@
             App.updateActiveSpecimen(sp);
             showInfoCard(sp);
           }
+
+          // Force visibility on scan to bypass A-Frame/AR.js lifecycle bugs on mobile
+          const model = marker.querySelector('a-gltf-model');
+          const label = marker.querySelector('a-text');
+          const isVisible = gameState.started;
+          if (model) {
+            model.setAttribute('visible', isVisible ? 'true' : 'false');
+            if (model.object3D) model.object3D.visible = isVisible;
+          }
+          if (label) {
+            label.setAttribute('visible', isVisible ? 'true' : 'false');
+            if (label.object3D) label.object3D.visible = isVisible;
+          }
+
           onFlowerScanned(idx);
         }
       });

@@ -1,0 +1,20 @@
+# Logs (dev server / debug output — never commit)
+*.log
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.swp
+
+# Node (in case tooling is added later)
+node_modules/
+npm-debug.log*
+
+# Uncompressed / source GLB originals — only ship the Draco-compressed runtime asset
+*.original.glb
+
+# Editor dirs (keep .claude/settings shared, ignore the rest)
+.vscode/
+.idea/

@@ -10,12 +10,18 @@
 
 ## Files
 ```
-ARproject_v3/
-├── index.html          # Toàn bộ logic (~1500 dòng)
-├── azalea.glb          # 3D model (17MB, Sketchfab/Nestaeric, CC-BY-4.0)
-├── targets.mind        # MindAR compiled marker
-├── marker-azalea.jpg   # Ảnh marker gốc (in để quét)
-└── azalea-bloom.mp4    # Video time-lapse 8s, 577KB
+ARproject/
+├── index.html              # Markup UI (không còn <a-scene> inline)
+├── css/style.css           # Toàn bộ style
+├── js/
+│   ├── common.js           # window.App: i18n, modals, capture, audio
+│   ├── explore.js          # MindAR image-target mode
+│   └── game.js             # AR.js barcode mode + scavenger hunt
+├── Explore/
+│   ├── flower-twigs.glb    # 3D model (Draco nén ~1MB)
+│   ├── targets.mind        # MindAR compiled image target
+│   └── azalea-bloom.mp4    # Video time-lapse 8s, 577KB
+└── gamemode/               # GLB + assets cho game mode
 ```
 
 ## Deploy

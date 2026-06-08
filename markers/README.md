@@ -23,7 +23,7 @@ Nếu chọn sai Type (vd `3x3_HAMMING63` hay `4x4`), AR.js sẽ KHÔNG decode �
 
 | File          | Value | Purpose                                  | GLB content                          |
 | ------------- | ----- | ---------------------------------------- | ------------------------------------ |
-| `marker-0.png`| 0     | START / hero — chung 2 mode              | `Explore/azalea.glb` (explore only)  |
+| `marker-0.png`| 0     | START / hero — chung 2 mode              | `Explore/flower-twigs.glb` (explore only) |
 | `marker-1.png`| 1     | 紫杜鵑 · Purple Azalea (game mode)        | `gamemode/purple-azalea.glb`         |
 | `marker-2.png`| 2     | 白杜鵑 · White Azalea (game mode)         | `gamemode/white-azalea.glb`          |
 | `marker-3.png`| 3     | 花期縮時 · Time-lapse (game mode)         | `gamemode/default_timelapse.glb`     |
@@ -49,7 +49,7 @@ Nếu chọn sai Type (vd `3x3_HAMMING63` hay `4x4`), AR.js sẽ KHÔNG decode �
 Nếu muốn thêm loài hoa thứ 4 (đã có pin trên campus map):
 1. Generate marker với value `4` từ link trên.
 2. Save `marker-4.png` vào folder này.
-3. Push entry mới vào `SPECIES` array trong [js/main.js](../js/main.js#L89).
+3. Push entry mới vào `SPECIES` array trong [js/game.js](../js/game.js#L27).
 4. Drop GLB tương ứng vào `gamemode/`.
 
 Không cần đụng marker code khác — `generateFlowerTargets()` auto-append.

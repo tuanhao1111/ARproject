@@ -19,7 +19,24 @@
       "Bash(node --check js/explore.js)",
       "Bash(node -e ' *)",
       "Bash(npx --yes @gltf-transform/cli@latest optimize Explore/flower-twigs.original.glb Explore/flower-twigs.glb --texture-compress webp --texture-size 1024 --compress draco)",
-      "Bash(node --check js/game.js)"
+      "Bash(node --check js/game.js)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(git rm *)",
+      "Bash(awk '{print \"repo working tree size:\", $1}')",
+      "Bash(npm -v)",
+      "Bash(npx --no-install gltf-transform --version)",
+      "Bash(npx --no-install gltf-pipeline -v)",
+      "Bash(npx --yes @gltf-transform/cli optimize gamemode/purple-azalea.glb gamemode/_tmp-purple.glb --texture-compress webp --texture-size 1024 --simplify false)",
+      "Bash(rm -f gamemode/_tmp-purple.glb)",
+      "Bash(npx --yes @gltf-transform/cli optimize gamemode/purple-azalea.glb gamemode/_tmp-purple.glb --compress draco --texture-compress webp --texture-size 1024 --simplify false)",
+      "Bash(mv -f gamemode/_tmp-purple.glb gamemode/purple-azalea.glb)",
+      "Bash(mv -f gamemode/_tmp-white-azalea.glb gamemode/white-azalea.glb)",
+      "Bash(mv -f gamemode/_tmp-default_timelapse.glb gamemode/default_timelapse.glb)",
+      "Bash(awk '{print $5\"\\\\t\"$9}')",
+      "mcp__Claude_in_Chrome__tabs_create_mcp",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer"
     ]
   }
 }

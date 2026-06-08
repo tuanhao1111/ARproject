@@ -307,6 +307,9 @@
     scene.setAttribute('arjs', 'sourceType: webcam; sourceWidth: 1280; sourceHeight: 720; destWidth: 1280; destHeight: 720; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false; trackingMethod: best;');
     scene.setAttribute('color-space', 'sRGB');
     scene.setAttribute('renderer', 'colorManagement: true; logarithmicDepthBuffer: true; preserveDrawingBuffer: true;');
+    // GLB game mode đã nén Draco (geometry) + WebP (texture) → cần Draco decoder,
+    // thiếu sẽ model-error. WebP được three.js hỗ trợ native nên không cần thêm gì.
+    scene.setAttribute('gltf-model', 'dracoDecoderPath: https://www.gstatic.com/draco/v1/decoders/');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
 

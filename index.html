@@ -301,6 +301,14 @@
       <span id="hud-best-value">—</span>
     </div>
   </div>
+
+  <!-- Mission line: bottom center, above FABs. Shown/hidden via .active by game.js,
+       text + glow driven by setMission(). Restored after the main.js → 3-file refactor
+       accidentally dropped this markup (CSS + JS for it were left intact). -->
+  <div id="game-mission">
+    <span id="mission-text" data-i18n="mission_start">掃描 START QR 開始 · SCAN START QR</span>
+  </div>
+
   <div id="game-toast" role="status" aria-live="polite">
     <span id="toast-text">+1</span>
   </div>

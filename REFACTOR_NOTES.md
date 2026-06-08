@@ -1,8 +1,8 @@
 # Refactor — tách Explore / Game thành 2 file (Done)
 
-Đã tách monolithic `js/main.js` thành 3 file. `main.js` **không còn được load**
-trong `index.html` — có thể xoá file đó khi mọi thứ chạy ổn (giữ lại để git
-history còn diff cho dễ).
+Đã tách monolithic `js/main.js` thành 3 file (`common.js` / `game.js` /
+`explore.js`). `main.js` đã được **xoá** khỏi repo — nội dung cũ vẫn còn trong
+git history nếu cần đối chiếu.
 
 ## Kiến trúc mới
 

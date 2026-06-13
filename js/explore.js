@@ -39,8 +39,15 @@
       desc_zh: '常綠灌木，喜酸性土壤與半遮蔭環境。3-5月盛放，五瓣對稱，花色極具觀賞價值。',
       desc_en: 'Evergreen shrub; thrives in acidic soil and semi-shade. Blooms March-May.',
       glb: './Explore/flower-twigs.glb',
-      scale: 0.5,
-      position: '0.75 0 0',          // model đứng CẠNH PHẢI tấm thẻ (marker width=1, span x:-0.5..0.5)
+      // (B) Transform — 3 NÚM CHỈNH nếu muốn dời/xoay/phóng hoa:
+      //   scale    : độ lớn (0.5 → 0.72 cho hoa to, rõ hơn).
+      //   position : 'x y z' cạnh thẻ. x≈±0.6 = trái/phải, y nhấc lên cho gốc
+      //              tựa mép thẻ, z hơi dương = nhô ra trước thẻ một chút.
+      //   rotation : 'x y z' độ. y xoay quanh trục đứng → góc 3/4 nhìn đẹp hơn
+      //              là nhìn thẳng; x ngả ra/vào, z nghiêng.
+      scale: 0.72,
+      position: '0.62 0.12 0.05',
+      rotation: '0 -22 0',
       // Video timelapse nằm ĐÚNG vị trí tấm thẻ (marker plane). Tỉ lệ marker 1063×650 → h≈0.61.
       video: './Explore/azalea-bloom.mp4',
       videoWidth: 1,
@@ -143,14 +150,25 @@
     cam.setAttribute('look-controls', 'enabled: false');
     scene.appendChild(cam);
 
-    // Lighting
+    // Lighting (A) — kiểu vườn ngoài trời để hoa có KHỐI & tươi, hết bị bệt:
+    //   • ambient hạ thấp (1.2 → 0.5) để không xoá mất bóng đổ.
+    //   • hemisphere: ánh trời ấm phía trên + phản xạ đất hơi xanh lá phía dưới.
+    //   • key directional ấm, mạnh, chếch trên-phải → tạo highlight & chiều sâu.
+    //   • fill directional mát, yếu, từ phía đối diện → mềm vùng tối, đỡ gắt.
     const lAmb = document.createElement('a-entity');
-    lAmb.setAttribute('light', 'type: ambient; color: #ffffff; intensity: 1.2');
+    lAmb.setAttribute('light', 'type: ambient; color: #ffffff; intensity: 0.5');
     scene.appendChild(lAmb);
-    const lDir = document.createElement('a-entity');
-    lDir.setAttribute('light', 'type: directional; color: #ffffff; intensity: 0.7');
-    lDir.setAttribute('position', '0 1 1');
-    scene.appendChild(lDir);
+    const lHemi = document.createElement('a-entity');
+    lHemi.setAttribute('light', 'type: hemisphere; color: #fff6e8; groundColor: #9fb085; intensity: 0.8');
+    scene.appendChild(lHemi);
+    const lKey = document.createElement('a-entity');
+    lKey.setAttribute('light', 'type: directional; color: #fff3df; intensity: 1.2');
+    lKey.setAttribute('position', '1 2 1');
+    scene.appendChild(lKey);
+    const lFill = document.createElement('a-entity');
+    lFill.setAttribute('light', 'type: directional; color: #dce8ff; intensity: 0.45');
+    lFill.setAttribute('position', '-1.5 0.5 -0.5');
+    scene.appendChild(lFill);
 
     // Asset pool — video textures must be registered here for reliable playback
     const assets = document.createElement('a-assets');

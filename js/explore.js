@@ -224,49 +224,71 @@
     } else { v.pause(); }
   }
 
-  // BỆNH THẬT (xác nhận qua console): MindAR set ma trận chiếu hợp lệ, nhưng một
-  // lần resize/rebuild của A-Frame (fov=0) ghi đè phần X/Y của ma trận thành
-  // NaN/Inf → nội dung chiếu ra toạ độ vô định (NDC.x/y = NaN) → vô hình HOÀN
-  // TOÀN, dù targetFound + model-loaded + video playing đều OK.
+  // BỆNH THẬT (xác nhận qua console): MindAR sinh ma trận chiếu SUY BIẾN
+  // (e[0]=NaN, e[5]=Infinity, e[8]/e[9]=NaN) vì fov≈0 → nội dung chiếu ra toạ độ
+  // vô định (NDC.x/y = NaN) → vô hình HOÀN TOÀN, dù targetFound + model-loaded +
+  // video playing đều OK. Phần Z (e[10],e[14]) thì lành → trích được near≈10.
+  // Pose của hoa cũng là số thật (không NaN), chỉ riêng ma trận CHIẾU hỏng.
   //
-  // Cách xử lý: mỗi frame
-  //   1. Nếu X/Y của ma trận đang HỢP LỆ → chụp lại (snapshot) làm bản tốt.
-  //   2. Nếu X/Y bị NaN/Inf/0 → khôi phục từ snapshot tốt gần nhất.
-  //   3. Nới far plane (giữ nguyên ý đồ cũ) khi phần Z (depth row) còn lành.
-  // Lần chạy ĐỒNG BỘ đầu tiên (gọi trong arReady TRƯỚC enforceCameraSize +
-  // dispatch 'resize') chụp được ma trận tốt trước khi nó bị ghi đè.
+  // Cách xử lý mỗi frame:
+  //   1. X/Y đang HỢP LỆ → chụp lại (snapshot) làm bản tốt.
+  //   2. X/Y bị NaN/Inf/0 và CÓ snapshot → khôi phục từ snapshot.
+  //   3. X/Y bị NaN/Inf/0 và CHƯA có snapshot (born-NaN, trường hợp đang gặp) →
+  //      dựng lại một perspective hợp lệ: centered (đúng cấu trúc MindAR dự
+  //      định, principal-point ở giữa ảnh), aspect lấy theo canvas, FOV lấy
+  //      EXPLORE_PROJ_FOV. near lấy từ depth-row của MindAR, far nới rộng.
+  //   4. Nới far plane khi phần Z còn lành.
+  //
+  // EXPLORE_PROJ_FOV: FOV dọc (độ) dùng khi phải dựng lại ma trận. Tăng/giảm để
+  // hoa+video khớp đúng kích thước tấm card trong khung hình camera (camera điện
+  // thoại thường rộng ~65–80°). Đây là số DUY NHẤT cần tinh chỉnh nếu hoa lệch.
+  const EXPLORE_PROJ_FOV = 70;
   let farPatchRAF = null;
   let goodXY = null;          // snapshot phần X/Y của ma trận chiếu lúc còn lành
-  let projRestoredOnce = false;
+  let projFixedOnce = false;
+
+  function rebuildProjection(e, near) {
+    const canvas = sceneEl && sceneEl.canvas;
+    const cw = (canvas && canvas.width) || window.innerWidth || 1;
+    const ch = (canvas && canvas.height) || window.innerHeight || 1;
+    const aspect = cw / ch;
+    const n = (isFinite(near) && near > 0) ? near : 10;
+    const far = 1e6;
+    const f = 1 / Math.tan((EXPLORE_PROJ_FOV * Math.PI / 180) / 2);
+    e[0] = f / aspect; e[1] = 0;  e[2] = 0;  e[3] = 0;
+    e[4] = 0;          e[5] = f;  e[6] = 0;  e[7] = 0;
+    e[8] = 0;          e[9] = 0;  e[10] = -(far + n) / (far - n); e[11] = -1;
+    e[12] = 0;         e[13] = 0; e[14] = -(2 * far * n) / (far - n); e[15] = 0;
+  }
+
   function patchCameraFar() {
     const camEl = sceneEl && (sceneEl.querySelector('a-camera') || sceneEl.querySelector('[camera]'));
     const cam = camEl && camEl.getObject3D('camera');
     if (cam && cam.projectionMatrix) {
       const e = cam.projectionMatrix.elements;
+      const near = e[14] / (e[10] - 1);   // trích near từ depth-row (lành)
 
-      // 1+2. Bảo toàn phần X/Y (focal e[0],e[5] + skew principal-point e[8],e[9]).
       const xyValid = isFinite(e[0]) && isFinite(e[5]) && e[0] !== 0 && e[5] !== 0;
       if (xyValid) {
+        // 1. X/Y lành → ghi nhớ làm bản tốt, rồi chỉ nới far plane.
         goodXY = { e0: e[0], e1: e[1], e4: e[4], e5: e[5], e8: e[8], e9: e[9], e12: e[12], e13: e[13] };
+        if (isFinite(near) && near > 0) {
+          const far = 1e6;
+          const m10 = -(far + near) / (far - near);
+          const m14 = -(2 * far * near) / (far - near);
+          if (Math.abs(e[10] - m10) > 1e-9) { e[10] = m10; e[14] = m14; }
+        }
       } else if (goodXY) {
+        // 2. Hỏng nhưng có snapshot → khôi phục.
         e[0] = goodXY.e0; e[1] = goodXY.e1; e[4] = goodXY.e4; e[5] = goodXY.e5;
         e[8] = goodXY.e8; e[9] = goodXY.e9; e[12] = goodXY.e12; e[13] = goodXY.e13;
-        if (!projRestoredOnce) {
-          projRestoredOnce = true;
-          console.log('[explore] projection X/Y was NaN/Inf — restored from snapshot (content should now be visible)');
-        }
+        if (!projFixedOnce) { projFixedOnce = true; console.log('[explore] projection restored from snapshot'); }
+      } else {
+        // 3. born-NaN → dựng lại perspective hợp lệ.
+        rebuildProjection(e, near);
+        if (!projFixedOnce) { projFixedOnce = true; console.log('[explore] projection was degenerate (fov≈0) — rebuilt centered perspective fov=' + EXPLORE_PROJ_FOV); }
       }
 
-      // 3. Nới far plane khi phần Z còn hợp lệ.
-      const near = e[14] / (e[10] - 1);   // trích near từ ma trận perspective hiện tại
-      if (isFinite(near) && near > 0) {
-        const far = 1e6;
-        const m10 = -(far + near) / (far - near);
-        const m14 = -(2 * far * near) / (far - near);
-        if (Math.abs(e[10] - m10) > 1e-9) {
-          e[10] = m10; e[14] = m14;
-        }
-      }
       cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
     }
     farPatchRAF = requestAnimationFrame(patchCameraFar);
@@ -364,7 +386,7 @@
 
     // Reset projection-snapshot state (xem patchCameraFar)
     goodXY = null;
-    projRestoredOnce = false;
+    projFixedOnce = false;
 
     document.getElementById('detach-controls')?.classList.remove('show');
     dom.floatingMode?.classList.remove('active');

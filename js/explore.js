@@ -38,6 +38,10 @@
       origin_en: 'Origin: East Asia / Hirado, Japan',
       desc_zh: '常綠灌木，喜酸性土壤與半遮蔭環境。3-5月盛放，五瓣對稱，花色極具觀賞價值。',
       desc_en: 'Evergreen shrub; thrives in acidic soil and semi-shade. Blooms March-May.',
+      // brief_* = câu NGẮN hiển thị trên thẻ info (đoạn desc_* dài để dành cho
+      // modal BIO). Tránh nhồi cả đoạn dài làm chữ wrap nhiều dòng, chồng nhau.
+      brief_zh: '常綠灌木，喜酸性土壤與半遮蔭，3–5月盛放。',
+      brief_en: 'Evergreen shrub; acidic soil & semi-shade; blooms Mar–May.',
       glb: './Explore/flower-twigs.glb',
       // (B) Transform — 3 NÚM CHỈNH nếu muốn dời/xoay/phóng hoa:
       //   scale    : độ lớn (0.5 → 0.72 cho hoa to, rõ hơn).

@@ -2609,7 +2609,7 @@ body.game-mode #floating-mode {
   min-width: 280px;
   max-width: 88vw;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s, transform 0.3s;
@@ -2625,9 +2625,10 @@ body.game-mode #explore-info.show {
 
 #explore-info .ei-row {
   display: flex;
+  flex-wrap: wrap;          /* tên + tên Latin xuống dòng thay vì đè nhau khi hẹp */
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
+  gap: 2px 12px;
 }
 
 #explore-info .ei-name {
@@ -2646,8 +2647,9 @@ body.game-mode #explore-info.show {
 
 #explore-info .ei-brief {
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.6;
   color: var(--ink);
+  word-break: break-word;
 }
 
 #explore-info .ei-hint {

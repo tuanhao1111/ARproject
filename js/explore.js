@@ -671,8 +671,10 @@
     } else if (e.touches.length === 1 && oneStart) {
       const dx = (e.touches[0].clientX - oneStart.x) / window.innerWidth;
       const dy = (e.touches[0].clientY - oneStart.y) / window.innerHeight;
-      userRot.y = oneStartRot.y + dx * 360;
-      userRot.x = Math.max(-80, Math.min(80, oneStartRot.x + dy * 360));
+      // Dấu TRỪ: hoa quay theo chiều ngón tay (kéo trái → quay trái, kéo lên →
+      // ngẩng lên). Trước đây cộng → cảm giác bị đảo ngược cả 2 trục.
+      userRot.y = oneStartRot.y - dx * 360;
+      userRot.x = Math.max(-80, Math.min(80, oneStartRot.x - dy * 360));
       applyTransform();
       e.preventDefault();
     }
@@ -718,11 +720,11 @@
       userPos.x = mStartPos.x + rawDx * sensitivity;
       userPos.y = mStartPos.y - rawDy * sensitivity;
     } else {
-      // Left-drag: rotate
+      // Left-drag: rotate (dấu TRỪ để quay theo chiều kéo, đồng nhất với cảm ứng)
       const dx = rawDx / window.innerWidth;
       const dy = rawDy / window.innerHeight;
-      userRot.y = mStartRot.y + dx * 360;
-      userRot.x = Math.max(-80, Math.min(80, mStartRot.x + dy * 360));
+      userRot.y = mStartRot.y - dx * 360;
+      userRot.x = Math.max(-80, Math.min(80, mStartRot.x - dy * 360));
     }
     applyTransform();
   });

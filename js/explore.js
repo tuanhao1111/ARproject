@@ -46,7 +46,10 @@
       //   rotation : 'x y z' độ. y xoay quanh trục đứng → góc 3/4 nhìn đẹp hơn
       //              là nhìn thẳng; x ngả ra/vào, z nghiêng.
       scale: 0.72,
-      position: '0.62 0.12 0.05',
+      // x lớn để hoa nằm HẲN ra cạnh thẻ, không đè lên video (video phủ kín thẻ,
+      // span x:-0.5..0.5). z dương = nhô ra trước thẻ, tránh đè theo chiều sâu.
+      // Nếu hoa lệch sai phía: đổi dấu x. Lệch ra mép màn hình: giảm |x|.
+      position: '1.0 0.1 0.12',
       rotation: '0 -22 0',
       // Video timelapse nằm ĐÚNG vị trí tấm thẻ (marker plane). Tỉ lệ marker 1063×650 → h≈0.61.
       video: './Explore/azalea-bloom.mp4',
@@ -74,7 +77,12 @@
 
   const USER_SCALE_MIN = 0.3;
   const USER_SCALE_MAX = 3.0;
+  // userScale là HỆ SỐ NHÂN [0.3,3] (KHÔNG phải scale tuyệt đối). Kích thước
+  // thực = wrapBaseScale × userScale. Vì hệ anchor của MindAR là pixel-scale
+  // (~1063), khi decouple ta lưu scale hiện tại vào wrapBaseScale rồi nhân
+  // userScale lên — tránh việc clamp [0.3,3] làm hoa co ~350× và biến mất.
   let userScale = 1, userRot = { x: 0, y: 0 }, userPos = { x: 0, y: 0, z: 0 };
+  let wrapBaseScale = 1;
   let pinchStart = null, pinchStartScale = null, pinchMidStart = null, pinchStartPos = null;
   let oneStart = null, oneStartRot = null;
 
@@ -136,7 +144,10 @@
     const scene = document.createElement('a-scene');
     scene.id = 'ar-scene-explore';
     scene.setAttribute('embedded', '');
-    scene.setAttribute('mindar-image', 'imageTargetSrc: ./Explore/targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no;');
+    // filterMinCF / filterBeta: bộ lọc OneEuro làm mượt pose, CHỐNG RUNG.
+    //   filterMinCF nhỏ hơn = mượt hơn (hơi trễ khi di chuyển nhanh).
+    //   filterBeta nhỏ hơn = ít giật hơn. Tăng/giảm 2 số này nếu còn rung hoặc bị trễ.
+    scene.setAttribute('mindar-image', 'imageTargetSrc: ./Explore/targets.mind; autoStart: true; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.01;');
     scene.setAttribute('color-space', 'sRGB');
     scene.setAttribute('renderer', 'colorManagement: true; logarithmicDepthBuffer: true; preserveDrawingBuffer: true;');
     // flower-twigs.glb nén Draco (31MB→1MB) → cần Draco decoder, nếu thiếu model-error.
@@ -417,6 +428,7 @@
 
     // Reset gesture states
     userScale = 1;
+    wrapBaseScale = 1;
     userRot = { x: 0, y: 0 };
     userPos = { x: 0, y: 0, z: 0 };
 
@@ -524,7 +536,8 @@
   function applyTransform() {
     const w = currentWrap();
     if (!w) return;
-    w.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
+    const s = wrapBaseScale * userScale;   // base × hệ số → tránh sụp scale
+    w.setAttribute('scale', `${s} ${s} ${s}`);
     w.setAttribute('rotation', `${userRot.x} ${userRot.y} 0`);
     w.setAttribute('position', `${userPos.x} ${userPos.y} ${userPos.z}`);
   }
@@ -547,8 +560,11 @@
     userRot.x = THREE.MathUtils.radToDeg(euler.x);
     userRot.y = THREE.MathUtils.radToDeg(euler.y);
 
-    // Update user scale
-    userScale = w.object3D.scale.x;
+    // Giữ kích thước hiện tại làm GỐC, userScale reset về 1 (hệ số nhân).
+    // Trước đây gán userScale = scale tuyệt đối (~1063) rồi bị clamp [0.3,3]
+    // → hoa co ~350× → biến mất khi pinch. Nay nhân tương đối nên không sụp.
+    wrapBaseScale = w.object3D.scale.x;
+    userScale = 1;
 
     w.dataset.decoupled = 'true';
 
@@ -580,16 +596,17 @@
       markerEl.object3D.attach(w.object3D);
     }
     
-    // Reset to defaults
-    const sp = SPECIES_EXPLORE[currentSpeciesIdx];
+    // Reset WRAP về identity — model giữ nguyên transform riêng (scale/position/
+    // rotation đặt trong buildScene), nên KHÔNG gán sp.* vào wrap (sẽ nhân đôi).
     userScale = 1;
     userRot = { x: 0, y: 0 };
-    userPos = { x: 0, y: 0, z: 0.1 };
-    
-    w.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
-    w.setAttribute('rotation', sp.rotation || '0 0 0');
-    w.setAttribute('position', sp.position || '0 0 0.1');
-    
+    userPos = { x: 0, y: 0, z: 0 };
+    wrapBaseScale = 1;
+
+    w.setAttribute('scale', '1 1 1');
+    w.setAttribute('rotation', '0 0 0');
+    w.setAttribute('position', '0 0 0');
+
     delete w.dataset.decoupled;
     
     // Hide UI

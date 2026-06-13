@@ -362,6 +362,10 @@
     userRot = { x: 0, y: 0 };
     userPos = { x: 0, y: 0, z: 0 };
 
+    // Reset projection-snapshot state (xem patchCameraFar)
+    goodXY = null;
+    projRestoredOnce = false;
+
     document.getElementById('detach-controls')?.classList.remove('show');
     dom.floatingMode?.classList.remove('active');
     dom.scanHint?.classList.remove('hide');
@@ -382,11 +386,15 @@
     arReadyListener = () => {
       dom.loading.classList.remove('active');
       dom.arUI.classList.add('active');
+      // patchCameraFar() phải chạy TRƯỚC enforceCameraSize: lần chạy đồng bộ
+      // đầu tiên chụp ma trận chiếu khi còn lành (trước mọi can thiệp sizing).
       patchCameraFar();
       App.enforceCameraSize();
       resizeListener = () => App.enforceCameraSize();
       window.addEventListener('resize', resizeListener);
-      window.dispatchEvent(new Event('resize'));
+      // KHÔNG dispatch 'resize' cưỡng bức nữa: nó khiến A-Frame rebuild ma trận
+      // chiếu (fov=0) đè lên ma trận hợp lệ của MindAR → NaN ở X/Y → content vô
+      // hình. enforceCameraSize() đã tự canh kích thước camera bằng CSS.
     };
     sceneEl.addEventListener('arReady', arReadyListener, { once: true });
     // Fallback: in case arReady doesn't fire (e.g. no .mind file yet)

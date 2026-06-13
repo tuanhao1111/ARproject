@@ -243,9 +243,9 @@
   // hoa+video khớp đúng kích thước tấm card trong khung hình camera (camera điện
   // thoại thường rộng ~65–80°). Đây là số DUY NHẤT cần tinh chỉnh nếu hoa lệch.
   const EXPLORE_PROJ_FOV = 70;
-  let farPatchRAF = null;
   let goodXY = null;          // snapshot phần X/Y của ma trận chiếu lúc còn lành
   let projFixedOnce = false;
+  let origRenderFn = null;    // renderer.render gốc (khôi phục khi exit)
 
   function rebuildProjection(e, near) {
     const canvas = sceneEl && sceneEl.canvas;
@@ -261,37 +261,53 @@
     e[12] = 0;         e[13] = 0; e[14] = -(2 * far * n) / (far - n); e[15] = 0;
   }
 
-  function patchCameraFar() {
-    const camEl = sceneEl && (sceneEl.querySelector('a-camera') || sceneEl.querySelector('[camera]'));
-    const cam = camEl && camEl.getObject3D('camera');
-    if (cam && cam.projectionMatrix) {
-      const e = cam.projectionMatrix.elements;
-      const near = e[14] / (e[10] - 1);   // trích near từ depth-row (lành)
+  // Sửa ma trận chiếu của 1 camera (1 frame). Chỉ đụng camera PERSPECTIVE
+  // (e[11] === -1) — bỏ qua camera bóng đổ/ortho nếu có.
+  function fixCameraProjection(cam) {
+    if (!cam || !cam.projectionMatrix) return;
+    const e = cam.projectionMatrix.elements;
+    if (e[11] !== -1) return;
+    const near = e[14] / (e[10] - 1);   // trích near từ depth-row (lành)
 
-      const xyValid = isFinite(e[0]) && isFinite(e[5]) && e[0] !== 0 && e[5] !== 0;
-      if (xyValid) {
-        // 1. X/Y lành → ghi nhớ làm bản tốt, rồi chỉ nới far plane.
-        goodXY = { e0: e[0], e1: e[1], e4: e[4], e5: e[5], e8: e[8], e9: e[9], e12: e[12], e13: e[13] };
-        if (isFinite(near) && near > 0) {
-          const far = 1e6;
-          const m10 = -(far + near) / (far - near);
-          const m14 = -(2 * far * near) / (far - near);
-          if (Math.abs(e[10] - m10) > 1e-9) { e[10] = m10; e[14] = m14; }
-        }
-      } else if (goodXY) {
-        // 2. Hỏng nhưng có snapshot → khôi phục.
-        e[0] = goodXY.e0; e[1] = goodXY.e1; e[4] = goodXY.e4; e[5] = goodXY.e5;
-        e[8] = goodXY.e8; e[9] = goodXY.e9; e[12] = goodXY.e12; e[13] = goodXY.e13;
-        if (!projFixedOnce) { projFixedOnce = true; console.log('[explore] projection restored from snapshot'); }
-      } else {
-        // 3. born-NaN → dựng lại perspective hợp lệ.
-        rebuildProjection(e, near);
-        if (!projFixedOnce) { projFixedOnce = true; console.log('[explore] projection was degenerate (fov≈0) — rebuilt centered perspective fov=' + EXPLORE_PROJ_FOV); }
+    const xyValid = isFinite(e[0]) && isFinite(e[5]) && e[0] !== 0 && e[5] !== 0;
+    if (xyValid) {
+      // 1. X/Y lành → ghi nhớ làm bản tốt, rồi chỉ nới far plane.
+      goodXY = { e0: e[0], e1: e[1], e4: e[4], e5: e[5], e8: e[8], e9: e[9], e12: e[12], e13: e[13] };
+      if (isFinite(near) && near > 0) {
+        const far = 1e6;
+        const m10 = -(far + near) / (far - near);
+        const m14 = -(2 * far * near) / (far - near);
+        if (Math.abs(e[10] - m10) > 1e-9) { e[10] = m10; e[14] = m14; }
       }
-
-      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    } else if (goodXY) {
+      // 2. Hỏng nhưng có snapshot → khôi phục.
+      e[0] = goodXY.e0; e[1] = goodXY.e1; e[4] = goodXY.e4; e[5] = goodXY.e5;
+      e[8] = goodXY.e8; e[9] = goodXY.e9; e[12] = goodXY.e12; e[13] = goodXY.e13;
+      if (!projFixedOnce) { projFixedOnce = true; console.log('[explore] projection restored from snapshot'); }
+    } else {
+      // 3. born-NaN → dựng lại perspective hợp lệ.
+      rebuildProjection(e, near);
+      if (!projFixedOnce) { projFixedOnce = true; console.log('[explore] projection was degenerate (fov≈0) — rebuilt centered perspective fov=' + EXPLORE_PROJ_FOV); }
     }
-    farPatchRAF = requestAnimationFrame(patchCameraFar);
+    cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+  }
+
+  // Bọc renderer.render: sửa ma trận chiếu NGAY TRƯỚC mỗi lần vẽ. Đây là điểm
+  // chạy SAU mọi tick (kể cả khi MindAR set lại projection mỗi frame), nên bản
+  // sửa luôn thắng — không bị ghi đè như cách vá bằng requestAnimationFrame.
+  function installProjectionGuard() {
+    const renderer = sceneEl && sceneEl.renderer;
+    if (!renderer || origRenderFn) return;
+    origRenderFn = renderer.render.bind(renderer);
+    renderer.render = function (scene, camera) {
+      fixCameraProjection(camera);
+      return origRenderFn(scene, camera);
+    };
+  }
+  function uninstallProjectionGuard() {
+    const renderer = sceneEl && sceneEl.renderer;
+    if (renderer && origRenderFn) renderer.render = origRenderFn;
+    origRenderFn = null;
   }
 
   function wireTargetEvents() {
@@ -313,6 +329,7 @@
           // Chiếu vào NDC: nếu ndc.z > 1 → vượt far plane (bị clip xa); < -1 → trước near
           let ndcStr = 'n/a';
           if (cam) {
+            fixCameraProjection(cam);   // đảm bảo diag đọc đúng ma trận đã sửa
             const ndc = wp.clone().project(cam);
             ndcStr = ndc.x.toFixed(2) + ',' + ndc.y.toFixed(2) + ',' + ndc.z.toFixed(3);
           }
@@ -373,6 +390,7 @@
   }
 
   async function enter() {
+    console.log('[explore] build=projfix-v4 (renderer guard, fov=' + EXPLORE_PROJ_FOV + ')');
     if (!window.AFRAME?.components['mindar-image']) {
       console.warn('[explore] mind-ar-js component missing — has the lib loaded?');
     }
@@ -384,7 +402,7 @@
     userRot = { x: 0, y: 0 };
     userPos = { x: 0, y: 0, z: 0 };
 
-    // Reset projection-snapshot state (xem patchCameraFar)
+    // Reset projection-snapshot state (xem fixCameraProjection)
     goodXY = null;
     projFixedOnce = false;
 
@@ -408,9 +426,9 @@
     arReadyListener = () => {
       dom.loading.classList.remove('active');
       dom.arUI.classList.add('active');
-      // patchCameraFar() phải chạy TRƯỚC enforceCameraSize: lần chạy đồng bộ
-      // đầu tiên chụp ma trận chiếu khi còn lành (trước mọi can thiệp sizing).
-      patchCameraFar();
+      // Bọc renderer để sửa ma trận chiếu ngay trước mỗi lần vẽ (chống MindAR
+      // ghi đè). Thay cho vòng patchCameraFar requestAnimationFrame cũ.
+      installProjectionGuard();
       App.enforceCameraSize();
       resizeListener = () => App.enforceCameraSize();
       window.addEventListener('resize', resizeListener);
@@ -443,10 +461,7 @@
       window.removeEventListener('resize', resizeListener);
       resizeListener = null;
     }
-    if (farPatchRAF) {
-      cancelAnimationFrame(farPatchRAF);
-      farPatchRAF = null;
-    }
+    uninstallProjectionGuard();
     hideInfoCard();
     if (sceneEl) {
       // Restore any decoupled wrappers to their original markers before removing the scene

@@ -224,16 +224,40 @@
     } else { v.pause(); }
   }
 
-  // MindAR set ma trận chiếu TRỰC TIẾP (fov=0) với far plane thật ≈ vài nghìn,
-  // trong khi hệ tọa độ anchor scale ~1063× → content nằm ở z≈-3500 > far → bị
-  // clip → vô hình (dù targetFound + model load OK). Nới far plane mỗi frame mà
-  // KHÔNG đụng phần x/y của ma trận (giữ canh marker chuẩn). Chỉ sửa e[10],e[14].
+  // BỆNH THẬT (xác nhận qua console): MindAR set ma trận chiếu hợp lệ, nhưng một
+  // lần resize/rebuild của A-Frame (fov=0) ghi đè phần X/Y của ma trận thành
+  // NaN/Inf → nội dung chiếu ra toạ độ vô định (NDC.x/y = NaN) → vô hình HOÀN
+  // TOÀN, dù targetFound + model-loaded + video playing đều OK.
+  //
+  // Cách xử lý: mỗi frame
+  //   1. Nếu X/Y của ma trận đang HỢP LỆ → chụp lại (snapshot) làm bản tốt.
+  //   2. Nếu X/Y bị NaN/Inf/0 → khôi phục từ snapshot tốt gần nhất.
+  //   3. Nới far plane (giữ nguyên ý đồ cũ) khi phần Z (depth row) còn lành.
+  // Lần chạy ĐỒNG BỘ đầu tiên (gọi trong arReady TRƯỚC enforceCameraSize +
+  // dispatch 'resize') chụp được ma trận tốt trước khi nó bị ghi đè.
   let farPatchRAF = null;
+  let goodXY = null;          // snapshot phần X/Y của ma trận chiếu lúc còn lành
+  let projRestoredOnce = false;
   function patchCameraFar() {
     const camEl = sceneEl && (sceneEl.querySelector('a-camera') || sceneEl.querySelector('[camera]'));
     const cam = camEl && camEl.getObject3D('camera');
     if (cam && cam.projectionMatrix) {
       const e = cam.projectionMatrix.elements;
+
+      // 1+2. Bảo toàn phần X/Y (focal e[0],e[5] + skew principal-point e[8],e[9]).
+      const xyValid = isFinite(e[0]) && isFinite(e[5]) && e[0] !== 0 && e[5] !== 0;
+      if (xyValid) {
+        goodXY = { e0: e[0], e1: e[1], e4: e[4], e5: e[5], e8: e[8], e9: e[9], e12: e[12], e13: e[13] };
+      } else if (goodXY) {
+        e[0] = goodXY.e0; e[1] = goodXY.e1; e[4] = goodXY.e4; e[5] = goodXY.e5;
+        e[8] = goodXY.e8; e[9] = goodXY.e9; e[12] = goodXY.e12; e[13] = goodXY.e13;
+        if (!projRestoredOnce) {
+          projRestoredOnce = true;
+          console.log('[explore] projection X/Y was NaN/Inf — restored from snapshot (content should now be visible)');
+        }
+      }
+
+      // 3. Nới far plane khi phần Z còn hợp lệ.
       const near = e[14] / (e[10] - 1);   // trích near từ ma trận perspective hiện tại
       if (isFinite(near) && near > 0) {
         const far = 1e6;
@@ -241,9 +265,9 @@
         const m14 = -(2 * far * near) / (far - near);
         if (Math.abs(e[10] - m10) > 1e-9) {
           e[10] = m10; e[14] = m14;
-          cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
         }
       }
+      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
     }
     farPatchRAF = requestAnimationFrame(patchCameraFar);
   }
@@ -274,6 +298,14 @@
             ' worldScale=' + ws.x.toFixed(2) + ' meshes=' + meshCount +
             ' | cam far=' + (cam && cam.far) + ' near=' + (cam && cam.near) + ' fov=' + (cam && cam.fov) +
             ' | NDC=' + ndcStr + ' (|z|>1 => clipped)');
+          // [DIAG-TEMP] dump các phần tử ma trận chiếu để tìm phần tử NaN ở X/Y.
+          if (cam && cam.projectionMatrix) {
+            const e = cam.projectionMatrix.elements;
+            console.log('[explore][diag] projMatrix e[0]=' + e[0] + ' e[5]=' + e[5] +
+              ' e[8]=' + e[8] + ' e[9]=' + e[9] + ' e[10]=' + e[10] +
+              ' e[11]=' + e[11] + ' e[14]=' + e[14] +
+              ' | canvas=' + (sceneEl.canvas && (sceneEl.canvas.width + 'x' + sceneEl.canvas.height)));
+          }
         }));
         
         // If there was a previously decoupled flower, re-dock it first!

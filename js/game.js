@@ -78,7 +78,7 @@
     {
       id: 3,
       name: '花期縮時 · Time-lapse',
-      name_zh: '唐杜鵑 (花期縮時)',
+      name_zh: '紅杜鵑 (花期縮時)',
       name_en: 'Tang Azalea (Time-lapse)',
       scientific: 'Rhododendron simsii',
       family_zh: '杜鵑花科 Ericaceae',
@@ -201,7 +201,7 @@
     const name = lang === 'zh' ? sp.name_zh : sp.name_en;
     const brief = lang === 'zh' ? (sp.growth_zh || sp.form_zh) : (sp.growth_en || sp.form_en);
     const origin = lang === 'zh' ? sp.origin_zh : sp.origin_en;
-    
+
     dom.exploreInfo.querySelector('.ei-name').textContent = name;
     dom.exploreInfo.querySelector('.ei-latin').textContent = sp.scientific;
     dom.exploreInfo.querySelector('.ei-brief').textContent = `${origin} • ${brief}`;
@@ -243,7 +243,7 @@
     showGameToast(`${sp ? sp.name : '+1'} · ${gameState.collected.size}/${TOTAL_FLOWERS}`, 1500);
 
     setMission(gameState.collected.size >= TOTAL_FLOWERS ? 'mission_return' : 'mission_find',
-               gameState.collected.size >= TOTAL_FLOWERS);
+      gameState.collected.size >= TOTAL_FLOWERS);
   }
 
   function completeRun() {
@@ -362,7 +362,7 @@
       model.setAttribute('position', '0 0.2 0');
       model.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
       model.setAttribute('visible', 'false');
-      
+
       // Dynamic visibility guard when GLB finishes loading
       model.addEventListener('model-loaded', () => {
         const isVisible = gameState.started;
@@ -370,7 +370,7 @@
         if (model.object3D) model.object3D.visible = isVisible;
         console.log(`[game] model-loaded idx=${sp.id} visible=${isVisible}`);
       });
-      
+
       wrap.appendChild(model);
 
       m.appendChild(wrap);
@@ -543,7 +543,7 @@
     }
     // Also stop any leftover video tracks AR.js attached to body
     document.querySelectorAll('video#arjs-video').forEach(v => {
-      try { v.srcObject?.getTracks().forEach(t => t.stop()); } catch (e) {}
+      try { v.srcObject?.getTracks().forEach(t => t.stop()); } catch (e) { }
       v.parentNode?.removeChild(v);
     });
     resetGameState();
@@ -604,7 +604,7 @@
 
     // Show detach UI
     document.getElementById('detach-controls')?.classList.add('show');
-    
+
     console.log('[decouple] Game flower decoupled to camera space!', userPos, userRot, userScale);
   }
 
@@ -612,28 +612,27 @@
     if (activeFlowerId < 0) return;
     const w = currentWrap();
     if (!w || w.dataset.decoupled !== 'true') return;
-    
+
     const markerEl = w.closest('.flower-target');
     if (markerEl && markerEl.object3D && w.object3D) {
       markerEl.object3D.attach(w.object3D);
     }
-    
+
     // Reset to defaults
-    const sp = SPECIES.find(s => s.id === activeFlowerId);
     userScale = 1;
     userRot = { x: 0, y: 0 };
-    userPos = { x: 0, y: 0.2, z: 0 };
-    
-    w.setAttribute('scale', `${sp.scale} ${sp.scale} ${sp.scale}`);
+    userPos = { x: 0, y: 0, z: 0 };
+
+    w.setAttribute('scale', '1 1 1');
     w.setAttribute('rotation', '0 0 0');
-    w.setAttribute('position', '0 0.2 0');
-    
+    w.setAttribute('position', '0 0 0');
+
     delete w.dataset.decoupled;
-    
+
     // Hide UI
     document.getElementById('detach-controls')?.classList.remove('show');
     dom.floatingMode?.classList.remove('active');
-    
+
     console.log('[decouple] Game flower re-docked!');
   }
 
@@ -682,7 +681,7 @@
       // 2. Translate (pan) - Dragging two fingers translates the flower
       const panDx = currentMid.x - pinchMidStart.x;
       const panDy = currentMid.y - pinchMidStart.y;
-      
+
       const sensitivity = 0.008;
       userPos.x = pinchStartPos.x + panDx * sensitivity;
       userPos.y = pinchStartPos.y - panDy * sensitivity; // drag up = move up

@@ -1,585 +1,510 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
-
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>杜鵑花 AR · Azalea</title>
-  <meta name="theme-color" content="#6d1b3e" />
-  <link rel="manifest" href="./manifest.json" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>杜鵑花 · AR</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400;1,500&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap"
-    rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Be+Vietnam+Pro:wght@300;400;500;600&family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="./css/style.css" />
+<style>
+  :root{
+    --plum:#2a1235; --mulberry:#5c2a5e; --blush:#f9c6d9;
+    --azalea:#ff5c8a; --magenta:#c61e63; --cream:#fff4f7; --pollen:#ffd9a0;
+    --bg-top:#3a1a44; --bg-bottom:#1c0c26;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:"Be Vietnam Pro", system-ui, sans-serif;
+    color:var(--cream);
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--bg-top) 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    background-attachment:fixed;
+    overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  }
 
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <!-- MindAR — Explore mode chỉ dùng MindAR. Game mode dùng AR.js.
-       AR.js (aframe-ar.js) KHÔNG nạp toàn cục nữa: hệ 'arjs' của nó tự bám vào
-       MỌI a-scene (kể cả scene MindAR của Explore) và chèn một lượt render
-       camera-feed với autoClear → xóa sạch nội dung MindAR mỗi frame. Vì vậy
-       AR.js chỉ được nạp ĐỘNG khi vào game mode (xem loadARjs() trong game.js). -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  /* ===== Font theo ngôn ngữ ===== */
+  body.lang-en{ font-family:"Be Vietnam Pro", system-ui, sans-serif; }
+  body.lang-en .display, body.lang-en .lede{ font-family:"Cormorant", serif; }
+  body.lang-zh{ font-family:"Noto Sans TC", system-ui, sans-serif; }
+  body.lang-zh .display, body.lang-zh .lede{ font-family:"Noto Serif TC", serif; }
+  body.lang-zh .hero-title{ letter-spacing:.12em; font-size:clamp(3.6rem, 15vw, 11rem); }
+  body.lang-zh .lede{ line-height:1.55; max-width:22ch; }
+  body.lang-zh .lede .accent{ font-style:normal; }
+  body.lang-zh .eyebrow{ letter-spacing:.3em; }
+
+  #scene{ position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+  .vignette{ position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(20,8,28,.55) 100%); }
+  .page{ position:relative; z-index:2; }
+  .panel{ min-height:100svh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:14vh 7vw; }
+
+  /* ===== Nút chuyển ngôn ngữ ===== */
+  .lang-toggle{ position:fixed; top:max(1.2rem, env(safe-area-inset-top)); right:1.2rem; z-index:20;
+    display:flex; gap:.25rem; padding:.25rem; border-radius:999px;
+    background:rgba(42,18,53,.45); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,244,247,.18); }
+  .lang-toggle button{ font-family:"Be Vietnam Pro", sans-serif; font-size:.8rem; font-weight:500;
+    letter-spacing:.05em; color:rgba(255,244,247,.7); background:none; border:none; cursor:pointer;
+    padding:.45em 1em; border-radius:999px; transition:color .3s, background .3s; }
+  .lang-toggle button:hover{ color:var(--cream); }
+  .lang-toggle button.active{ color:var(--plum); background:linear-gradient(135deg, var(--blush), var(--azalea)); }
+  .lang-toggle button:focus-visible{ outline:2px solid var(--cream); outline-offset:2px; }
+
+  /* Fallback reveal (khi KHÔNG có GSAP) */
+  .reveal{ opacity:0; transform:translateY(34px);
+    transition:opacity 1.1s cubic-bezier(.2,.7,.2,1), transform 1.1s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in{ opacity:1; transform:none; }
+  .gsap-on .reveal{ opacity:1; transform:none; transition:none; }
+
+  .eyebrow{ font-size:.78rem; font-weight:500; letter-spacing:.42em;
+    text-transform:uppercase; color:var(--azalea); margin-bottom:1.6rem; }
+
+  .display{ font-family:"Cormorant", serif; font-weight:500; line-height:.96;
+    letter-spacing:.01em; text-shadow:0 0 40px rgba(255,92,138,.35); }
+  .hero-title{ font-size:clamp(4.2rem, 17vw, 13rem); }
+  .hero-title .t-main{ display:block; }
+  .hero-title em{ font-style:italic; font-weight:400; color:var(--blush);
+    display:block; font-size:.42em; letter-spacing:.06em; margin-top:.4em; text-shadow:none;
+    font-family:"Cormorant", serif; }
+
+  .lede{ font-family:"Cormorant", serif; font-size:clamp(1.9rem, 5.2vw, 3.4rem);
+    font-weight:400; line-height:1.32; max-width:18ch; color:var(--cream); }
+  .lede .accent{ color:var(--azalea); font-style:italic; }
+  .note{ margin-top:1.8rem; font-size:clamp(.95rem, 2.4vw, 1.1rem);
+    font-weight:300; line-height:1.7; max-width:42ch; color:rgba(255,244,247,.72); }
+
+  .char{ display:inline-block; will-change:transform, opacity; }
+
+  .scroll-hint{ position:absolute; bottom:4.5vh; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:.8rem;
+    font-size:.72rem; letter-spacing:.34em; text-transform:uppercase; color:rgba(255,244,247,.6); }
+  .scroll-hint .line{ width:1px; height:46px; background:linear-gradient(var(--azalea), transparent);
+    animation:drip 2.4s ease-in-out infinite; }
+  @keyframes drip{ 0%{transform:scaleY(0);transform-origin:top;opacity:0}
+    40%{transform:scaleY(1);transform-origin:top;opacity:1}
+    60%{transform:scaleY(1);transform-origin:bottom;opacity:1}
+    100%{transform:scaleY(0);transform-origin:bottom;opacity:0} }
+
+  .cta{ margin-top:2.6rem; display:inline-flex; align-items:center; gap:.7em;
+    font-family:"Be Vietnam Pro", sans-serif; font-size:1.02rem; font-weight:500; letter-spacing:.02em;
+    color:var(--plum); background:linear-gradient(135deg, var(--blush), var(--azalea));
+    border:none; border-radius:999px; padding:1.05em 2.4em; cursor:pointer;
+    box-shadow:0 8px 40px rgba(255,92,138,.45), inset 0 0 0 1px rgba(255,255,255,.3);
+    transition:box-shadow .35s ease; will-change:transform; }
+  .cta:hover{ box-shadow:0 14px 54px rgba(255,92,138,.6), inset 0 0 0 1px rgba(255,255,255,.45); }
+  .cta:focus-visible{ outline:3px solid var(--cream); outline-offset:4px; }
+  .cta .dot{ width:.5em; height:.5em; border-radius:50%; background:var(--plum);
+    box-shadow:0 0 0 .28em rgba(42,18,53,.18); animation:pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  #flash{ position:fixed; inset:0; z-index:30;
+    background:radial-gradient(circle at 50% 55%, var(--blush), var(--azalea) 45%, var(--plum) 100%);
+    opacity:0; pointer-events:none; transition:opacity .9s ease; }
+  #flash.on{ opacity:1; }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; } .reveal{ transition-duration:.3s; }
+    .scroll-hint .line{ animation:none; } .cta .dot{ animation:none; }
+  }
+</style>
 </head>
+<body class="lang-zh">
 
-<body>
+  <canvas id="scene"></canvas>
+  <div class="vignette"></div>
 
-  <!-- ============ INTRO SCREEN ============ -->
-  <div id="intro">
-    <!-- Interactive custom spotlight overlay -->
-    <div id="intro-spotlight" class="intro-spotlight"></div>
-
-    <!-- Drifting pollen particles for organic museum atmosphere -->
-    <div class="pollen p1"></div>
-    <div class="pollen p2"></div>
-    <div class="pollen p3"></div>
-    <div class="pollen p4"></div>
-    <div class="pollen p5"></div>
-
-    <div class="intro-header reveal-item reveal-delay-1">
-      <div class="intro-header-left">
-        <div class="badge" data-i18n="intro_badge">校園生態 · AR 導覽</div>
-      </div>
-      <div class="intro-header-right">
-        <button class="intro-ctrl-btn" id="intro-lang-toggle" title="切換語言 / Switch Language"
-          aria-label="Switch Language">
-          <!-- Globe SVG -->
-          <svg class="lang-icon" viewBox="0 0 24 24">
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z" />
-          </svg>
-        </button>
-        <button class="intro-ctrl-btn" id="intro-sound-toggle" title="Toggle Sound" aria-label="Toggle Sound">
-          <!-- Speaker Unmute SVG -->
-          <svg class="sound-icon" viewBox="0 0 24 24">
-            <path
-              d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM4.5 9v6H8l4.5 4.5V4.5L8 9H4.5z" />
-          </svg>
-        </button>
-        <button class="intro-ctrl-btn" id="intro-theme-toggle" title="Toggle Night Mode" aria-label="Toggle Night Mode">
-          <!-- Moon SVG -->
-          <svg class="theme-icon-moon" viewBox="0 0 24 24">
-            <path d="M12 3c.132 0 .263 0 .393.007a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z" />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <div class="intro-main">
-      <div class="meta-line reveal-item reveal-delay-2">
-        <span data-i18n="intro_meta_sub">生物學專題報告</span>
-        <span class="dot"></span>
-        <span>2026</span>
-      </div>
-      <h1 class="title-zh reveal-item reveal-delay-3" data-i18n="intro_title_zh">尋見<span class="accent">杜鵑</span></h1>
-      <p class="title-en reveal-item reveal-delay-4" data-i18n="intro_title_en">A bloom that lives by conditions</p>
-      <p class="description reveal-item reveal-delay-5" data-i18n="intro_desc">
-        杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。
-        將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。
-      </p>
-
-      <!-- Scientific researcher preview card -->
-      <div class="intro-exhibit-card reveal-item reveal-delay-6">
-        <div class="exhibit-badge" data-i18n="intro_card_badge"><span class="icon">🔍</span> Spatially Analyzed Specimen
-          No. 001</div>
-        <h2 class="exhibit-header" data-i18n="intro_card_header">Rhododendron pulchrum</h2>
-        <p class="exhibit-meta" data-i18n="intro_card_meta">Division: Angiosperms • Family: Ericaceae</p>
-      </div>
-    </div>
-
-    <div class="intro-footer reveal-item reveal-delay-7">
-      <div class="intro-cta-stack">
-        <button class="game-btn" id="game-btn">
-          <span><span class="game-icon">✦</span><span data-i18n="game_btn">遊戲模式 · GAME MODE</span></span>
-        </button>
-        <button class="start-btn" id="start-btn">
-          <span data-i18n="explore_btn">開始尋花 · EXPLORE</span>
-        </button>
-      </div>
-      <div class="credits" data-i18n="intro_credits">校園植物學社</div>
-    </div>
+  <div class="lang-toggle" role="group" aria-label="語言 / Language">
+    <button type="button" data-lang="zh" class="active">繁中</button>
+    <button type="button" data-lang="en">EN</button>
   </div>
 
-  <!-- ============ LOADING ============ -->
-  <div id="loading" role="alert" aria-live="assertive">
-    <div class="loader"></div>
-    <div class="loading-text" id="loading-text">Initializing camera...</div>
-  </div>
+  <main class="page">
+    <section class="panel" id="hero">
+      <p class="eyebrow reveal" data-key="eyebrowHero">AR · 杜鵑花</p>
+      <h1 class="display hero-title reveal">
+        <span class="t-main" data-key="titleMain">杜鵑花</span>
+        <em data-key="titleSub">Azalea · Rhododendron</em>
+      </h1>
+      <div class="scroll-hint"><span data-key="scrollHint">向下滾動</span><span class="line"></span></div>
+    </section>
 
-  <!-- ============ ERROR ============ -->
-  <div id="error-screen">
-    <h2 id="error-title">Camera Access Required</h2>
-    <p id="error-msg">This experience needs your camera.</p>
-    <div class="err-detail" id="err-detail"></div>
-    <button id="error-retry">Try Again</button>
-  </div>
+    <section class="panel">
+      <p class="lede reveal" data-key="lede1" data-html>每逢春日，山坡再度<span class="accent">染上緋紅</span>——成千上萬朵杜鵑，於同一個節奏裡綻放。</p>
+      <p class="note reveal" data-key="note1">杜鵑是高山的象徵，自冬末綻放至初夏；每一簇五片花瓣上點綴著細小的蜜斑，為蜂蝶指引方向。</p>
+    </section>
 
-  <!-- ============ SCENE HOST ============ -->
-  <!-- AR scene được mount động vào đây bởi js/game.js (AR.js barcode) hoặc
-     js/explore.js (MindAR image target). Chỉ 1 scene active tại 1 thời điểm,
-     khi user bấm BACK → JS unmount để giải phóng camera. -->
-  <div id="scene-host"></div>
+    <section class="panel">
+      <p class="lede reveal" data-key="lede2" data-html>此刻，一朵將在<span class="accent">你的掌心綻放</span>。</p>
+      <p class="note reveal" data-key="note2">將鏡頭對準標記圖卡，立體的花朵便會浮現眼前——旋轉、放大，細看每一層花瓣。</p>
+    </section>
 
-  <!-- ============ AR UI OVERLAY ============ -->
-  <div id="ar-ui">
-    <div class="top-bar">
-      <button class="back-btn" id="back-btn" data-i18n="back">← BACK</button>
-      <div class="top-meta">
-        <div class="live-dot-wrap">
-          <span class="live-dot"></span>
-        </div>
-        <div class="specimen-label"><span data-i18n="specimen_en">SPECIMEN</span>
-        </div>
-      </div>
-      <button class="map-btn game-only" id="map-btn" title="Show campus map" aria-label="Show map">
-        <svg viewBox="0 0 24 24">
-          <path
-            d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zm0 2.2L15 8v11.8L9 18V6.2zm-2 .2v11.6l-2 .7V7l2-.6zm10 0l2-.6v11.6l-2 .7V6.4z" />
-        </svg>
+    <section class="panel" id="enter">
+      <p class="eyebrow reveal" data-key="eyebrowEnter">準備就緒</p>
+      <p class="lede reveal" data-key="ledeEnter">開啟真實世界。</p>
+      <button class="cta" id="startAR" aria-label="開啟擴增實境體驗">
+        <span class="dot"></span><span class="cta-label" data-key="ctaLabel">開啟 AR 體驗</span>
       </button>
-      <button class="lang-btn" id="lang-btn" title="Switch language">
-        <span class="lang-active" id="lang-active">中</span>
-        <span class="lang-divider">/</span>
-        <span class="lang-inactive" id="lang-inactive">EN</span>
-      </button>
-    </div>
+    </section>
+  </main>
 
-    <div class="scan-hint" id="scan-hint">
-      <div class="scan-laser"></div>
-      <span class="corner c1"></span><span class="corner c2"></span>
-      <span class="corner c3"></span><span class="corner c4"></span>
-      <span class="label" data-i18n="scan_hint">POINT AT THE QR MARKER · 將鏡頭對準 QR 標記</span>
-    </div>
+  <div id="flash"></div>
 
-    <!-- FLOATING UI MODE (hiện khi camera lia khỏi marker) -->
-    <div class="floating-mode" id="floating-mode">
-      <div class="floating-status" data-i18n="floating_status">FREE MODE · 自由模式</div>
-      <div class="floating-video">
-        <video id="floating-video-el" autoplay loop muted playsinline></video>
-      </div>
-    </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
 
-    <!-- DETACH CONTROLS (hiện khi hoa bị decouple khỏi marker) -->
-    <div class="detach-controls" id="detach-controls">
-      <div class="detach-status">
-        <span class="detach-dot"></span>
-        <span data-i18n="detach_status">自由飛翔 · FREE FLIGHT</span>
-      </div>
-      <div class="detach-hint">
-        <span data-i18n="detach_hint">雙指移動，單指旋轉</span>
-      </div>
-      <button class="btn-reset-flower" id="btn-reset-flower">
-        <span data-i18n="btn_reset_flower">重設位置 · RE-DOCK</span>
-      </button>
-    </div>
+<script type="importmap">
+{ "imports": { "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js" } }
+</script>
 
+<script type="module">
+import * as THREE from "three";
 
-    <!-- EXPLORE INFO CARD (hiện khi target được detect trong cả Explore và Game mode) -->
-    <!-- Tap → mở modal BIO. JS sẽ điền nội dung tương ứng. -->
-    <div id="explore-info">
-      <div class="ei-row">
-        <div class="ei-name">—</div>
-        <div class="ei-latin">—</div>
-      </div>
-      <div class="ei-brief">—</div>
-      <div class="ei-hint">點擊查看詳細資訊 · Tap for details</div>
-    </div>
+/* ===== Thư viện & môi trường ===== */
+const G  = window.gsap;
+const ST = window.ScrollTrigger;
+const hasGSAP = !!(G && ST);
+if (hasGSAP){
+  G.registerPlugin(ST);
+  if (window.SplitText) G.registerPlugin(window.SplitText);
+}
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isMobile = Math.min(innerWidth, innerHeight) < 720;
+const PETAL_COUNT  = isMobile ? 46 : 92;
+const POLLEN_COUNT = isMobile ? 130 : 280;
 
-    <!-- Interactive Gesture Help Panel -->
-    <div id="gesture-hint" class="gesture-hint">
-      <div class="gesture-hint-header">
-        <span class="icon">✨</span>
-        <span class="title-zh" data-i18n="gesture_title_zh">互動手勢指引</span>
-        <span class="title-en" data-i18n="gesture_title_en">Interactive Gestures</span>
-      </div>
-      <div class="gesture-steps">
-        <div class="gesture-step">
-          <div class="gesture-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path
-                d="M12 2a1 1 0 0 1 1 1v6.3a2.5 2.5 0 0 1 2 2.4v.3a3.5 3.5 0 0 1 3.5 3.5v1.5a3 3 0 0 1-3 3h-4.5A7.5 7.5 0 0 1 4.5 13v-2.5a2.5 2.5 0 0 1 5 0v.5c0 .3.2.5.5.5s.5-.2.5-.5v-8a1 1 0 0 1 1-1z" />
-            </svg>
-          </div>
-          <div class="gesture-desc">
-            <div class="desc-zh"><strong>旋轉</strong>：單指滑動旋轉花朵。</div>
-            <div class="desc-en">Swipe 1 finger to rotate flower.</div>
-          </div>
-        </div>
-        <div class="gesture-step">
-          <div class="gesture-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M18 15l3 3m0 0l-3 3m3-3H11M6 9L3 6m0 0l3-3M3 6h10" />
-            </svg>
-          </div>
-          <div class="gesture-desc">
-            <div class="desc-zh"><strong>縮放</strong>：雙指捏合來縮放模型。</div>
-            <div class="desc-en">Pinch 2 fingers to zoom model.</div>
-          </div>
-        </div>
-        <div class="gesture-step">
-          <div class="gesture-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M5 12h14M12 5v14M12 5l3 3m-3-3L9 8m3 11l3-3m-3 3l-3-3" />
-            </svg>
-          </div>
-          <div class="gesture-desc">
-            <div class="desc-zh"><strong>移動</strong>：雙指拖曳來移動花朵。</div>
-            <div class="desc-en">Drag 2 fingers to translate.</div>
-          </div>
-        </div>
-      </div>
-      <div class="gesture-hint-footer">
-        <span class="label-zh">點擊任意處關閉</span>
-        <span class="label-en">Tap anywhere to dismiss</span>
-      </div>
-    </div>
+/* ===== Three.js ===== */
+const canvas = document.getElementById("scene");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x2a1235, 0.0075);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 400);
+const CAM_START_Z = 62, CAM_END_Z = -92;
+camera.position.set(0, 0, CAM_START_Z);
+scene.add(camera);
 
-    <!-- 5 FAB buttons -->
-    <div class="fabs" id="fabs">
-      <button class="fab" data-action="bio">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 2C8 8 4 12 4 16a8 8 0 0016 0c0-4-4-8-8-14z" />
-          <circle cx="12" cy="14" r="2" />
-        </svg>
-        <span class="lab-zh">生態</span>
-        <span class="lab-en">Bio</span>
-      </button>
-      <button class="fab" data-action="video">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="6" width="18" height="12" rx="1" />
-          <path d="M10 10l4 2-4 2v-4z" fill="currentColor" stroke="none" />
-        </svg>
-        <span class="lab-zh">影片</span>
-        <span class="lab-en">Video</span>
-      </button>
-      <button class="fab" data-action="life">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        <span class="lab-zh">生命</span>
-        <span class="lab-en">Life</span>
-      </button>
-      <button class="fab" data-action="audio">
-        <svg viewBox="0 0 24 24">
-          <path d="M11 5L6 9H2v6h4l5 4V5z" />
-          <path d="M15.5 8.5a5 5 0 010 7M19 5a9 9 0 010 14" />
-        </svg>
-        <span class="lab-zh">聲音</span>
-        <span class="lab-en">Audio</span>
-      </button>
-      <button class="fab" data-action="capture" id="capture-btn" title="Capture Specimen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-          <circle cx="12" cy="13" r="4" />
-        </svg>
-        <span class="lab-zh">拍照</span>
-        <span class="lab-en">Capture</span>
-        <div id="capture-tooltip" class="capture-tooltip" data-i18n="capture_tooltip">📸 拍照生成黃金標本</div>
-      </button>
-    </div>
-  </div>
+/* ===== Texture ===== */
+function makePetalTexture(){
+  const s=128, cv=document.createElement("canvas"); cv.width=cv.height=s;
+  const c=cv.getContext("2d");
+  const glow=c.createRadialGradient(s/2,s/2,4,s/2,s/2,s/2);
+  glow.addColorStop(0,"rgba(255,200,220,0.55)"); glow.addColorStop(0.45,"rgba(255,140,180,0.18)");
+  glow.addColorStop(1,"rgba(255,140,180,0)"); c.fillStyle=glow; c.fillRect(0,0,s,s);
+  c.translate(s/2,s/2);
+  const grd=c.createLinearGradient(0,-46,0,46);
+  grd.addColorStop(0,"rgba(255,255,255,0.96)"); grd.addColorStop(0.55,"rgba(255,210,228,0.95)");
+  grd.addColorStop(1,"rgba(255,150,190,0.9)"); c.fillStyle=grd;
+  c.beginPath(); c.moveTo(0,44);
+  c.bezierCurveTo(36,26,34,-34,6,-46); c.bezierCurveTo(2,-40,-2,-40,-6,-46);
+  c.bezierCurveTo(-34,-34,-36,26,0,44); c.closePath(); c.fill();
+  c.fillStyle="rgba(198,30,99,0.5)";
+  for(let i=0;i<7;i++){ const a=-0.5+Math.random(), r=6+Math.random()*14;
+    c.beginPath(); c.arc(Math.sin(a)*r*0.6,-10+Math.cos(a)*r,1.4,0,Math.PI*2); c.fill(); }
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+function makePollenTexture(){
+  const s=64, cv=document.createElement("canvas"); cv.width=cv.height=s;
+  const c=cv.getContext("2d");
+  const g=c.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(0.3,"rgba(255,225,180,0.8)");
+  g.addColorStop(1,"rgba(255,200,150,0)"); c.fillStyle=g; c.fillRect(0,0,s,s);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const petalTex=makePetalTexture(), pollenTex=makePollenTexture();
 
-  <!-- ============ GAME MODE UI ============ -->
-  <div id="game-hud">
-    <div class="hud-label" data-i18n="hud_collected">收集 · COLLECTED</div>
-    <div class="hud-score">
-      <span id="hud-score-current">0</span>
-      <span class="total">/ <span id="hud-score-total">4</span></span>
-    </div>
-    <div class="hud-best">
-      <span data-i18n="hud_best">最佳 · BEST</span>:
-      <span id="hud-best-value">—</span>
-    </div>
-  </div>
+/* ===== Cánh hoa ===== */
+const PALETTE=[0xffffff,0xffd3e2,0xff9ec4,0xff5c8a,0xffe9c4];
+const FIELD_X=46, FIELD_Y=30, FIELD_Z=210;
+const petalGeo=new THREE.PlaneGeometry(2.4,3.2); const petals=[];
+function resetPetal(m, initial){
+  m.position.set((Math.random()-0.5)*FIELD_X*2,(Math.random()-0.5)*FIELD_Y*2,
+    initial?(Math.random()*FIELD_Z-150):(camera.position.z-FIELD_Z+Math.random()*20));
+  const sc=0.7+Math.random()*1.5; m.scale.set(sc,sc,sc);
+  m.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+  m.userData={ spin:(Math.random()-0.5)*(reduceMotion?0.003:0.012),
+    spin2:(Math.random()-0.5)*(reduceMotion?0.003:0.012),
+    swayA:Math.random()*Math.PI*2, swayS:0.4+Math.random()*0.8,
+    swayR:0.6+Math.random()*1.4, drift:0.4+Math.random()*0.7 };
+}
+for(let i=0;i<PETAL_COUNT;i++){
+  const mat=new THREE.MeshBasicMaterial({ map:petalTex, transparent:true, depthWrite:false,
+    opacity:0.9, color:PALETTE[(Math.random()*PALETTE.length)|0],
+    blending:THREE.NormalBlending, side:THREE.DoubleSide });
+  const m=new THREE.Mesh(petalGeo,mat); resetPetal(m,true); scene.add(m); petals.push(m);
+}
 
-  <!-- Mission line: bottom center, above FABs. Shown/hidden via .active by game.js,
-       text + glow driven by setMission(). Restored after the main.js → 3-file refactor
-       accidentally dropped this markup (CSS + JS for it were left intact). -->
-  <div id="game-mission">
-    <span id="mission-text" data-i18n="mission_start">掃描 START QR 開始 · SCAN START QR</span>
-  </div>
+/* ===== Hạt phấn ===== */
+const pollenGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(POLLEN_COUNT*3), pBase=[];
+for(let i=0;i<POLLEN_COUNT;i++){
+  const x=(Math.random()-0.5)*FIELD_X*2, y=(Math.random()-0.5)*FIELD_Y*2, z=Math.random()*FIELD_Z-150;
+  pPos[i*3]=x; pPos[i*3+1]=y; pPos[i*3+2]=z; pBase.push({x,phase:Math.random()*Math.PI*2,amp:0.4+Math.random()*1.2});
+}
+pollenGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));
+const pollenMat=new THREE.PointsMaterial({ map:pollenTex,size:1.5,transparent:true,
+  depthWrite:false,blending:THREE.AdditiveBlending,color:0xffd9a0,opacity:0.85 });
+const pollen=new THREE.Points(pollenGeo,pollenMat); scene.add(pollen);
 
-  <div id="game-toast" role="status" aria-live="polite">
-    <span id="toast-text">+1</span>
-  </div>
+/* ===== Hoa nở (climax) ===== */
+const bloomGroup=new THREE.Group();
+const bloomMat=new THREE.MeshBasicMaterial({ map:petalTex, transparent:true, depthWrite:false,
+  side:THREE.DoubleSide, color:0xff77a8, opacity:0, blending:THREE.NormalBlending });
+const bloomPetals=[];
+for(let i=0;i<5;i++){
+  const pivot=new THREE.Object3D(); pivot.rotation.z=i*(Math.PI*2/5); pivot.rotation.x=-1.3;
+  const petal=new THREE.Mesh(new THREE.PlaneGeometry(6,8), bloomMat); petal.position.y=4;
+  pivot.add(petal); bloomGroup.add(pivot); bloomPetals.push(pivot);
+}
+const bloomCenterMat=new THREE.SpriteMaterial({ map:pollenTex, color:0xffd9a0,
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0 });
+const bloomCenter=new THREE.Sprite(bloomCenterMat); bloomCenter.scale.setScalar(3); bloomGroup.add(bloomCenter);
+bloomGroup.position.set(0,-1.5,-22); bloomGroup.visible=false; camera.add(bloomGroup);
+function setBloom(v){
+  v=Math.max(0,Math.min(1,v));
+  bloomGroup.visible=v>0.001; bloomGroup.scale.setScalar(0.2+v*1.6);
+  for(const p of bloomPetals) p.rotation.x=-1.3+v*1.15;
+  bloomMat.opacity=v; bloomCenterMat.opacity=v; bloomCenter.scale.setScalar(0.3+v*1.2);
+}
 
-  <div id="reward-modal">
-    <div id="confetti-container"></div>
-    <div class="reward-card">
-      <div class="glow-sunburst"></div>
-      <div class="reward-sparkles">
-        <span class="sparkle s1">✦</span>
-        <span class="sparkle s2">✦</span>
-        <span class="sparkle s3">✦</span>
-        <span class="sparkle s4">✦</span>
-      </div>
-      <div class="reward-stamp" data-i18n="reward_stamp">尋花已成 · QUEST COMPLETE</div>
-      <div class="reward-medal-container">
-        <img src="./gamemode/reward-medal.png" alt="Dayeh University badge" class="reward-medal" />
-      </div>
-      <div class="reward-title" data-i18n="reward_title">恭喜！</div>
-      <div class="reward-subtitle" data-i18n="reward_subtitle">You found every azalea</div>
+/* ===== Nền bình minh ===== */
+function mix(a,b,t){ return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`; }
+function setBg(p){
+  document.documentElement.style.setProperty("--bg-top",    mix([0x3a,0x1a,0x44],[0xf9,0xc6,0xd9],p));
+  document.documentElement.style.setProperty("--bg-bottom", mix([0x1c,0x0c,0x26],[0x8e,0x3a,0x6e],p));
+}
 
-      <div class="reward-score-big">
-        <span id="reward-score">4</span><span class="of"> / <span id="reward-score-total">4</span></span>
-      </div>
+/* ===== Nút AR ===== */
+const ctaBtn=document.getElementById("startAR");
+let ctaShown=false;
+function revealCTA(p){
+  const k=Math.max(0,Math.min(1,(p-0.6)/0.4));
+  if(hasGSAP){
+    if(k<1){ G.set(ctaBtn,{opacity:k, y:(1-k)*28, scale:0.92+0.08*k}); ctaShown=false; }
+    else if(!ctaShown){ G.set(ctaBtn,{opacity:1, y:0, scale:1}); ctaShown=true; }
+  } else { ctaBtn.style.opacity=k; ctaBtn.style.transform=`translateY(${(1-k)*28}px) scale(${0.92+0.08*k})`; }
+}
+if(hasGSAP) G.set(ctaBtn,{opacity:0}); else ctaBtn.style.opacity=0;
+if(hasGSAP && !reduceMotion){
+  ctaBtn.addEventListener("mousemove",(e)=>{
+    if(!ctaShown) return;
+    const r=ctaBtn.getBoundingClientRect();
+    G.to(ctaBtn,{ x:(e.clientX-(r.left+r.width/2))*0.3, y:(e.clientY-(r.top+r.height/2))*0.4, duration:.4, overwrite:"auto" });
+  });
+  ctaBtn.addEventListener("mouseleave",()=>{ if(ctaShown) G.to(ctaBtn,{ x:0,y:0,duration:.6,ease:"elastic.out(1,.4)" }); });
+}
 
-      <div class="reward-message" id="reward-message"></div>
+/* ===== i18n: nội dung 2 ngôn ngữ ===== */
+const I18N = {
+  zh: {
+    eyebrowHero:"AR · 杜鵑花", titleMain:"杜鵑花", titleSub:"Azalea · Rhododendron",
+    scrollHint:"向下滾動",
+    lede1:'每逢春日，山坡再度<span class="accent">染上緋紅</span>——成千上萬朵杜鵑，於同一個節奏裡綻放。',
+    note1:"杜鵑是高山的象徵，自冬末綻放至初夏；每一簇五片花瓣上點綴著細小的蜜斑，為蜂蝶指引方向。",
+    lede2:'此刻，一朵將在<span class="accent">你的掌心綻放</span>。',
+    note2:"將鏡頭對準標記圖卡，立體的花朵便會浮現眼前——旋轉、放大，細看每一層花瓣。",
+    eyebrowEnter:"準備就緒", ledeEnter:"開啟真實世界。",
+    ctaLabel:"開啟 AR 體驗", ctaAria:"開啟擴增實境體驗"
+  },
+  en: {
+    eyebrowHero:"AR · Azalea", titleMain:"Azalea", titleSub:"杜鵑花 · Rhododendron",
+    scrollHint:"Scroll down",
+    lede1:'Each spring, the mountainsides <span class="accent">blush again</span> — thousands of azaleas blooming to a single rhythm.',
+    note1:"The azalea is an emblem of the highlands, flowering from late winter into early summer; each cluster of five petals is freckled with tiny nectar spots that guide the bees.",
+    lede2:'Now, one will <span class="accent">bloom in your hands</span>.',
+    note2:"Point your camera at the marker card and a three-dimensional flower appears before you — rotate it, zoom in, explore each layer of petals.",
+    eyebrowEnter:"Ready", ledeEnter:"Open the real world.",
+    ctaLabel:"Launch AR experience", ctaAria:"Launch the augmented reality experience"
+  }
+};
+function setI18N(lang){
+  const dict=I18N[lang];
+  document.querySelectorAll("[data-key]").forEach(el=>{
+    const k=el.dataset.key; if(!(k in dict)) return;
+    if(el.hasAttribute("data-html")) el.innerHTML=dict[k]; else el.textContent=dict[k];
+  });
+  ctaBtn.setAttribute("aria-label", dict.ctaAria);
+}
 
-      <div class="reward-stats">
-        <div class="reward-stat">
-          <span class="num" id="reward-best">0</span>
-          <span class="lbl" data-i18n="reward_best">最佳 · BEST</span>
-        </div>
-        <div class="reward-stat">
-          <span class="num" id="reward-runs">1</span>
-          <span class="lbl" data-i18n="reward_runs">完成次數 · RUNS</span>
-        </div>
-      </div>
+/* ===== Tách chữ thủ công (dự phòng khi không có SplitText) ===== */
+function splitCharsManual(el){
+  const text=(el.textContent||"").normalize("NFC"); el.textContent="";
+  return Array.from(text).map(ch=>{
+    const sp=document.createElement("span"); sp.className="char"; sp.textContent=ch;
+    if(ch===" ") sp.style.width="0.3em"; el.appendChild(sp); return sp;
+  });
+}
 
-      <div class="reward-actions">
-        <button class="reward-btn reward-btn-secondary" id="reward-close" data-i18n="reward_close">關閉 · CLOSE</button>
-        <button class="reward-btn reward-btn-primary" id="reward-replay" data-i18n="reward_replay">再玩一次 · PLAY
-          AGAIN</button>
-      </div>
-    </div>
-  </div>
+/* ===== Thiết lập hiệu ứng chữ (gọi lại được khi đổi ngôn ngữ) ===== */
+let currentLang="zh";
+let textSplits=[], textTweens=[];
+function clearText(){
+  textTweens.forEach(t=>{ if(t && t.scrollTrigger) t.scrollTrigger.kill(); if(t) t.kill(); });
+  textTweens=[];
+  textSplits.forEach(s=>{ try{ s.revert(); }catch(e){} });
+  textSplits=[];
+}
+function setupText(firstLoad){
+  // Tiêu đề hero: bay vào từng ký tự
+  const heroMain=document.querySelector(".hero-title .t-main");
+  let hc;
+  if(window.SplitText){ const s=new window.SplitText(heroMain,{type:"chars"}); textSplits.push(s); hc=s.chars; }
+  else { hc=splitCharsManual(heroMain); }
+  textTweens.push(G.from(hc,{ yPercent:120, opacity:0, rotateZ:8, stagger:0.04,
+    duration:1, ease:"power3.out", delay:firstLoad?0.2:0 }));
+  const em=document.querySelector(".hero-title em");
+  if(em) textTweens.push(G.from(em,{ opacity:0, y:18, duration:0.9, ease:"power2.out", delay:firstLoad?0.9:0.05 }));
 
-  <!-- ============ MODALS ============ -->
+  // Các câu thơ: tiếng Trung tách ký tự, tiếng Anh tách từ
+  document.querySelectorAll(".lede").forEach(el=>{
+    if(window.SplitText){
+      const type=(currentLang==="zh")?"chars":"words";
+      const s=new window.SplitText(el,{type}); textSplits.push(s);
+      const pieces=(type==="chars")?s.chars:s.words;
+      textTweens.push(G.from(pieces,{ y:26, opacity:0, stagger:0.045, duration:0.8, ease:"power3.out",
+        scrollTrigger:{ trigger:el, start:"top 82%" } }));
+    } else {
+      textTweens.push(G.from(el,{ y:28, opacity:0, duration:0.9, ease:"power3.out",
+        scrollTrigger:{ trigger:el, start:"top 82%" } }));
+    }
+  });
 
-  <!-- Modal: MAP (game mode only — auto-show on enter, reopen via top-bar button) -->
-  <div class="modal" id="modal-map" role="dialog" aria-modal="true">
-    <div class="modal-content modal-map-content">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span data-i18n="map_title">校園尋花地圖</span>
-          <span class="latin" data-i18n="map_subtitle">Campus quest map</span>
-        </div>
-        <button class="modal-close" data-close>×</button>
-      </div>
-      <div class="modal-body">
-        <p data-i18n="map_intro">沿校園尋找 4 個 QR 標記點，掃描收集杜鵑。集齊後返回 START 領取獎勵。</p>
-        <div class="map-wrap">
-          <img src="./gamemode/campus-map.png" alt="Campus quest map" class="map-img" />
-        </div>
-        <p class="map-foot" data-i18n="map_foot">⚫ 黑色標記 = QR 位置 · Black pins = QR locations</p>
-      </div>
-    </div>
-  </div>
+  // Ghi chú + eyebrow: hiện mềm
+  document.querySelectorAll(".note, .eyebrow").forEach(el=>{
+    textTweens.push(G.from(el,{ y:20, opacity:0, duration:0.9, ease:"power2.out",
+      scrollTrigger:{ trigger:el, start:"top 88%" } }));
+  });
 
-  <!-- Modal: BIO -->
-  <div class="modal" id="modal-bio" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title" id="bio-modal-title">
-          平戶杜鵑
-          <span class="latin">Rhododendron × pulchrum</span>
-        </div>
-        <button class="modal-close" data-close>×</button>
-      </div>
-      <div class="modal-body">
-        <h3 data-i18n="bio_growth_title">生長條件 · Growth Conditions</h3>
-        <p id="bio-growth-desc">常綠灌木，適生於酸性土壤（pH 4.5–5.5）與排水良好之半遮蔭環境。台灣校園常見種，亦為日本平戶起源之大型雜交種。</p>
+  ST.refresh();
+}
 
-        <!-- Premium Growth Indicators -->
-        <div class="growth-indicators">
-          <div class="indicator-group">
-            <div class="indicator-label" data-i18n="bio_soil_ph">土壤酸鹼度 · Soil pH</div>
-            <div class="ph-bar-wrap">
-              <div class="ph-bar"></div>
-              <div class="ph-range-indicator"></div>
-              <div class="ph-value-marker" id="bio-ph-marker" style="left: 33%">pH 4.5 - 5.5</div>
-            </div>
-            <div class="ph-scale-labels">
-              <span data-i18n="bio_ph_acidic">Acidic (pH 4)</span>
-              <span data-i18n="bio_ph_neutral">Neutral (pH 7)</span>
-              <span data-i18n="bio_ph_alkaline">Alkaline (pH 10)</span>
-            </div>
-          </div>
-          <div class="indicator-group">
-            <div class="indicator-label" data-i18n="bio_sunlight">日照環境 · Light Requirement</div>
-            <div class="light-indicator-wrap" id="bio-light-wrap">
-              <span class="light-pill active" id="bio-light-pill-1">半遮蔭 · Semi-shaded</span>
-              <span class="light-pill" id="bio-light-pill-2">避免強光 · Avoid Intense Light</span>
-            </div>
-          </div>
-        </div>
+/* ===== Áp dụng ngôn ngữ ===== */
+function applyLang(lang, firstLoad){
+  currentLang=lang;
+  if(hasGSAP) clearText();
+  setI18N(lang);
+  document.body.classList.toggle("lang-zh", lang==="zh");
+  document.body.classList.toggle("lang-en", lang==="en");
+  document.documentElement.lang = (lang==="zh") ? "zh-Hant" : "en";
+  document.querySelectorAll(".lang-toggle button").forEach(b=>b.classList.toggle("active", b.dataset.lang===lang));
+  if(hasGSAP) setupText(!!firstLoad);
+}
+document.querySelectorAll(".lang-toggle button").forEach(b=>{
+  b.addEventListener("click",()=>{ if(b.dataset.lang!==currentLang) applyLang(b.dataset.lang,false); });
+});
 
-        <div style="margin-top: 16px; margin-bottom: 20px;" id="bio-tags-wrap">
-          <span class="tag">酸性土</span><span class="tag">半遮蔭</span><span class="tag">春季</span>
-        </div>
+/* ===== Cuộn: Lenis + ScrollTrigger ===== */
+let lenis=null, scrollVel=0;
+const camState={ z:CAM_START_Z };
 
-        <h3 data-i18n="bio_form_title">形態 · Form</h3>
-        <p id="bio-form-desc">株高 1–3 公尺，葉橢圓形革質。花色由純白至深桃紅，五瓣對稱，雄蕊 5–10 枚。</p>
-        <h3 data-i18n="bio_caution_title">注意 · Caution</h3>
-        <p class="caution-box">
-          <span class="caution-icon">⚠️</span>
-          <span class="caution-text" id="bio-caution-desc">全株含 <strong>grayanotoxin</strong> 毒素，誤食可致中毒。賞花無虞，請勿採食。</span>
-        </p>
-      </div>
-    </div>
-  </div>
+if(hasGSAP){
+  document.body.classList.add("gsap-on");
+  if(window.Lenis && !reduceMotion){
+    lenis=new Lenis({ lerp:0.1, smoothWheel:true, smoothTouch:false });
+    lenis.on("scroll",(e)=>{ ST.update(); scrollVel=e.velocity||0; });
+    G.ticker.add((t)=> lenis.raf(t*1000)); G.ticker.lagSmoothing(0);
+  }
+  G.to(camState,{ z:CAM_END_Z, ease:"none",
+    scrollTrigger:{ trigger:"#enter", start:"top bottom", end:"top top", scrub:reduceMotion?true:1 } });
+  ST.create({ start:0, end:"max", scrub:reduceMotion?true:0.5, onUpdate:(self)=>setBg(self.progress) });
+  ST.create({ trigger:"#enter", start:"top top", end:"+=130%", pin:true, scrub:reduceMotion?true:1,
+    onUpdate:(self)=>{ setBloom(self.progress); revealCTA(self.progress); } });
+  if(!reduceMotion){
+    document.querySelectorAll(".note").forEach(el=>{
+      G.to(el,{ yPercent:-12, ease:"none",
+        scrollTrigger:{ trigger:el, start:"top bottom", end:"bottom top", scrub:true } });
+    });
+  }
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=> ST.refresh());
+  addEventListener("load",()=> ST.refresh());
+} else {
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting) e.target.classList.add("in"); }),{threshold:0.25});
+  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+  let lastY=scrollY;
+  function onScroll(){
+    const max=document.body.scrollHeight-innerHeight;
+    const p=max>0?Math.min(1,Math.max(0,scrollY/max)):0;
+    camState.z=CAM_START_Z+(CAM_END_Z-CAM_START_Z)*Math.min(1,p/0.8);
+    setBg(p); setBloom((p-0.8)/0.2); revealCTA(p);
+    scrollVel=(scrollY-lastY)*2; lastY=scrollY;
+  }
+  addEventListener("scroll",onScroll,{passive:true}); onScroll();
+}
 
-  <!-- Modal: VIDEO -->
-  <div class="modal" id="modal-video" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span data-i18n="video_title">花開時序</span>
-          <span class="latin" data-i18n="video_subtitle">Time-lapse footage</span>
-        </div>
-        <button class="modal-close" data-close>×</button>
-      </div>
-      <div class="modal-body">
-        <div class="video-wrap">
-          <iframe src="https://www.youtube.com/embed/yJrn5iY4uFE?rel=0" title="Azalea bloom time-lapse - Yangmingshan"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen></iframe>
-        </div>
-        <p data-i18n="video_desc">陽明山國家公園杜鵑花盛開縮時影像（4K）。從花苞至盛開的瞬間，記錄春日清晨的綻放過程。</p>
-        <p style="font-size:11px;color:var(--azalea-leaf);margin-top:8px;" data-i18n="video_note">
-          ※ 替換 iframe 中的 YouTube ID 即可換成你的影片。
-        </p>
-      </div>
-    </div>
-  </div>
+/* ===== Khởi tạo ngôn ngữ (mặc định: phồn thể) ===== */
+applyLang("zh", true);
 
-  <!-- Modal: LIFECYCLE -->
-  <div class="modal" id="modal-life" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span data-i18n="life_title">生命週期</span>
-          <span class="latin" data-i18n="life_subtitle">Annual lifecycle</span>
-        </div>
-        <button class="modal-close" data-close>×</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin-bottom:16px;" data-i18n="life_intro">點選各階段以查看詳細說明 · Tap a stage to see details</p>
+/* ===== Con trỏ / chạm ===== */
+const pointer={ x:0,y:0,tx:0,ty:0 };
+function onMove(e){ const t=e.touches?e.touches[0]:e;
+  pointer.tx=(t.clientX/innerWidth-0.5)*2; pointer.ty=(t.clientY/innerHeight-0.5)*2; }
+addEventListener("mousemove",onMove,{passive:true});
+addEventListener("touchmove",onMove,{passive:true});
 
-        <div class="lifecycle">
-          <div class="lc-stage active" data-stage="0">
-            <svg viewBox="0 0 40 50">
-              <line x1="20" y1="50" x2="20" y2="32" stroke="#4a6741" stroke-width="2" />
-              <ellipse cx="20" cy="28" rx="5" ry="8" fill="#4a6741" />
-            </svg>
-            <div class="lc-num">01</div>
-            <div class="lc-name" data-i18n="life_stage_1">芽</div>
-            <div class="lc-month">JAN</div>
-          </div>
-          <div class="lc-stage" data-stage="1">
-            <svg viewBox="0 0 40 50">
-              <line x1="20" y1="50" x2="20" y2="28" stroke="#4a6741" stroke-width="2" />
-              <path d="M14 28 Q20 18 26 28 Q26 22 20 18 Q14 22 14 28 Z" fill="#e8a5c0" />
-              <ellipse cx="20" cy="22" rx="5" ry="7" fill="#6d1b3e" />
-            </svg>
-            <div class="lc-num">02</div>
-            <div class="lc-name" data-i18n="life_stage_2">蕾</div>
-            <div class="lc-month">FEB</div>
-          </div>
-          <div class="lc-stage" data-stage="2">
-            <svg viewBox="0 0 40 50">
-              <line x1="20" y1="50" x2="20" y2="35" stroke="#4a6741" stroke-width="2" />
-              <path d="M20 12 L24 22 L34 22 L26 28 L29 38 L20 32 L11 38 L14 28 L6 22 L16 22 Z" fill="#e8a5c0" />
-              <circle cx="20" cy="25" r="3" fill="#c9a961" />
-            </svg>
-            <div class="lc-num">03</div>
-            <div class="lc-name" data-i18n="life_stage_3">花</div>
-            <div class="lc-month">MAR</div>
-          </div>
-          <div class="lc-stage" data-stage="3">
-            <svg viewBox="0 0 40 50">
-              <line x1="20" y1="50" x2="20" y2="38" stroke="#4a6741" stroke-width="2" />
-              <path d="M20 38 Q14 30 12 38" stroke="#c9a961" stroke-width="2" fill="none" />
-              <path d="M20 38 Q26 30 28 38" stroke="#c9a961" stroke-width="2" fill="none" />
-              <ellipse cx="14" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6" />
-              <ellipse cx="26" cy="36" rx="3" ry="2" fill="#c9a961" opacity="0.6" />
-            </svg>
-            <div class="lc-num">04</div>
-            <div class="lc-name" data-i18n="life_stage_4">果</div>
-            <div class="lc-month">JUN</div>
-          </div>
-        </div>
+/* ===== Render loop ===== */
+const clock=new THREE.Clock(); let running=true;
+document.addEventListener("visibilitychange",()=>{ running=!document.hidden; if(running) clock.getDelta(); });
+function animate(){
+  requestAnimationFrame(animate);
+  if(!running) return;
+  const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
 
-        <div class="lc-detail" id="lc-detail">
-          <h3 style="margin-top:0;font-size:14px;" id="lc-title">芽期 · Bud Stage</h3>
-          <p id="lc-desc" style="margin-bottom:0;">冬末春初，杜鵑於枝端形成花芽。芽鱗片緊閉，包覆著未來的花朵。低溫累積對花芽分化十分關鍵。</p>
-        </div>
-      </div>
-    </div>
-  </div>
+  camera.position.z += (camState.z-camera.position.z)*(reduceMotion?1:0.1);
+  pointer.x += (pointer.tx-pointer.x)*0.05; pointer.y += (pointer.ty-pointer.y)*0.05;
+  camera.position.x += (pointer.x*9-camera.position.x)*0.04;
+  camera.position.y += (-pointer.y*6-camera.position.y)*0.04;
+  camera.lookAt(pointer.x*3, -pointer.y*2, camera.position.z-40);
 
-  <!-- Modal: AUDIO -->
-  <div class="modal" id="modal-audio" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span data-i18n="audio_title">聲音導覽</span>
-          <span class="latin" data-i18n="audio_subtitle">Audio narration</span>
-        </div>
-        <button class="modal-close" data-close>×</button>
-      </div>
-      <div class="modal-body">
-        <div class="audio-player">
-          <button class="audio-btn" id="audio-btn-zh" data-lang="zh-TW">
-            <svg class="icon-play" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            <svg class="icon-pause" viewBox="0 0 24 24">
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          </button>
-          <div class="audio-info">
-            <div class="audio-title" data-i18n="audio_chinese_nav">中文導覽</div>
-            <div class="audio-sub" data-i18n="audio_sec_zh">~ 30 秒</div>
-          </div>
-          <div class="voice-wave">
-            <span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
+  scrollVel*=0.9;
+  const turb=Math.min(Math.abs(scrollVel)*0.00025,0.05);
+  const dir=Math.sign(scrollVel)||1;
+  for(const m of petals){
+    const u=m.userData;
+    m.rotation.x+=u.spin; m.rotation.z+=u.spin2 + turb*dir; u.swayA+=dt*u.swayS;
+    m.position.x+=Math.sin(u.swayA)*(u.swayR+turb*40)*dt; m.position.y-=u.drift*dt;
+    if(m.position.z>camera.position.z+14 || m.position.y<-FIELD_Y) resetPetal(m,false);
+  }
+  const arr=pollenGeo.attributes.position.array;
+  for(let i=0;i<POLLEN_COUNT;i++){
+    const b=pBase[i];
+    arr[i*3]=b.x+Math.sin(t*0.4+b.phase)*b.amp;
+    arr[i*3+1]+=0.25*dt; if(arr[i*3+1]>FIELD_Y) arr[i*3+1]=-FIELD_Y;
+    if(arr[i*3+2]>camera.position.z+14) arr[i*3+2]-=FIELD_Z;
+  }
+  pollenGeo.attributes.position.needsUpdate=true;
+  pollenMat.opacity=0.6+Math.sin(t*1.5)*0.2; pollen.rotation.z=t*0.01;
+  if(bloomGroup.visible) bloomGroup.rotation.z+=dt*0.1;
+  renderer.render(scene,camera);
+}
+animate();
 
-        <div class="audio-player">
-          <button class="audio-btn" id="audio-btn-en" data-lang="en-US">
-            <svg class="icon-play" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            <svg class="icon-pause" viewBox="0 0 24 24">
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          </button>
-          <div class="audio-info">
-            <div class="audio-title" data-i18n="audio_english_nav">English Narration</div>
-            <div class="audio-sub" data-i18n="audio_sec_en">~ 30 sec</div>
-          </div>
-          <div class="voice-wave">
-            <span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
+/* ===== Resize ===== */
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  if(hasGSAP) ST.refresh();
+});
 
-        <p style="font-size:11px;color:var(--azalea-leaf);margin-top:16px;" data-i18n="audio_note">
-          ※ 使用瀏覽器 Web Speech API 即時生成。如需自錄音檔，可替換為 &lt;audio src="azalea.mp3"&gt;。
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Load order matters: common.js exports window.App, các mode đăng ký vào đó -->
-  <script src="./js/common.js"></script>
-  <script src="./js/game.js"></script>
-  <script src="./js/explore.js"></script>
-
-  <div id="screen-flash" class="screen-flash"></div>
-
+/* ================================================================
+   ĐIỂM BÀN GIAO (HOOK) SANG AR  —  sửa AR_URL hoặc khai báo window.startAzaleaAR
+================================================================ */
+const AR_URL="ar.html"; // TODO: đổi cho khớp
+ctaBtn.addEventListener("click",()=>{
+  document.getElementById("flash").classList.add("on");
+  if(lenis) lenis.stop();
+  setTimeout(()=>{
+    if(typeof window.startAzaleaAR==="function") window.startAzaleaAR();
+    else window.location.href=AR_URL;
+  },850);
+});
+</script>
 </body>
-
 </html>

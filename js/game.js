@@ -107,7 +107,7 @@
       family_en: 'Ericaceae Family',
       origin_zh: '原產地: 日本',
       origin_en: 'Origin: Japan',
-      glb: './gamemode/pink-white-azalea.glb',
+      glb: './gamemode/mountain-azalea.glb',
       scale: 15,
       growth_zh: '常綠矮灌木，生長緩慢，喜好排水極佳的酸性砂質土壤。在日本盆景藝術中極受推崇。',
       growth_en: 'An evergreen dwarf shrub, slow-growing and preferring extremely well-drained acidic sandy soil. Highly prized in Japanese bonsai art.',

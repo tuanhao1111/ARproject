@@ -39,7 +39,9 @@
       "mcp__Claude_in_Chrome__computer",
       "mcp__Claude_Preview__preview_start",
       "Bash(git commit -m '@ *)",
-      "Bash(dir \"C:\\\\Users\\\\user\\\\OneDrive\\\\Documents\\\\GitHub\\\\ARproject\\\\gamemode\")"
+      "Bash(dir \"C:\\\\Users\\\\user\\\\OneDrive\\\\Documents\\\\GitHub\\\\ARproject\\\\gamemode\")",
+      "Bash(ls -la \"C:/Users/user/OneDrive/Desktop/cc0__moutain_azalea test.glb\")",
+      "Bash(cp \"C:/Users/user/OneDrive/Desktop/cc0__moutain_azalea test.glb\" \"C:/Users/user/OneDrive/Documents/GitHub/ARproject/gamemode/mountain-azalea.glb\" && ls -la \"C:/Users/user/OneDrive/Documents/GitHub/ARproject/gamemode/mountain-azalea.glb\")"
     ]
   }
 }

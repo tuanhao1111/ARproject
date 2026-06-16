@@ -99,8 +99,8 @@
     },
     {
       id: 4,
-      name: '皋月杜鵑 · Satsuki Azalea',
-      name_zh: '皋月杜鵑',
+      name: '粉紅杜鵑 · Satsuki Azalea',
+      name_zh: '粉紅杜鵑',
       name_en: 'Satsuki Azalea',
       scientific: 'Rhododendron indicum',
       family_zh: '杜鵑花科 Ericaceae',

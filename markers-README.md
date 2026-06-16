@@ -27,7 +27,7 @@ Nếu chọn sai Type (vd `3x3_HAMMING63` hay `4x4`), AR.js sẽ KHÔNG decode �
 | `marker-1.png`| 1     | 紫杜鵑 · Purple Azalea (game mode)        | `gamemode/purple-azalea.glb`         |
 | `marker-2.png`| 2     | 白杜鵑 · White Azalea (game mode)         | `gamemode/white-azalea.glb`          |
 | `marker-3.png`| 3     | 花期縮時 · Time-lapse (game mode)         | `gamemode/default_timelapse.glb`     |
-| `marker-4.png`| 4     | 皋月杜鵑 · Satsuki Azalea (game mode)     | `gamemode/purple-azalea.glb` (placeholder) |
+| `marker-4.png`| 4     | 粉紅杜鵑 · Satsuki Azalea (game mode)     | `gamemode/purple-azalea.glb` (placeholder) |
 
 ## Cách in & dùng
 

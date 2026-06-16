@@ -119,22 +119,15 @@
   // ----------------------------------------------------------
   // INFO CARD — show species info when target detected
   // ----------------------------------------------------------
+  // Thẻ info card đã gỡ bỏ — chỉ giữ side-effect: ghi nhận loài đang active
+  // (currentSpeciesIdx + updateActiveSpecimen) để FAB / cử chỉ / re-dock hoạt động.
   function showInfoCard(idx) {
     const sp = SPECIES_EXPLORE[idx];
-    if (!sp || !dom.exploreInfo) return;
+    if (!sp) return;
     currentSpeciesIdx = idx;
     updateActiveSpecimen(sp);
-    const lang = App.currentLang;
-    const name  = lang === 'zh' ? sp.name_zh : sp.name_en;
-    const brief = lang === 'zh' ? (sp.brief_zh || sp.desc_zh) : (sp.brief_en || sp.desc_en);
-    dom.exploreInfo.querySelector('.ei-name').textContent = name;
-    dom.exploreInfo.querySelector('.ei-latin').textContent = sp.scientific;
-    dom.exploreInfo.querySelector('.ei-brief').textContent = brief;
-    dom.exploreInfo.classList.add('show');
   }
-  function hideInfoCard() {
-    dom.exploreInfo?.classList.remove('show');
-  }
+  function hideInfoCard() {}
 
   // ----------------------------------------------------------
   // SCENE MOUNT / UNMOUNT
@@ -743,12 +736,7 @@
   }, { passive: false });
 
 
-  // ----------------------------------------------------------
-  // INFO CARD CLICK → open BIO modal for current species
-  // ----------------------------------------------------------
-  dom.exploreInfo?.addEventListener('click', () => {
-    App.openModal(document.getElementById('modal-bio'));
-  });
+  // (Info card đã gỡ bỏ — xem chi tiết qua nút FAB "生態 · Bio".)
 
   // ----------------------------------------------------------
   // REGISTER + WIRE INTRO BUTTON AND RE-DOCK BUTTON

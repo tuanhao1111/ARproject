@@ -59,8 +59,6 @@
     rewardBest:   document.getElementById('reward-best'),
     rewardRuns:   document.getElementById('reward-runs'),
     rewardMessage:document.getElementById('reward-message'),
-    // Explore-only refs
-    exploreInfo:  document.getElementById('explore-info'),
     // i18n
     langBtn:      document.getElementById('lang-btn'),
     introLangToggle: document.getElementById('intro-lang-toggle'),

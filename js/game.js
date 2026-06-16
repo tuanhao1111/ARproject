@@ -192,22 +192,11 @@
   // ----------------------------------------------------------
   // INFO CARD — show species info when target detected
   // ----------------------------------------------------------
-  function showInfoCard(sp) {
-    if (!sp || !dom.exploreInfo) return;
-    const lang = App.currentLang;
-    const name = lang === 'zh' ? sp.name_zh : sp.name_en;
-    const brief = lang === 'zh' ? (sp.growth_zh || sp.form_zh) : (sp.growth_en || sp.form_en);
-    const origin = lang === 'zh' ? sp.origin_zh : sp.origin_en;
+  // Thẻ info card đã gỡ bỏ — updateActiveSpecimen() được gọi riêng ở targetFound,
+  // nên 2 hàm này giờ chỉ là no-op để các lời gọi sẵn có không bị lỗi.
+  function showInfoCard(sp) {}
 
-    dom.exploreInfo.querySelector('.ei-name').textContent = name;
-    dom.exploreInfo.querySelector('.ei-latin').textContent = sp.scientific;
-    dom.exploreInfo.querySelector('.ei-brief').textContent = `${origin} • ${brief}`;
-    dom.exploreInfo.classList.add('show');
-  }
-
-  function hideInfoCard() {
-    dom.exploreInfo?.classList.remove('show');
-  }
+  function hideInfoCard() {}
 
   // ----------------------------------------------------------
   // SCAN HANDLERS

@@ -2597,7 +2597,8 @@ body.game-mode #floating-mode {
   display: flex;
   position: fixed;
   left: 50%;
-  bottom: 32px;
+  /* Nâng lên trên dock FAB (.fabs cao ~76px, bottom 28px) để không bị đè */
+  bottom: 116px;
   transform: translateX(-50%) translateY(20px);
   z-index: 50;
   background: rgba(255, 255, 255, 0.92);
@@ -2658,6 +2659,13 @@ body.game-mode #explore-info.show {
   color: var(--azalea-leaf);
   text-transform: uppercase;
   margin-top: 2px;
+}
+
+/* Mobile: dock FAB ở bottom 20px, FAB nhỏ hơn (~54px) → thẻ info hạ tương ứng */
+@media (max-width: 600px) {
+  #explore-info {
+    bottom: 100px;
+  }
 }
 
 /* ============ MAP BUTTON (top-bar, game mode only) ============ */

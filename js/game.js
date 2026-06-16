@@ -99,7 +99,7 @@
     },
     {
       id: 4,
-      name: '杜鵑 04 · Azalea 04',
+      name: '皋月杜鵑 · Satsuki Azalea',
       name_zh: '皋月杜鵑',
       name_en: 'Satsuki Azalea',
       scientific: 'Rhododendron indicum',

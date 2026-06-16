@@ -29,7 +29,7 @@
   // a matching entry below. targetIndex auto-derived from array order.
   const SPECIES_EXPLORE = [
     {
-      name_zh: '平戶杜鵑',
+      name_zh: '粉紅杜鵑',
       name_en: 'Hirado Azalea',
       scientific: 'Rhododendron × pulchrum',
       family_zh: '杜鵑花科 Ericaceae',

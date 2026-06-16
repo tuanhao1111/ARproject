@@ -109,7 +109,7 @@
       intro_title_en: 'A bloom that lives by conditions',
       intro_desc: '杜鵑花以柔美姿態盛放，卻只在<em>酸性土壤、清涼氣候</em>下方能成形。將鏡頭對準 QR 標記，杜鵑將綻放於眼前，並開啟生態、影像、生命週期、聲音四個面向。',
       intro_card_badge: '🔍 生態空間分析標本 No. 001',
-      intro_card_header: '平戶杜鵑 (Rhododendron pulchrum)',
+      intro_card_header: '粉紅杜鵑 (Rhododendron pulchrum)',
       intro_card_meta: '被子植物門 • 杜鵑花科',
       intro_credits: '校園植物學社',
       intro_active_botanists: 'ACTIVE BOTANISTS',
@@ -521,7 +521,7 @@
   // SPECIMEN CAMERA CAPTURE MODE
   // ----------------------------------------------------------
   const activeSpecimen = {
-    name_zh: '平戶杜鵑',
+    name_zh: '粉紅杜鵑',
     name_en: 'Hirado Azalea',
     scientific: 'Rhododendron × pulchrum',
     family_zh: '杜鵑花科 Ericaceae',
@@ -763,7 +763,7 @@
       const contentY = lineY + Math.round(cardH * 0.08);
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 ${fSizeName}px 'Noto Serif TC', serif`;
-      const nameZH = activeSpecimen.name_zh || '平戶杜鵑';
+      const nameZH = activeSpecimen.name_zh || '粉紅杜鵑';
       const nameEN = activeSpecimen.name_en || 'Hirado Azalea';
       ctx.fillText(`${nameZH} (${nameEN})`, cardX + paddingX, contentY);
 

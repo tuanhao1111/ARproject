@@ -38,7 +38,8 @@
       "mcp__Claude_in_Chrome__navigate",
       "mcp__Claude_in_Chrome__computer",
       "mcp__Claude_Preview__preview_start",
-      "Bash(git commit -m '@ *)"
+      "Bash(git commit -m '@ *)",
+      "Bash(dir \"C:\\\\Users\\\\user\\\\OneDrive\\\\Documents\\\\GitHub\\\\ARproject\\\\gamemode\")"
     ]
   }
 }

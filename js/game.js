@@ -21,9 +21,6 @@
   // ----------------------------------------------------------
   // To add a species: push a new entry + print matching barcode.
   // ID 0 reserved for START.
-  //
-  // ⚠️ ASSET TODO: ID 4 cần GLB riêng. Hiện tạm dùng purple-azalea.glb
-  //    làm placeholder. Khi có file thật, đổi `glb` field bên dưới.
   const SPECIES = [
     {
       id: 1,
@@ -110,7 +107,7 @@
       family_en: 'Ericaceae Family',
       origin_zh: '原產地: 日本',
       origin_en: 'Origin: Japan',
-      glb: './gamemode/purple-azalea.glb',
+      glb: './gamemode/pink-white-azalea.glb',
       scale: 15,
       growth_zh: '常綠矮灌木，生長緩慢，喜好排水極佳的酸性砂質土壤。在日本盆景藝術中極受推崇。',
       growth_en: 'An evergreen dwarf shrub, slow-growing and preferring extremely well-drained acidic sandy soil. Highly prized in Japanese bonsai art.',
